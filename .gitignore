@@ -1,0 +1,5 @@
+dist/
+cabal-dev/
+*.sqlite3
+.ghci
+log/
