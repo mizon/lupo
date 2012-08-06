@@ -10,6 +10,8 @@ import qualified Data.Text as T
 import Test.Framework.Providers.HUnit
 import Test.Framework
 import Test.HUnit hiding (Test)
+import qualified Data.Enumerator.List as EL
+import Data.Enumerator
 import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Control.Applicative
@@ -38,6 +40,21 @@ testSuite =
             EDB.delete db 1
             assertRaise RecordNotFound $
                 void $ EDB.select db 1
+
+        , dbTestCase "all empty" $ do
+            db <- EDB.getEntryDB
+            enum <- EDB.all db
+            es <- run_ $ enum $$ EL.consume
+            liftIO $ Prelude.length es @?= 0
+
+        , dbTestCase "all exist" $ do
+            db <- EDB.getEntryDB
+            EDB.insert db EDB.Entry {EDB.title = "foo1"}
+            EDB.insert db EDB.Entry {EDB.title = "foo2"}
+            enum <- EDB.all db
+            es <- run_ $ enum $$ EL.consume
+            assertEntry (es !! 0) 2 "foo2"
+            assertEntry (es !! 1) 1 "foo1"
         ]
     ]
 
