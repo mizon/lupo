@@ -1,28 +1,32 @@
 {-# LANGUAGE TemplateHaskell
     , FlexibleInstances
-    , OverloadedStrings #-}
+    , OverloadedStrings
+    , ScopedTypeVariables #-}
 import qualified Lupo.EntryDB as EDB
+import Lupo.Exception
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
 import qualified Data.Text as T
 import Test.Framework.Providers.HUnit
 import Test.Framework
 import Test.HUnit hiding (Test)
+import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Control.Applicative
-import Control.Exception
+import qualified Control.Exception as E
+import Prelude hiding (catch)
 
 main :: IO ()
 main = defaultMain testSuite
 
-instance (MonadIO m, Applicative m, Functor m) =>
+instance (MonadCatchIO m, Applicative m, Functor m) =>
         EDB.MonadEntryDB (ReaderT EDB.EntryDB m) where
     getEntryDB = ask
 
 testSuite :: [Test]
 testSuite =
     [ testGroup "database control"
-        [ dbTestCase "insert" $ do
+        [ dbTestCase "insert and select" $ do
             db <- EDB.getEntryDB
             EDB.insert db EDB.Entry {EDB.title = "diary title"}
             e <- EDB.select db 1
@@ -32,8 +36,8 @@ testSuite =
             db <- EDB.getEntryDB
             EDB.insert db EDB.Entry {EDB.title = "foo"}
             EDB.delete db 1
-            e <- EDB.select db 1
-            assertEntry e 1 "diary title"
+            assertRaise RecordNotFound $
+                void $ EDB.select db 1
         ]
     ]
 
@@ -51,3 +55,9 @@ dbTestCase msg m = testCase msg $
         void $ DB.run conn "DELETE FROM entries" []
         DB.commit conn
         DB.disconnect conn
+
+assertRaise :: (MonadCatchIO m, E.Exception e) => e -> m () -> m ()
+assertRaise ex m = (m >> liftIO (assertFailure "exception doesn't be raised")) `catch`
+    \(raised :: LupoException) -> do
+        unless (show ex == show raised) $
+            liftIO $ assertFailure "an exception raised but it isn't expected"

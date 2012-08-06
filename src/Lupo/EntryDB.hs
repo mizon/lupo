@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings
     , TemplateHaskell
-    , PolymorphicComponents #-}
+    , PolymorphicComponents
+    , DoAndIfThenElse #-}
 module Lupo.EntryDB
     ( MonadEntryDB(..)
     , Entry(..)
@@ -9,6 +10,7 @@ module Lupo.EntryDB
     , makeEntryDB
     ) where
 
+import Lupo.Exception
 import qualified Database.HDBC as DB
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator
@@ -18,12 +20,13 @@ import Control.Applicative
 import Data.Functor
 import Control.Monad
 import Control.Monad.Trans
+import Control.Monad.CatchIO
 import System.FilePath
 import Prelude hiding (all)
 
 import Development.Placeholders
 
-class (MonadIO m, Applicative m, Functor m) => MonadEntryDB m where
+class (MonadCatchIO m, Applicative m, Functor m) => MonadEntryDB m where
     getEntryDB :: m EntryDB
 
 data Entry = Entry
@@ -65,7 +68,7 @@ dbSelect i = do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
         void $ DB.execute stmt [DB.toSql i]
         DB.fetchRow stmt
-    return $ maybe undefined fromSql row
+    maybe (throw RecordNotFound) (return . fromSql) row
 
 dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
 dbAll = do
@@ -95,8 +98,11 @@ dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
     conn <- connection <$> getEntryDB
     liftIO $ do
-        void $ DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
-        DB.commit conn
+        status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
+        if status /= 1 then
+            throw RecordNotFound
+        else
+            DB.commit conn
 
 fromSql :: [DB.SqlValue] -> Saved Entry
 fromSql [id_, c_at, m_at, t] = Saved
