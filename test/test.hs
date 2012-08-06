@@ -53,6 +53,7 @@ testSuite =
             EDB.insert db EDB.Entry {EDB.title = "foo2"}
             enum <- EDB.all db
             es <- run_ $ enum $$ EL.consume
+            liftIO $ Prelude.length es @?= 2
             assertEntry (es !! 0) 2 "foo2"
             assertEntry (es !! 1) 1 "foo1"
         ]
