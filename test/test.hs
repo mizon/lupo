@@ -6,7 +6,6 @@ import qualified Lupo.EntryDB as EDB
 import Lupo.Exception
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
-import qualified Data.Text as T
 import Test.Framework.Providers.HUnit
 import Test.Framework
 import Test.HUnit hiding (Test)
@@ -30,13 +29,13 @@ testSuite =
     [ testGroup "database control"
         [ dbTestCase "insert and select" $ do
             db <- EDB.getEntryDB
-            EDB.insert db EDB.Entry {EDB.title = "diary title"}
+            EDB.insert db $ EDB.Entry "title" "body"
             e <- EDB.select db 1
-            assertEntry e 1 "diary title"
+            assertEntry (EDB.Entry "title" "body") e
 
         , dbTestCase "delete" $ do
             db <- EDB.getEntryDB
-            EDB.insert db EDB.Entry {EDB.title = "foo"}
+            EDB.insert db $ EDB.Entry "title" "body"
             EDB.delete db 1
             assertRaise RecordNotFound $
                 void $ EDB.select db 1
@@ -49,25 +48,25 @@ testSuite =
 
         , dbTestCase "all exist" $ do
             db <- EDB.getEntryDB
-            EDB.insert db EDB.Entry {EDB.title = "foo1"}
-            EDB.insert db EDB.Entry {EDB.title = "foo2"}
+            EDB.insert db $ EDB.Entry "foo1" "body"
+            EDB.insert db $ EDB.Entry "foo2" "body"
             enum <- EDB.all db
             es <- run_ $ enum $$ EL.consume
             liftIO $ Prelude.length es @?= 2
-            assertEntry (es !! 0) 2 "foo2"
-            assertEntry (es !! 1) 1 "foo1"
+            assertEntry (EDB.Entry "foo2" "body") $ es !! 0
+            assertEntry (EDB.Entry "foo1" "body") $ es !! 1
         ]
     ]
 
-assertEntry :: MonadIO m => EDB.Saved EDB.Entry -> Integer -> T.Text -> m ()
-assertEntry e i title
-    | EDB.title (EDB.refObject e) == title && EDB.idx e == i = return ()
+assertEntry :: MonadIO m => EDB.Entry -> EDB.Saved EDB.Entry -> m ()
+assertEntry expected actual
+    | expected == EDB.refObject actual = return ()
     | otherwise = liftIO $ assertFailure "invlaid entry"
 
 dbTestCase :: String -> ReaderT EDB.EntryDB IO () -> Test
 dbTestCase msg m = testCase msg $
     bracket (Sqlite3.connectSqlite3 "./test.sqlite3") finalize $ \conn ->
-        runReaderT m $ EDB.makeEntryDB conn ""
+        runReaderT m $ EDB.makeEntryDB conn "./tmp/entries"
   where
     finalize conn = do
         void $ DB.run conn "DELETE FROM entries" []
