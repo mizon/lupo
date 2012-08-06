@@ -100,7 +100,7 @@ dbInsert Entry {..} = do
             , DB.toSql now
             , DB.toSql title
             ]
-        stmt <- DB.prepare conn "SELECT max(id) FROM entries"
+        stmt <- DB.prepare conn "SELECT MAX(id) FROM entries"
         void $ DB.execute stmt []
         Just [DB.fromSql -> (lastIdx :: Integer)] <- DB.fetchRow stmt
         DB.commit conn
