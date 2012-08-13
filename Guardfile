@@ -1,7 +1,7 @@
 require "socket"
 
 guard :shell do
-  watch %r<(snaplets|src)/.*> do
+  watch %r<(snaplets|src|static/css)/.*> do
     system "pkill -HUP -f src/Main.hs"
     wait_for_server_killed 8000
     Process.spawn "rh -Wall src/Main.hs"
