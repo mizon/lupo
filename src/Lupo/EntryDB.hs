@@ -36,8 +36,8 @@ class (MonadCatchIO m, Applicative m, Functor m) => MonadEntryDB m where
     getEntryDB :: m EntryDB
 
 data Entry = Entry
-    { title :: TL.Text
-    , body :: TL.Text
+    { title :: T.Text
+    , body :: T.Text
     } deriving (Show, Eq)
 
 data Saved o = Saved
@@ -107,7 +107,7 @@ dbInsert Entry {..} = do
         Just [DB.fromSql -> (lastIdx :: Integer)] <- DB.fetchRow stmt
         DB.commit conn
         withFile (path </> show lastIdx) WriteMode $ \h ->
-            run_ $ enumList 1 (TL.toChunks body) $$ ET.iterHandle h
+            run_ $ enumList 1 [body] $$ ET.iterHandle h
 
 dbUpdate :: MonadEntryDB m => Integer -> Entry -> m ()
 dbUpdate i Entry {..} = do
@@ -122,7 +122,7 @@ dbUpdate i Entry {..} = do
             ]
         DB.commit conn
         withFile (path </> show i) WriteMode $ \h ->
-            run_ $ enumList 1 (TL.toChunks body) $$ ET.iterHandle h
+            run_ $ enumList 1 [body] $$ ET.iterHandle h
 
 dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
@@ -140,7 +140,7 @@ fromSql [ DB.fromSql -> id_
         , DB.fromSql -> m_at
         , DB.fromSql -> t ] = do
     edir <- entriesDir <$> getEntryDB
-    b <- liftIO $ run_ $ ET.enumFile (edir </> show id_) $$ ET.consume
+    (TL.toStrict -> b) <- liftIO $ run_ $ ET.enumFile (edir </> show id_) $$ ET.consume
     return Saved
         { idx = id_
         , createdAt = c_at

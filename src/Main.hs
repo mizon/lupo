@@ -18,7 +18,6 @@ import Data.Enumerator
 import Snap.Util.FileServe
 import qualified Snap.Http.Server.Config as C
 import Snap
-import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as BS
@@ -75,8 +74,8 @@ newEntry :: Handler Lupo Lupo ()
 newEntry = method GET (newEntryEditor Nothing) <|> submitEntry
   where
     submitEntry = method POST $ do
-        (TL.fromStrict -> title) <- param "title"
-        (TL.fromStrict -> body) <- param "body"
+        title <- param "title"
+        body <- param "body"
         action <- param "action"
         case action of
             "Submit" -> do
@@ -101,8 +100,8 @@ editEntry = method GET editor <|> method POST updateEntry
 
     updateEntry = do
         id_ <- paramId
-        (TL.fromStrict -> title) <- param "title"
-        (TL.fromStrict -> body) <- param "body"
+        title <- param "title"
+        body <- param "body"
         action <- param "action"
         case action of
             "Submit" -> do
@@ -136,8 +135,8 @@ showPreview prevTitle e@EDB.Entry {..} = do
         [ ("style-sheet", textSplice "admin")
         , ("preview-title", textSplice prevTitle)
         , ("submit-path", textSplice submitPath)
-        , ("entry-title", textSplice $ TL.toStrict title)
-        , ("entry-body", textSplice $ TL.toStrict body)
+        , ("entry-title", textSplice title)
+        , ("entry-body", textSplice body)
         , ("rendered-body", H.liftHeist $ V.entryBody e)
         ]
 
@@ -148,8 +147,8 @@ showEditor title entry = do
         [ ("style-sheet", textSplice "admin")
         , ("edit-title", textSplice title)
         , ("submit-path", textSplice submitPath)
-        , ("default-title", textSplice $ maybe "" (TL.toStrict . EDB.title) entry)
-        , ("default-body", textSplice $ maybe "" (TL.toStrict . EDB.body) entry)
+        , ("default-title", textSplice $ maybe "" EDB.title entry)
+        , ("default-body", textSplice $ maybe "" EDB.body entry)
         ]
 
 textSplice :: T.Text -> H.SnapletSplice Lupo Lupo

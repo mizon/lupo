@@ -12,13 +12,12 @@ import Text.XmlHtml
 import Data.Time
 import qualified System.Locale as L
 import qualified Text.Templating.Heist as H
-import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
 import Data.Monoid
 import Control.Applicative
 
 entryBody :: Monad m => EDB.Entry -> H.Splice m
-entryBody EDB.Entry {..} = return $ S.renderBody $ TL.toStrict body
+entryBody EDB.Entry {..} = return $ S.renderBody body
 
 entryInfo :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
 entryInfo es = return $ singleEntry <$> es
@@ -26,7 +25,7 @@ entryInfo es = return $ singleEntry <$> es
     singleEntry EDB.Saved {refObject = EDB.Entry {..}, ..} =
         Element "tr" []
             [ Element "td" [("class", "date")] [TextNode timeText]
-            , Element "td" [] [TextNode $ TL.toStrict title]
+            , Element "td" [] [TextNode title]
             , Element "td" [("class", "operation")]
                 [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
                 , TextNode " "
