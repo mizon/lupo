@@ -1,10 +1,32 @@
+{-# LANGUAGE OverloadedStrings
+    , RecordWildCards
+    , FlexibleInstances #-}
 module Lupo.View
-    ( exports
+    ( entryInfo
     ) where
 
+import qualified Lupo.EntryDB as EDB
 import Text.XmlHtml
+import Data.Time
+import qualified System.Locale as L
 import qualified Text.Templating.Heist as H
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
+import Data.Convertible
+import Data.Monoid
+import Data.String
+import Control.Applicative
 
-editForm :: Monad m => T.Text -> H.Splice m
-editForm action = return $ Element "form" [("method", "post"), ("action", action)] []
+entryInfo :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
+entryInfo es = return $ singleEntry <$> es
+  where
+    singleEntry EDB.Saved {refObject = EDB.Entry {..}, ..} =
+        Element "tr" []
+            [ Element "td" [("class", "date")] [TextNode timeText]
+            , Element "td" [] [TextNode $ TL.toStrict title]
+            , Element "td" [("class", "operation")]
+                [Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]]
+            ]
+      where
+        timeText = T.pack $ formatTime L.defaultTimeLocale "%Y-%m-%d" createdAt
+        toText = T.pack . show

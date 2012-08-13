@@ -1,10 +1,12 @@
 <!doctype html>
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="/css/diary.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/${style-sheet}.css"/>
     <title><page-title/></title>
   </head>
   <body>
-    <content/>
+    <div id="container">
+      <content/>
+    </div>
   </body>
 </html>
