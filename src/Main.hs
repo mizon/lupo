@@ -71,9 +71,9 @@ admin = do
         ]
 
 newEntry :: Handler Lupo Lupo ()
-newEntry = method GET (newEntryEditor Nothing) <|> submitEntry
+newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
   where
-    submitEntry = method POST $ do
+    submitEntry = do
         title <- param "title"
         body <- param "body"
         action <- param "action"
