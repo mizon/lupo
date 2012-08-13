@@ -8,16 +8,13 @@ module Lupo.View
 
 import qualified Lupo.EntryDB as EDB
 import qualified Lupo.Syntax as S
-import qualified Data.Attoparsec.Text as A
 import Text.XmlHtml
 import Data.Time
 import qualified System.Locale as L
 import qualified Text.Templating.Heist as H
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
-import Data.Convertible
 import Data.Monoid
-import Data.String
 import Control.Applicative
 
 entryBody :: Monad m => EDB.Entry -> H.Splice m

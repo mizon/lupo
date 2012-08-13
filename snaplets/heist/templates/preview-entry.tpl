@@ -1,11 +1,13 @@
 <apply template="default">
-  <h1>Preview</h1>
+  <h1><preview-title/></h1>
   <h2><entry-title/></h2>
-  <entry-body/>
-  <form id="entry-editor" action="/admin/${entry-id}/edit" method="post">
+  <rendered-body/>
+  <form id="entry-editor" action="${submit-path}" method="post">
     <div class="buttons">
-      <input type="submit" name="preview" value="Edit"/>
-      <input type="submit" value="Submit"/>
+      <input type="hidden" name="title" value="${entry-title}"/>
+      <input type="hidden" name="body" value="${entry-body}"/>
+      <input type="submit" name="action" value="Edit"/>
+      <input type="submit" name="action" value="Submit"/>
     </div>
   </form>
 </apply>
