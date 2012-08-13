@@ -72,7 +72,7 @@ admin = do
     entries <- run_ =<< ($$) <$> EDB.all db <*> pure EL.consume
     H.renderWithSplices "admin"
         [ ("entries-list", H.liftHeist $ V.entryInfo entries)
-        , ("style-sheet", H.liftHeist $ TH.textSplice "admin")
+        , ("style-sheet", textSplice "admin")
         ]
 
 newEntry :: Handler Lupo Lupo ()
