@@ -62,8 +62,8 @@ top = do
     db <- EDB.getEntryDB
     entries <- run_ =<< ($$) <$> EDB.all db <*> pure EL.consume
     H.renderWithSplices "index"
-        [ ("page-title", H.liftHeist $ TH.textSplice "Lupo Web Diary")
-        , ("style-sheet", H.liftHeist $ TH.textSplice "diary")
+        [ ("page-title", textSplice "Lupo Web Diary")
+        , ("style-sheet", textSplice "diary")
         ]
 
 admin :: Handler Lupo Lupo ()
