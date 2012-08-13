@@ -41,6 +41,13 @@ testSuite =
             assertRaise RecordNotFound $
                 void $ EDB.select db 1
 
+        , dbTestCase "update" $ do
+            db <- EDB.getEntryDB
+            EDB.insert db $ EDB.Entry "title" "body"
+            EDB.update db 1 $ EDB.Entry "foo" "foooo"
+            e <- EDB.select db 1
+            assertEntry (EDB.Entry "foo" "foooo") e
+
         , dbTestCase "all empty" $ do
             db <- EDB.getEntryDB
             enum <- EDB.all db

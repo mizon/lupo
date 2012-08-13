@@ -54,6 +54,7 @@ data EntryDB = EntryDB
     , all :: forall m a. MonadEntryDB m => m (Enumerator (Saved Entry) m a)
     , search :: forall m a. MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
     , insert :: MonadEntryDB m => Entry -> m ()
+    , update :: MonadEntryDB m => Integer -> Entry -> m ()
     , delete :: MonadEntryDB m => Integer -> m ()
     }
 
@@ -65,6 +66,7 @@ makeEntryDB conn dir = EntryDB
     , all = dbAll
     , search = dbSearch
     , insert = dbInsert
+    , update = dbUpdate
     , delete = dbDelete
     }
 
@@ -105,6 +107,21 @@ dbInsert Entry {..} = do
         Just [DB.fromSql -> (lastIdx :: Integer)] <- DB.fetchRow stmt
         DB.commit conn
         withFile (path </> show lastIdx) WriteMode $ \h ->
+            run_ $ enumList 1 (TL.toChunks body) $$ ET.iterHandle h
+
+dbUpdate :: MonadEntryDB m => Integer -> Entry -> m ()
+dbUpdate i Entry {..} = do
+    conn <- connection <$> getEntryDB
+    path <- entriesDir <$> getEntryDB
+    liftIO $ do
+        now <- Ti.getZonedTime
+        void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ? WHERE id = ?"
+            [ DB.toSql now
+            , DB.toSql title
+            , DB.toSql i
+            ]
+        DB.commit conn
+        withFile (path </> show i) WriteMode $ \h ->
             run_ $ enumList 1 (TL.toChunks body) $$ ET.iterHandle h
 
 dbDelete :: MonadEntryDB m => Integer -> m ()
