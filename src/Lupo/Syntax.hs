@@ -1,13 +1,16 @@
 {-# LANGUAGE OverloadedStrings
     , ScopedTypeVariables #-}
 module Lupo.Syntax
-    ( diaryParser
+    ( renderBody
     ) where
 
 import qualified Data.Attoparsec.Text as A
 import Text.XmlHtml
 import qualified Data.Text as T
 import Control.Applicative
+
+renderBody :: T.Text -> [Node]
+renderBody = either (error "[BUG] in body parsing") id . A.parseOnly diaryParser
 
 diaryParser :: A.Parser [Node]
 diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput

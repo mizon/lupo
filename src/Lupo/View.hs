@@ -2,10 +2,13 @@
     , RecordWildCards
     , FlexibleInstances #-}
 module Lupo.View
-    ( entryInfo
+    ( entryBody
+    , entryInfo
     ) where
 
 import qualified Lupo.EntryDB as EDB
+import qualified Lupo.Syntax as S
+import qualified Data.Attoparsec.Text as A
 import Text.XmlHtml
 import Data.Time
 import qualified System.Locale as L
@@ -16,6 +19,9 @@ import Data.Convertible
 import Data.Monoid
 import Data.String
 import Control.Applicative
+
+entryBody :: Monad m => EDB.Entry -> H.Splice m
+entryBody EDB.Entry {..} = return $ S.renderBody $ TL.toStrict body
 
 entryInfo :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
 entryInfo es = return $ singleEntry <$> es
@@ -28,7 +34,7 @@ entryInfo es = return $ singleEntry <$> es
                 [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
                 , TextNode " "
                 , Element "a" [ ("href", "/admin/" <> toText idx <> "/delete")
-                              , ("onclick", "return confirm(\"Are you sure?\")")] [TextNode "Delete"]
+                              , ("onclick", "return confirm(\"Are you sure?\")") ] [TextNode "Delete"]
                 ]
             ]
       where
