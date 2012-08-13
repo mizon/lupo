@@ -22,6 +22,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as BS
+import Data.Maybe
 
 import Development.Placeholders
 
@@ -49,6 +50,7 @@ lupoInit = makeSnaplet "lupo" "A personal web diary." Nothing $ do
         , ("admin/new", newEntry)
         , ("admin/:id/edit", editEntry)
         , ("admin/:id/delete", deleteEntry)
+        , ("admin/:id/preview", previewEntry)
         , ("js", serveDirectory "static/js")
         , ("css", serveDirectory "static/css")
         ]
@@ -108,15 +110,32 @@ editEntry = method GET showEditor <|> updateEntry
         id <- paramId
         (TL.fromStrict -> title) <- param "title"
         (TL.fromStrict -> body) <- param "body"
-        db <- EDB.getEntryDB
-        EDB.update db id $ EDB.Entry title body
-        redirect "/admin"
+        (isJust -> isPreview) <- getParam "preview"
+        if isPreview then
+            H.renderWithSplices "preview-entry"
+                [ ("style-sheet", textSplice "admin")
+                , ("entry-title", textSplice $ TL.toStrict body)
+                , ("entry-body", H.liftHeist $ V.entryBody $ EDB.Entry title body)
+                ]
+        else do
+            db <- EDB.getEntryDB
+            EDB.update db id $ EDB.Entry title body
+            redirect "/admin"
 
 deleteEntry :: Handler Lupo Lupo ()
 deleteEntry = do
     db <- EDB.getEntryDB
     EDB.delete db =<< paramId
     redirect "/admin"
+
+previewEntry :: Handler Lupo Lupo ()
+previewEntry = method POST $ do
+    (TL.fromStrict -> title) <- param "title"
+    (TL.fromStrict -> body) <- param "body"
+    H.renderWithSplices "preview-entry"
+        [ ("style-sheet", textSplice "admin")
+        , ("entry-body", H.liftHeist $ V.entryBody $ EDB.Entry title body)
+        ]
 
 entryIndex :: Snap ()
 entryIndex = $notImplemented
