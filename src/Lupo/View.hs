@@ -25,7 +25,11 @@ entryInfo es = return $ singleEntry <$> es
             [ Element "td" [("class", "date")] [TextNode timeText]
             , Element "td" [] [TextNode $ TL.toStrict title]
             , Element "td" [("class", "operation")]
-                [Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]]
+                [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
+                , TextNode " "
+                , Element "a" [ ("href", "/admin/" <> toText idx <> "/delete")
+                              , ("onclick", "return confirm(\"Are you sure?\")")] [TextNode "Delete"]
+                ]
             ]
       where
         timeText = T.pack $ formatTime L.defaultTimeLocale "%Y-%m-%d" createdAt

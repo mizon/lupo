@@ -48,6 +48,7 @@ lupoInit = makeSnaplet "lupo" "A personal web diary." Nothing $ do
         , ("admin", admin)
         , ("admin/new", newEntry)
         , ("admin/:id/edit", editEntry)
+        , ("admin/:id/delete", deleteEntry)
         , ("js", serveDirectory "static/js")
         , ("css", serveDirectory "static/css")
         ]
@@ -110,6 +111,12 @@ editEntry = method GET showEditor <|> updateEntry
         db <- EDB.getEntryDB
         EDB.update db id $ EDB.Entry title body
         redirect "/admin"
+
+deleteEntry :: Handler Lupo Lupo ()
+deleteEntry = do
+    db <- EDB.getEntryDB
+    EDB.delete db =<< paramId
+    redirect "/admin"
 
 entryIndex :: Snap ()
 entryIndex = $notImplemented
