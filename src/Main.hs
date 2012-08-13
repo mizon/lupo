@@ -114,7 +114,7 @@ editEntry = method GET showEditor <|> updateEntry
         if isPreview then
             H.renderWithSplices "preview-entry"
                 [ ("style-sheet", textSplice "admin")
-                , ("entry-title", textSplice $ TL.toStrict body)
+                , ("entry-title", textSplice $ TL.toStrict title)
                 , ("entry-body", H.liftHeist $ V.entryBody $ EDB.Entry title body)
                 ]
         else do
