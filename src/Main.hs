@@ -74,17 +74,16 @@ newEntry :: Handler Lupo Lupo ()
 newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
   where
     submitEntry = do
-        title <- param "title"
-        body <- param "body"
+        entry <- EDB.Entry <$> param "title" <*> param "body"
         action <- param "action"
         case action of
             "Submit" -> do
                 db <- EDB.getEntryDB
-                EDB.insert db $ EDB.Entry title body
+                EDB.insert db entry
                 redirect "/admin"
             "Preview" ->
-                showPreview "New Entry: Preview" $ EDB.Entry title body
-            "Edit" -> newEntryEditor $ Just $ EDB.Entry title body
+                showPreview "New Entry: Preview" entry
+            "Edit" -> newEntryEditor $ Just entry
             _ -> error "invalid request"
 
     newEntryEditor entry = showEditor "New Entry" entry
@@ -100,16 +99,15 @@ editEntry = method GET editor <|> method POST updateEntry
 
     updateEntry = do
         id_ <- paramId
-        title <- param "title"
-        body <- param "body"
+        entry <- EDB.Entry <$> param "title" <*> param "body"
         action <- param "action"
         case action of
             "Submit" -> do
                 db <- EDB.getEntryDB
-                EDB.update db id_ $ EDB.Entry title body
+                EDB.update db id_ entry
                 redirect "/admin"
-            "Preview" -> showPreview "Edit Entry: Preview" $ EDB.Entry title body
-            "Edit" -> editEntryEditor $ EDB.Entry title body
+            "Preview" -> showPreview "Edit Entry: Preview" entry
+            "Edit" -> editEntryEditor entry
             _ -> undefined
 
     editEntryEditor entry = showEditor "Edit Entry" $ Just entry
