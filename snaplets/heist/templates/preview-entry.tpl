@@ -1,4 +1,5 @@
 <apply template="default">
+  <bind tag="page-title"><preview-title/></bind>
   <h1><preview-title/></h1>
   <h2><entry-title/></h2>
   <rendered-body/>
