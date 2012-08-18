@@ -3,4 +3,4 @@ import Test_Syntax
 import Test.Framework
 
 main :: IO ()
-main = defaultMain [dbTest, syntaxTest]
+main = defaultMain [dbTest, savedTest, syntaxTest]
