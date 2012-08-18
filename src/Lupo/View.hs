@@ -2,7 +2,9 @@
     , RecordWildCards
     , FlexibleInstances #-}
 module Lupo.View
-    ( entry
+    ( Day(..)
+    , emptyDay
+    , entry
     , entryBody
     , entryInfo
     , day
@@ -17,6 +19,14 @@ import qualified Text.Templating.Heist as H
 import qualified Data.Text as T
 import Data.Monoid
 import Control.Applicative
+
+data Day a = Day
+    { entriesDay :: Ti.Day
+    , entries :: [EDB.Saved a]
+    }
+
+emptyDay :: Day a
+emptyDay = Day undefined []
 
 entry :: Monad m => EDB.Saved EDB.Entry -> H.Splice m
 entry EDB.Saved {refObject = e@EDB.Entry {..}, ..} = do
@@ -48,14 +58,14 @@ entryInfo es = return $ singleEntry <$> es
 timeToText :: Ti.ZonedTime -> T.Text
 timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 
-day :: Monad m => Ti.Day -> [EDB.Saved EDB.Entry] -> H.Splice m
-day day es = return $ pure $
+day :: Monad m => Day EDB.Entry -> H.Splice m
+day Day {..}  = return $ pure $
     Element "div" [("class", "day")] $
-           (Element "h2" [] [TextNode $ dayFormat day]) : concatMap entry es
+           (Element "h2" [] [TextNode $ dayFormat entriesDay]) : concatMap anEntry entries
   where
     dayFormat = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 
-    entry EDB.Saved {..} =
+    anEntry EDB.Saved {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
          : S.renderBody (EDB.body refObject)
         <> [Element "p" [("class", "time")] [TextNode $ timeFormat createdAt]]

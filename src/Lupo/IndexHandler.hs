@@ -45,14 +45,14 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
         return $ do
             db <- EDB.getEntryDB
             enumEntries <- EDB.all db
-            (fromMaybe [] -> es) <- run_ $ enumEntries
+            (fromMaybe V.emptyDay -> es) <- run_ $ enumEntries
                 $= EL.filter ((<= day) . EDB.getCreatedDay)
                 $$ packByDay
                 =$ EL.head
             H.renderWithSplices "index"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
-                , ("entries", H.liftHeist $ TH.mapSplices V.entry es)
+                , ("entries", H.liftHeist $ V.day es)
                 ]
 
     dayParser = Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
@@ -62,20 +62,20 @@ days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
     enumEntries <- EDB.all db
-    ess <- run_ $ enumEntries
+    es <- run_ $ enumEntries
         $= EL.filter ((<= from) . EDB.getCreatedDay)
         $$ packByDay
         =$ EL.take nDays
     H.renderWithSplices "index"
         [ ("page-title", textSplice "Lupo Web Diary")
         , ("style-sheet", textSplice "diary")
-        , ("entries", H.liftHeist $ TH.mapSplices (\es -> V.day (EDB.getCreatedDay $ head es) es) ess)
+        , ("entries", H.liftHeist $ TH.mapSplices V.day es)
         ]
 
-packByDay :: Monad m => Enumeratee (EDB.Saved a) [EDB.Saved a] m b
-packByDay = E.sequence $ EL.head >>= maybe (pure []) (\h -> do
+packByDay :: Monad m => Enumeratee (EDB.Saved a) (V.Day a) m b
+packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
       es <- EL.takeWhile $ isSameCreatedDay h
-      return $ h : es
+      return $ V.Day (EDB.getCreatedDay h) (h : es)
     )
   where
     isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
