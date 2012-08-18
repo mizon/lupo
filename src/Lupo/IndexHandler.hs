@@ -17,6 +17,7 @@ import qualified Data.Enumerator.List as EL
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Time as Ti
 import qualified Data.Text as T
+import qualified Data.List as L
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Char as C
 import Data.Maybe
@@ -75,7 +76,7 @@ days from nDays = do
 packByDay :: Monad m => Enumeratee (EDB.Saved a) (V.Day a) m b
 packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
       es <- EL.takeWhile $ isSameCreatedDay h
-      return $ V.Day (EDB.getCreatedDay h) (h : es)
+      return $ V.Day (EDB.getCreatedDay h) $ reverse (h : es)
     )
   where
     isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
