@@ -38,7 +38,7 @@ entries = do
     db <- EDB.getEntryDB
     enumEntries <- EDB.all db
     (concat -> es) <- run_ $ enumEntries
-        $= EL.filter (\e -> Ti.zonedTimeToLocalTime (EDB.createdAt e) <= Ti.zonedTimeToLocalTime from)
+        $= EL.filter ((<= from) . EDB.getCreatedDay)
         $$ packByDay
         =$ EL.take nDays
     H.renderWithSplices "index"
