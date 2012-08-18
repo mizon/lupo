@@ -73,12 +73,9 @@ days from nDays = do
         ]
 
 packByDay :: Monad m => Enumeratee (EDB.Saved a) [EDB.Saved a] m b
-packByDay = E.sequence $ do
-    h <- EL.head
-    case h of
-        Just entry -> do
-            follows <- EL.takeWhile $ isSameCreatedDay entry
-            return $ entry : follows
-        Nothing -> return []
+packByDay = E.sequence $ EL.head >>= maybe (pure []) (\h -> do
+      es <- EL.takeWhile $ isSameCreatedDay h
+      return $ h : es
+    )
   where
     isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
