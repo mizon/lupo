@@ -17,7 +17,7 @@ import qualified Data.Enumerator.List as EL
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Time as Ti
 import qualified Data.Text as T
-import Data.Enumerator as E hiding (replicate)
+import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Char as C
 import Data.Maybe
 import Control.Monad as M
@@ -62,14 +62,14 @@ days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
     enumEntries <- EDB.all db
-    (concat -> es) <- run_ $ enumEntries
+    ess <- run_ $ enumEntries
         $= EL.filter ((<= from) . EDB.getCreatedDay)
         $$ packByDay
         =$ EL.take nDays
     H.renderWithSplices "index"
         [ ("page-title", textSplice "Lupo Web Diary")
         , ("style-sheet", textSplice "diary")
-        , ("entries", H.liftHeist $ TH.mapSplices V.entry es)
+        , ("entries", H.liftHeist $ TH.mapSplices (\es -> V.day (EDB.getCreatedDay $ head es) es) ess)
         ]
 
 packByDay :: Monad m => Enumeratee (EDB.Saved a) [EDB.Saved a] m b
