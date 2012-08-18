@@ -4,6 +4,7 @@ module Main (main) where
 import qualified Lupo.AdminHandler as Admin
 import qualified Lupo.IndexHandler as Index
 import qualified Lupo.EntryDB as EDB
+import Lupo.Util
 import Lupo.Application
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Database.HDBC as DB
@@ -30,6 +31,6 @@ lupoInit = makeSnaplet "lupo" "A personal web diary." Nothing $ do
         , ("admin/:id/delete", Admin.deleteEntry)
         , ("js", serveDirectory "static/js")
         , ("css", serveDirectory "static/css")
-        , (":query", Index.entries)
+        , (":query", Index.parseQuery =<< param "query")
         ]
     return $ Lupo h db
