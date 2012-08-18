@@ -3,6 +3,7 @@
     , FlexibleInstances #-}
 module Test_EntryDB
     ( dbTest
+    , savedTest
     ) where
 
 import qualified Lupo.EntryDB as EDB
@@ -14,6 +15,7 @@ import Test.Framework
 import Test.HUnit hiding (Test)
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator
+import qualified Data.Time as Ti
 import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Control.Applicative
@@ -63,6 +65,25 @@ dbTest = testGroup "database control"
         assertEntry (EDB.Entry "foo2" "body") $ es !! 0
         assertEntry (EDB.Entry "foo1" "body") $ es !! 1
     ]
+
+savedTest :: Test
+savedTest = testGroup "saved object"
+    [ testCase "compare same createdAt" $ do
+        now <- Ti.getZonedTime
+        EDB.isSameCreatedDay (EDB.Saved 0 now now ()) (EDB.Saved 1 now now ()) @? "must true"
+
+    , testCase "compare not same createdAt" $ do
+        now <- Ti.getZonedTime
+        not (EDB.isSameCreatedDay (EDB.Saved 0 (toNextDay now) now ()) (EDB.Saved 1 now now ())) @? "must false"
+
+    , testCase "compare not same modifiedAt" $ do
+        now <- Ti.getZonedTime
+        EDB.isSameCreatedDay (EDB.Saved 0 now (toNextDay now) ()) (EDB.Saved 1 now now ()) @? "must true"
+    ]
+  where
+    toNextDay d = d {Ti.zonedTimeToLocalTime = (Ti.zonedTimeToLocalTime d) {Ti.localDay = getNextDay}}
+      where
+        getNextDay = Ti.addDays 1 $ Ti.localDay $ Ti.zonedTimeToLocalTime d
 
 assertEntry :: MonadIO m => EDB.Entry -> EDB.Saved EDB.Entry -> m ()
 assertEntry expected actual
