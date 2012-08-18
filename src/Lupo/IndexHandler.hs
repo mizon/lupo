@@ -33,8 +33,18 @@ top = do
         ]
 
 entries :: Handler Lupo Lupo ()
-entries = do
-    (from, nDays) <- either (const pass) pure =<< parseQuery <$> param "query"
+entries = uncurry days =<< either (const pass) pure =<< parseQuery <$> param "query"
+  where
+    parseQuery = A.parseOnly $ do
+        date <- Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
+        void $ A.char '-'
+        nentries <- read . pure <$> number
+        return (date, nentries)
+      where
+        number = A.satisfy C.isDigit
+
+days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
+days from nDays = do
     db <- EDB.getEntryDB
     enumEntries <- EDB.all db
     (concat -> es) <- run_ $ enumEntries
@@ -46,14 +56,6 @@ entries = do
         , ("style-sheet", textSplice "diary")
         , ("entries", H.liftHeist $ TH.mapSplices V.entry es)
         ]
-  where
-    parseQuery = A.parseOnly $ do
-        date <- Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
-        void $ A.char '-'
-        nentries <- read . pure <$> number
-        return (date, nentries)
-      where
-        number = A.satisfy C.isDigit
 
 packByDay :: Monad m => Enumeratee (EDB.Saved a) [EDB.Saved a] m b
 packByDay = E.sequence $ do
