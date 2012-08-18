@@ -60,6 +60,8 @@ packByDay = E.sequence $ do
     h <- EL.head
     case h of
         Just entry -> do
-            follows <- EL.takeWhile $ EDB.isSameCreatedDay entry
+            follows <- EL.takeWhile $ isSameCreatedDay entry
             return $ entry : follows
         Nothing -> return []
+  where
+    isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b

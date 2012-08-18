@@ -9,7 +9,7 @@ module Lupo.EntryDB
     ( MonadEntryDB(..)
     , Entry(..)
     , Saved(..)
-    , isSameCreatedDay
+    , getCreatedDay
     , EntryDB(..)
     , makeEntryDB
     ) where
@@ -59,10 +59,8 @@ data EntryDB = EntryDB
     , delete :: MonadEntryDB m => Integer -> m ()
     }
 
-isSameCreatedDay :: Saved a -> Saved b -> Bool
-isSameCreatedDay a b = getCreatedDay a == getCreatedDay b
-  where
-    getCreatedDay = Ti.localDay . Ti.zonedTimeToLocalTime . createdAt
+getCreatedDay :: Saved a -> Ti.Day
+getCreatedDay = Ti.localDay . Ti.zonedTimeToLocalTime . createdAt
 
 makeEntryDB :: DB.IConnection conn => conn -> FilePath -> EntryDB
 makeEntryDB conn dir = EntryDB

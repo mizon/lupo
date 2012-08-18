@@ -68,22 +68,19 @@ dbTest = testGroup "database control"
 
 savedTest :: Test
 savedTest = testGroup "saved object"
-    [ testCase "compare same createdAt" $ do
+    [ testCase "getCreatedDay" $ do
         now <- Ti.getZonedTime
-        EDB.isSameCreatedDay (EDB.Saved 0 now now ()) (EDB.Saved 1 now now ()) @? "must true"
-
-    , testCase "compare not same createdAt" $ do
-        now <- Ti.getZonedTime
-        not (EDB.isSameCreatedDay (EDB.Saved 0 (toNextDay now) now ()) (EDB.Saved 1 now now ())) @? "must false"
-
-    , testCase "compare not same modifiedAt" $ do
-        now <- Ti.getZonedTime
-        EDB.isSameCreatedDay (EDB.Saved 0 now (toNextDay now) ()) (EDB.Saved 1 now now ()) @? "must true"
+        EDB.getCreatedDay (EDB.Saved 1 now now ()) @?= getDay now
+        EDB.getCreatedDay (EDB.Saved 1 now (toNextDay now) ()) @?= getDay now
+        EDB.getCreatedDay (EDB.Saved 1 (toNextDay now) now ()) /= getDay now @?
+            "must not true when not equal createdAt"
     ]
   where
     toNextDay d = d {Ti.zonedTimeToLocalTime = (Ti.zonedTimeToLocalTime d) {Ti.localDay = getNextDay}}
       where
-        getNextDay = Ti.addDays 1 $ Ti.localDay $ Ti.zonedTimeToLocalTime d
+        getNextDay = Ti.addDays 1 $ getDay d
+
+    getDay = Ti.localDay . Ti.zonedTimeToLocalTime
 
 assertEntry :: MonadIO m => EDB.Entry -> EDB.Saved EDB.Entry -> m ()
 assertEntry expected actual
