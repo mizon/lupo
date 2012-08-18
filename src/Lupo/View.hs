@@ -2,7 +2,8 @@
     , RecordWildCards
     , FlexibleInstances #-}
 module Lupo.View
-    ( entryBody
+    ( entry
+    , entryBody
     , entryInfo
     ) where
 
@@ -16,6 +17,13 @@ import qualified Data.Text as T
 import Data.Monoid
 import Control.Applicative
 
+entry :: Monad m => EDB.Saved EDB.Entry -> H.Splice m
+entry EDB.Saved {refObject = e@EDB.Entry {..}, ..} = do
+    b <- entryBody e
+    return $
+        [ Element "div" [("class", "entry")] $
+          (Element "h2" [] [TextNode $ timeToText createdAt, TextNode " ", TextNode title]) : b ]
+
 entryBody :: Monad m => EDB.Entry -> H.Splice m
 entryBody EDB.Entry {..} = return $ S.renderBody body
 
@@ -24,7 +32,7 @@ entryInfo es = return $ singleEntry <$> es
   where
     singleEntry EDB.Saved {refObject = EDB.Entry {..}, ..} =
         Element "tr" []
-            [ Element "td" [("class", "date")] [TextNode timeText]
+            [ Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
             , Element "td" [] [TextNode title]
             , Element "td" [("class", "operation")]
                 [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
@@ -34,5 +42,7 @@ entryInfo es = return $ singleEntry <$> es
                 ]
             ]
       where
-        timeText = T.pack $ formatTime L.defaultTimeLocale "%Y-%m-%d" createdAt
         toText = T.pack . show
+
+timeToText :: ZonedTime -> T.Text
+timeToText = T.pack . formatTime L.defaultTimeLocale "%Y-%m-%d"
