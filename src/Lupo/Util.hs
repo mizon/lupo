@@ -6,7 +6,6 @@ module Lupo.Util
     , textSplice
     ) where
 
-import Lupo.Application
 import qualified Text.Templating.Heist as TH
 import qualified Snap.Snaplet.Heist as H
 import qualified Data.Attoparsec.Text as A
@@ -27,5 +26,5 @@ paramNum name = either (error "invalid param type") id . toIntegral <$> param na
 param :: MonadSnap m => BS.ByteString -> m T.Text
 param name = maybe (error "missing param") TE.decodeUtf8 <$> getParam name
 
-textSplice :: T.Text -> H.SnapletSplice Lupo Lupo
+textSplice :: T.Text -> H.SnapletSplice a b
 textSplice = H.liftHeist . TH.textSplice
