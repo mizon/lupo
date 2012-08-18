@@ -59,7 +59,7 @@ data EntryDB = EntryDB
     , delete :: MonadEntryDB m => Integer -> m ()
     }
 
-isSameCreatedDay :: Saved a -> Saved a -> Bool
+isSameCreatedDay :: Saved a -> Saved b -> Bool
 isSameCreatedDay a b = getCreatedDay a == getCreatedDay b
   where
     getCreatedDay = Ti.localDay . Ti.zonedTimeToLocalTime . createdAt
