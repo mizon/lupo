@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings
+    , ViewPatterns
+    , ScopedTypeVariables #-}
 module Lupo.IndexHandler
     ( top
     , entries
@@ -13,7 +15,7 @@ import qualified Snap.Snaplet.Heist as H
 import qualified Data.Enumerator.List as EL
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Time as Ti
-import Data.Enumerator as E hiding (replicate, sequence)
+import Data.Enumerator as E hiding (replicate)
 import Snap
 import qualified Data.Char as C
 import Control.Monad as M
@@ -32,10 +34,13 @@ top = do
 
 entries :: Handler Lupo Lupo ()
 entries = do
-    (from, nentries) <- either (const pass) pure =<< parseQuery <$> param "query"
+    (from, nDays) <- either (const pass) pure =<< parseQuery <$> param "query"
     db <- EDB.getEntryDB
     enumEntries <- EDB.all db
-    es <- run_ $ enumEntries $= EL.filter (\e -> Ti.zonedTimeToLocalTime (EDB.createdAt e) <= Ti.zonedTimeToLocalTime from) $$ EL.take nentries
+    (concat -> es) <- run_ $ enumEntries
+        $= EL.filter (\e -> Ti.zonedTimeToLocalTime (EDB.createdAt e) <= Ti.zonedTimeToLocalTime from)
+        $$ packByDay
+        =$ EL.take nDays
     H.renderWithSplices "index"
         [ ("page-title", textSplice "Lupo Web Diary")
         , ("style-sheet", textSplice "diary")
@@ -49,3 +54,12 @@ entries = do
         return (date, nentries)
       where
         number = A.satisfy C.isDigit
+
+packByDay :: Monad m => Enumeratee (EDB.Saved a) [EDB.Saved a] m b
+packByDay = E.sequence $ do
+    h <- EL.head
+    case h of
+        Just entry -> do
+            follows <- EL.takeWhile $ EDB.isSameCreatedDay entry
+            return $ entry : follows
+        Nothing -> return []
