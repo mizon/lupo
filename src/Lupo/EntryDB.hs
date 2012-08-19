@@ -17,20 +17,16 @@ module Lupo.EntryDB
 import Lupo.Exception
 import Lupo.Util
 import qualified Database.HDBC as DB
-import qualified Data.Enumerator.Text as ET
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator
 import qualified Data.Time as Ti
-import qualified Data.Text.Lazy as TL
 import qualified Data.Text as T
 import Control.Applicative
 import Data.Functor
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.CatchIO
-import System.Directory
 import System.FilePath
-import System.IO
 import Prelude hiding (all)
 
 import Development.Placeholders
@@ -111,44 +107,36 @@ dbSearch = $notImplemented
 dbInsert :: MonadEntryDB m => Entry -> m ()
 dbInsert Entry {..} = do
     conn <- connection <$> getEntryDB
-    path <- entriesDir <$> getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
         void $ DB.run conn "INSERT INTO days (id) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM days WHERE id = ?)"
             [DB.toSql $ zonedDay now, DB.toSql $ zonedDay now]
-        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day_id, title) VALUES (?, ?, ?, ?)"
+        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day_id, title, body) VALUES (?, ?, ?, ?, ?)"
             [ DB.toSql now
             , DB.toSql now
             , DB.toSql $ zonedDay now
             , DB.toSql title
+            , DB.toSql body
             ]
-        stmt <- DB.prepare conn "SELECT MAX(id) FROM entries"
-        void $ DB.execute stmt []
-        Just [DB.fromSql -> (lastIdx :: Integer)] <- DB.fetchRow stmt
         DB.commit conn
-        withFile (path </> show lastIdx) WriteMode $ \h ->
-            run_ $ enumList 1 [body] $$ ET.iterHandle h
 
 dbUpdate :: MonadEntryDB m => Integer -> Entry -> m ()
 dbUpdate i Entry {..} = do
-    conn <- connection <$> getEntryDB
-    path <- entriesDir <$> getEntryDB
+    (connection -> conn) <- getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
-        void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ? WHERE id = ?"
+        void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
             [ DB.toSql now
             , DB.toSql title
+            , DB.toSql body
             , DB.toSql i
             ]
         DB.commit conn
-        withFile (path </> show i) WriteMode $ \h ->
-            run_ $ enumList 1 [body] $$ ET.iterHandle h
 
 dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
     db <- getEntryDB
     (connection -> conn) <- getEntryDB
-    (entriesDir -> path) <- getEntryDB
     (getCreatedDay -> created) <- select db i
     liftIO $ do
         status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
@@ -156,7 +144,6 @@ dbDelete i = do
             throw RecordNotFound
         else do
             void $ DB.run conn "DELETE FROM days WHERE id = ?" [DB.toSql created]
-            removeFile $ path </> show i
             DB.commit conn
 
 fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
@@ -164,9 +151,8 @@ fromSql [ DB.fromSql -> id_
         , _
         , DB.fromSql -> c_at
         , DB.fromSql -> m_at
-        , DB.fromSql -> t ] = do
-    edir <- entriesDir <$> getEntryDB
-    (TL.toStrict -> b) <- liftIO $ run_ $ ET.enumFile (edir </> show id_) $$ ET.consume
+        , DB.fromSql -> t
+        , DB.fromSql -> b ] = do
     return Saved
         { idx = id_
         , createdAt = c_at
