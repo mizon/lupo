@@ -27,6 +27,7 @@ import Data.Functor
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.CatchIO
+import System.Directory
 import System.FilePath
 import System.IO
 import Prelude hiding (all)
@@ -131,11 +132,13 @@ dbUpdate i Entry {..} = do
 dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
     conn <- connection <$> getEntryDB
+    (entriesDir -> path) <- getEntryDB
     liftIO $ do
         status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
         if status /= 1 then
             throw RecordNotFound
-        else
+        else do
+            removeFile $ path </> show i
             DB.commit conn
 
 fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
