@@ -54,6 +54,7 @@ data EntryDB = EntryDB
     { connection :: DB.ConnWrapper
     , entriesDir :: FilePath
     , select :: MonadEntryDB m => Integer -> m (Saved Entry)
+    , selectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
     , all :: forall m a. MonadEntryDB m => m (Enumerator (Saved Entry) m a)
     , search :: forall m a. MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
     , insert :: MonadEntryDB m => Entry -> m ()
@@ -69,6 +70,7 @@ makeEntryDB conn dir = EntryDB
     { connection = DB.ConnWrapper conn
     , entriesDir = dir
     , select = dbSelect
+    , selectDay = dbSelectDay
     , all = dbAll
     , search = dbSearch
     , insert = dbInsert
@@ -84,6 +86,15 @@ dbSelect i = do
         void $ DB.execute stmt [DB.toSql i]
         DB.fetchRow stmt
     maybe (throw RecordNotFound) fromSql row
+
+dbSelectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
+dbSelectDay (DB.toSql -> day) = do
+    (connection -> conn) <- getEntryDB
+    rows <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day_id = ? ORDER BY created_at ASC"
+        void $ DB.execute stmt [day]
+        DB.fetchAllRows stmt
+    Prelude.mapM fromSql rows
 
 dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
 dbAll = do

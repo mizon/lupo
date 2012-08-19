@@ -35,6 +35,14 @@ dbTest = testGroup "database control"
         e <- EDB.select db 1
         assertEntry (EDB.Entry "title" "body") e
 
+    , dbTestCase "select by day" $ do
+        db <- EDB.getEntryDB
+        EDB.insert db $ EDB.Entry "title" "body"
+        EDB.insert db $ EDB.Entry "foo" "bar"
+        es <- EDB.selectDay db =<< getToday
+        assertEntry (EDB.Entry "title" "body") $ es !! 0
+        assertEntry (EDB.Entry "foo" "bar") $ es !! 1
+
     , dbTestCase "delete" $ do
         db <- EDB.getEntryDB
         EDB.insert db $ EDB.Entry "title" "body"
@@ -65,6 +73,8 @@ dbTest = testGroup "database control"
         assertEntry (EDB.Entry "foo2" "body") $ es !! 0
         assertEntry (EDB.Entry "foo1" "body") $ es !! 1
     ]
+  where
+    getToday = liftIO $ Ti.localDay . Ti.zonedTimeToLocalTime <$> Ti.getZonedTime
 
 savedTest :: Test
 savedTest = testGroup "saved object"
