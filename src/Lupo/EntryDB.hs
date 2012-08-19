@@ -54,6 +54,8 @@ data EntryDB = EntryDB
     , insert :: MonadEntryDB m => Entry -> m ()
     , update :: MonadEntryDB m => Integer -> Entry -> m ()
     , delete :: MonadEntryDB m => Integer -> m ()
+    , beforeSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
+    , afterSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
     }
 
 getCreatedDay :: Saved a -> Ti.Day
@@ -69,6 +71,8 @@ makeEntryDB conn = EntryDB
     , insert = dbInsert
     , update = dbUpdate
     , delete = dbDelete
+    , beforeSavedDays = dbBeforeSavedDays
+    , afterSavedDays = dbAfterSavedDays
     }
 
 dbSelect :: MonadEntryDB m => Integer -> m (Saved Entry)
@@ -142,6 +146,24 @@ dbDelete i = do
         else do
             void $ DB.run conn "DELETE FROM days WHERE id = ?" [DB.toSql created]
             DB.commit conn
+
+dbBeforeSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
+dbBeforeSavedDays (DB.toSql -> d) = do
+    (connection -> conn) <- getEntryDB
+    rows <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM days WHERE id < ? ORDER BY id DESC"
+        void $ DB.execute stmt [d]
+        DB.fetchAllRows stmt
+    return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+
+dbAfterSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
+dbAfterSavedDays (DB.toSql -> d) = do
+    (connection -> conn) <- getEntryDB
+    rows <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM days WHERE id > ? ORDER BY id ASC"
+        void $ DB.execute stmt [d]
+        DB.fetchAllRows stmt
+    return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
 fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
 fromSql [ DB.fromSql -> id_

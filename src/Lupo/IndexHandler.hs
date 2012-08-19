@@ -58,16 +58,17 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
 days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
-    enumEntries <- EDB.all db
-    es <- run_ $ enumEntries
-        $= EL.filter ((<= from) . EDB.getCreatedDay)
-        $$ packByDay
-        =$ EL.take nDays
+    days <- run_ =<< ($$ EL.take nDays) <$> EDB.beforeSavedDays db from
+    dayViews <- Prelude.mapM makeDayView $ from : days
+    title <- refLupoConfig lcSiteTitle
     H.renderWithSplices "index"
-        [ ("page-title", textSplice "Lupo Web Diary")
+        [ ("page-title", textSplice title)
         , ("style-sheet", textSplice "diary")
-        , ("entries", H.liftHeist $ TH.mapSplices V.day es)
+        , ("entries", H.liftHeist $ TH.mapSplices V.day dayViews)
         ]
+  where
+    makeDayView d = EDB.getEntryDB >>= \db ->
+        V.Day <$> pure d <*> EDB.selectDay db d
 
 packByDay :: Monad m => Enumeratee (EDB.Saved a) (V.Day a) m b
 packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
@@ -76,3 +77,11 @@ packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
     )
   where
     isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
+
+nextDay :: Ti.Day -> Handler Lupo Lupo (Maybe Ti.Day)
+nextDay d = EDB.getEntryDB >>= \db ->
+    run_ =<< ($$ EL.head) <$> EDB.afterSavedDays db d
+
+previousDay :: Ti.Day -> Handler Lupo Lupo (Maybe Ti.Day)
+previousDay d = EDB.getEntryDB >>= \db ->
+    run_ =<< ($$ EL.head) <$> EDB.beforeSavedDays db d
