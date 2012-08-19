@@ -6,13 +6,14 @@ module Lupo.IndexHandler
     , parseQuery
     ) where
 
-import Lupo.Application
-import Lupo.Util
-import Snap
 import qualified Lupo.EntryDB as EDB
 import qualified Lupo.View as V
+import Lupo.Application
+import Lupo.Util
+import Lupo.Config
 import qualified Text.Templating.Heist as TH
 import qualified Snap.Snaplet.Heist as H
+import Snap
 import qualified Data.Enumerator.List as EL
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Time as Ti
@@ -27,7 +28,7 @@ import Prelude hiding (filter)
 top :: Handler Lupo Lupo ()
 top = do
     (getDay -> today) <- liftIO $ Ti.getZonedTime
-    days today 5
+    days today =<< refLupoConfig lcDaysPerPage
   where
     getDay = Ti.localDay . Ti.zonedTimeToLocalTime
 

@@ -20,6 +20,7 @@ main :: IO ()
 main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
     { lcSiteTitle = "Lupo Web Dairy"
     , lcSqlitePath = "./development.sqlite3"
+    , lcDaysPerPage = 5
     }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo

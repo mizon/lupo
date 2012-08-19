@@ -10,6 +10,7 @@ import Control.Applicative
 data LupoConfig = LupoConfig
     { lcSiteTitle :: T.Text
     , lcSqlitePath :: FilePath
+    , lcDaysPerPage :: Integer
     } deriving Show
 
 class (Monad m, Applicative m, Functor m) => GetLupoConfig m where
