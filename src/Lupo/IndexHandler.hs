@@ -17,7 +17,6 @@ import qualified Data.Enumerator.List as EL
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Time as Ti
 import qualified Data.Text as T
-import qualified Data.List as L
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Char as C
 import Data.Maybe
