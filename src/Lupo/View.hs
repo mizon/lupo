@@ -59,9 +59,9 @@ timeToText :: Ti.ZonedTime -> T.Text
 timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 
 day :: Monad m => Day EDB.Entry -> H.Splice m
-day Day {..}  = return $ pure $
+day Day {..} = return $ pure $
     Element "div" [("class", "day")] $
-           (Element "h2" [] [TextNode $ dayFormat entriesDay]) : concatMap anEntry entries
+        (Element "h2" [] [TextNode $ dayFormat entriesDay]) : concatMap anEntry entries
   where
     dayFormat = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 
