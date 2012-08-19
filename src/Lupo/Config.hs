@@ -8,7 +8,7 @@ import qualified Data.Text as T
 import Control.Applicative
 
 data LupoConfig = LupoConfig
-    { lcSiteTitle ::T.Text
+    { lcSiteTitle :: T.Text
     , lcSqlitePath :: FilePath
     } deriving Show
 
