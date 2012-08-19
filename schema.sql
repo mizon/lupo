@@ -12,4 +12,5 @@ CREATE TABLE days (
     id TEXT PRIMARY KEY
 );
 
+CREATE INDEX entries_day_id_index ON entries (day_id);
 CREATE INDEX days_index ON days (id);
