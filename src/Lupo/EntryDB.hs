@@ -15,6 +15,7 @@ module Lupo.EntryDB
     ) where
 
 import Lupo.Exception
+import Lupo.Util
 import qualified Database.HDBC as DB
 import qualified Data.Enumerator.Text as ET
 import qualified Data.Enumerator.List as EL
@@ -102,9 +103,12 @@ dbInsert Entry {..} = do
     path <- entriesDir <$> getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
-        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, title) VALUES (?, ?, ?)"
+        void $ DB.run conn "INSERT INTO days (id) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM days WHERE id = ?)"
+            [DB.toSql $ zonedDay now, DB.toSql $ zonedDay now]
+        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day_id, title) VALUES (?, ?, ?, ?)"
             [ DB.toSql now
             , DB.toSql now
+            , DB.toSql $ zonedDay now
             , DB.toSql title
             ]
         stmt <- DB.prepare conn "SELECT MAX(id) FROM entries"
@@ -131,18 +135,22 @@ dbUpdate i Entry {..} = do
 
 dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
-    conn <- connection <$> getEntryDB
+    db <- getEntryDB
+    (connection -> conn) <- getEntryDB
     (entriesDir -> path) <- getEntryDB
+    (getCreatedDay -> created) <- select db i
     liftIO $ do
         status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
         if status /= 1 then
             throw RecordNotFound
         else do
+            void $ DB.run conn "DELETE FROM days WHERE id = ?" [DB.toSql created]
             removeFile $ path </> show i
             DB.commit conn
 
 fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
 fromSql [ DB.fromSql -> id_
+        , _
         , DB.fromSql -> c_at
         , DB.fromSql -> m_at
         , DB.fromSql -> t ] = do

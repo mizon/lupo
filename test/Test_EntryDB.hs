@@ -99,6 +99,7 @@ dbTestCase msg m = testCase msg $
     finalize conn = do
         D.removeDirectoryRecursive entriesPath
         void $ DB.run conn "DELETE FROM entries" []
+        void $ DB.run conn "DELETE FROM days" []
         DB.commit conn
         DB.disconnect conn
 
