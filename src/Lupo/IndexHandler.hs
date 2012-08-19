@@ -78,10 +78,10 @@ packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
   where
     isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
 
-nextDay :: Ti.Day -> Handler Lupo Lupo (Maybe Ti.Day)
+nextDay :: EDB.MonadEntryDB m => Ti.Day -> m (Maybe Ti.Day)
 nextDay d = EDB.getEntryDB >>= \db ->
     run_ =<< ($$ EL.head) <$> EDB.afterSavedDays db d
 
-previousDay :: Ti.Day -> Handler Lupo Lupo (Maybe Ti.Day)
+previousDay :: EDB.MonadEntryDB m => Ti.Day -> m (Maybe Ti.Day)
 previousDay d = EDB.getEntryDB >>= \db ->
     run_ =<< ($$ EL.head) <$> EDB.beforeSavedDays db d
