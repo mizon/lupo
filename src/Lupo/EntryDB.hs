@@ -26,7 +26,6 @@ import Data.Functor
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.CatchIO
-import System.FilePath
 import Prelude hiding (all)
 
 import Development.Placeholders
@@ -48,7 +47,6 @@ data Saved o = Saved
 
 data EntryDB = EntryDB
     { connection :: DB.ConnWrapper
-    , entriesDir :: FilePath
     , select :: MonadEntryDB m => Integer -> m (Saved Entry)
     , selectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
     , all :: forall m a. MonadEntryDB m => m (Enumerator (Saved Entry) m a)
@@ -61,10 +59,9 @@ data EntryDB = EntryDB
 getCreatedDay :: Saved a -> Ti.Day
 getCreatedDay = Ti.localDay . Ti.zonedTimeToLocalTime . createdAt
 
-makeEntryDB :: DB.IConnection conn => conn -> FilePath -> EntryDB
-makeEntryDB conn dir = EntryDB
+makeEntryDB :: DB.IConnection conn => conn -> EntryDB
+makeEntryDB conn = EntryDB
     { connection = DB.ConnWrapper conn
-    , entriesDir = dir
     , select = dbSelect
     , selectDay = dbSelectDay
     , all = dbAll

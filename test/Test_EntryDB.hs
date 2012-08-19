@@ -20,7 +20,6 @@ import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Control.Applicative
 import qualified Control.Exception as E
-import qualified System.Directory as D
 import Prelude hiding (catch)
 
 instance (MonadCatchIO m, Applicative m, Functor m) =>
@@ -100,20 +99,15 @@ assertEntry expected actual
 dbTestCase :: String -> ReaderT EDB.EntryDB IO () -> Test
 dbTestCase msg m = testCase msg $
     bracket initialize finalize $ \conn ->
-        runReaderT m $ EDB.makeEntryDB conn entriesPath
+        runReaderT m $ EDB.makeEntryDB conn
   where
-    initialize = do
-        D.createDirectory entriesPath
-        Sqlite3.connectSqlite3 "./test.sqlite3"
+    initialize = Sqlite3.connectSqlite3 "./test.sqlite3"
 
     finalize conn = do
-        D.removeDirectoryRecursive entriesPath
         void $ DB.run conn "DELETE FROM entries" []
         void $ DB.run conn "DELETE FROM days" []
         DB.commit conn
         DB.disconnect conn
-
-    entriesPath = "./tmp/entries"
 
 assertRaise :: (MonadCatchIO m, E.Exception e) => e -> m () -> m ()
 assertRaise ex m = (m >> liftIO (assertFailure "exception doesn't be raised")) `catch`

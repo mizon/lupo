@@ -26,9 +26,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
     h <- nestSnaplet "heist" heist $ H.heistInit "templates"
-    db <- liftIO $ EDB.makeEntryDB
-        <$> (DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath)
-        <*> pure "./db/entries"
+    db <- liftIO $ EDB.makeEntryDB . DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
     addRoutes
         [ ("", Index.top)
         , ("admin", Admin.admin)
