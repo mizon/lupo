@@ -61,9 +61,11 @@ timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 day :: Monad m => Day EDB.Entry -> H.Splice m
 day Day {..} = return $ pure $
     Element "div" [("class", "day")] $
-        (Element "h2" [] [TextNode $ dayFormat entriesDay]) : concatMap anEntry entries
+          (Element "h2" [] [Element "a" [("href", dayLinkFormat entriesDay)] [TextNode $ dayFormat entriesDay]])
+        : concatMap anEntry entries
   where
     dayFormat = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
+    dayLinkFormat = T.pack . Ti.formatTime L.defaultTimeLocale "/%Y%m%d"
 
     anEntry EDB.Saved {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
