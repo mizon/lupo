@@ -112,8 +112,7 @@ dbTestCase msg m = testCase msg $
   where
     initialize = do
         conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
-        sql <- readFile "./test/fixture.sql"
-        DB.runRaw conn sql
+        DB.runRaw conn =<< readFile "./test/fixture.sql"
         DB.commit conn
         return conn
 
