@@ -16,6 +16,7 @@ import Test.HUnit hiding (Test)
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator
 import qualified Data.Time as Ti
+import System.IO
 import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Control.Applicative
@@ -28,52 +29,46 @@ instance (MonadCatchIO m, Applicative m, Functor m) =>
 
 dbTest :: Test
 dbTest = testGroup "database control"
-    [ dbTestCase "insert and select" $ do
+    [ dbTestCase "select" $ do
         db <- EDB.getEntryDB
-        EDB.insert db $ EDB.Entry "title" "body"
-        e <- EDB.select db 1
-        assertEntry (EDB.Entry "title" "body") e
+        e3 <- EDB.select db 3
+        assertEntry (EDB.Entry "title 8-16" "body 8-16") e3
+
+    , dbTestCase "insert" $ do
+        db <- EDB.getEntryDB
+        EDB.insert db $ EDB.Entry "title newest" "body newest"
+        e <- EDB.select db 6
+        assertEntry (EDB.Entry "title newest" "body newest") e
 
     , dbTestCase "select by day" $ do
         db <- EDB.getEntryDB
-        EDB.insert db $ EDB.Entry "title" "body"
-        EDB.insert db $ EDB.Entry "foo" "bar"
-        es <- EDB.selectDay db =<< getToday
-        assertEntry (EDB.Entry "title" "body") $ es !! 0
-        assertEntry (EDB.Entry "foo" "bar") $ es !! 1
+        es <- EDB.selectDay db $ Ti.fromGregorian 2012 8 15
+        liftIO $ Prelude.length es @?= 2
+        assertEntry (EDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
+        assertEntry (EDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
 
     , dbTestCase "delete" $ do
         db <- EDB.getEntryDB
-        EDB.insert db $ EDB.Entry "title" "body"
+        e1 <- EDB.select db 1
+        assertEntry (EDB.Entry "title 8-15-1" "body 8-15-1") e1
         EDB.delete db 1
         assertRaise RecordNotFound $
             void $ EDB.select db 1
 
     , dbTestCase "update" $ do
         db <- EDB.getEntryDB
-        EDB.insert db $ EDB.Entry "title" "body"
         EDB.update db 1 $ EDB.Entry "foo" "foooo"
         e <- EDB.select db 1
         assertEntry (EDB.Entry "foo" "foooo") e
 
-    , dbTestCase "all empty" $ do
+    , dbTestCase "all" $ do
         db <- EDB.getEntryDB
         enum <- EDB.all db
         es <- run_ $ enum $$ EL.consume
-        liftIO $ Prelude.length es @?= 0
-
-    , dbTestCase "all exist" $ do
-        db <- EDB.getEntryDB
-        EDB.insert db $ EDB.Entry "foo1" "body"
-        EDB.insert db $ EDB.Entry "foo2" "body"
-        enum <- EDB.all db
-        es <- run_ $ enum $$ EL.consume
-        liftIO $ Prelude.length es @?= 2
-        assertEntry (EDB.Entry "foo2" "body") $ es !! 0
-        assertEntry (EDB.Entry "foo1" "body") $ es !! 1
+        liftIO $ Prelude.length es @?= 5
+        assertEntry (EDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
+        assertEntry (EDB.Entry "title 8-16" "body 8-16") $ es !! 2
     ]
-  where
-    getToday = liftIO $ Ti.localDay . Ti.zonedTimeToLocalTime <$> Ti.getZonedTime
 
 savedTest :: Test
 savedTest = testGroup "saved object"
@@ -101,7 +96,12 @@ dbTestCase msg m = testCase msg $
     bracket initialize finalize $ \conn ->
         runReaderT m $ EDB.makeEntryDB conn
   where
-    initialize = Sqlite3.connectSqlite3 "./test.sqlite3"
+    initialize = do
+        conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
+        sql <- readFile "./test/fixture.sql"
+        DB.runRaw conn sql
+        DB.commit conn
+        return conn
 
     finalize conn = do
         void $ DB.run conn "DELETE FROM entries" []

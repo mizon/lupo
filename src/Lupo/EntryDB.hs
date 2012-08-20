@@ -134,9 +134,7 @@ dbUpdate i Entry {..} = do
 
 dbDelete :: MonadEntryDB m => Integer -> m ()
 dbDelete i = do
-    db <- getEntryDB
     (connection -> conn) <- getEntryDB
-    (getCreatedDay -> created) <- select db i
     liftIO $ do
         status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
         if status /= 1 then
