@@ -150,7 +150,7 @@ dbBeforeSavedDays (DB.toSql -> d) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
         stmt <- DB.prepare conn
-            "SELECT day FROM entries WHERE day < ? GROUP BY day ORDER BY day DESC"
+            "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC"
         void $ DB.execute stmt [d]
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
@@ -160,7 +160,7 @@ dbAfterSavedDays (DB.toSql -> d) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
         stmt <- DB.prepare conn
-            "SELECT day FROM entries WHERE day > ? GROUP BY day ORDER BY day ASC"
+            "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC"
         void $ DB.execute stmt [d]
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
