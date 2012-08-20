@@ -22,6 +22,7 @@ import qualified Data.Time as Ti
 import qualified Data.Text as T
 import Control.Applicative
 import Data.Functor
+import Data.Monoid
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.CatchIO
@@ -103,8 +104,11 @@ dbSearch :: MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
 dbSearch (DB.toSql -> word) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries WHERE body LIKE '%' || ? || '%' ORDER BY id DESC"
-        void $ DB.execute stmt [word]
+        stmt <- DB.prepare conn $
+               "SELECT * FROM entries "
+            <> "WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' "
+            <> "ORDER BY id DESC"
+        void $ DB.execute stmt [word, word]
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.mapM fromSql
 
@@ -113,7 +117,8 @@ dbInsert Entry {..} = do
     (connection -> conn) <- getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
-        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
+        void $ DB.run conn
+            "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
             [ DB.toSql now
             , DB.toSql now
             , DB.toSql $ zonedDay now
