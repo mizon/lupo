@@ -21,7 +21,6 @@ import qualified Data.Time as Ti
 import qualified Data.Text as T
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Char as C
-import Data.Maybe
 import Control.Monad as M
 import System.Locale
 import Prelude hiding (filter)
@@ -47,7 +46,7 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
         return $ do
             db <- EDB.getEntryDB
             es <- EDB.selectDay db day
-            H.renderWithSplices "index"
+            H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
                 , ("entries", H.liftHeist $ V.day $ V.Day day es)
@@ -82,11 +81,3 @@ days from nDays = do
   where
     makeDayView d = EDB.getEntryDB >>= \db ->
         V.Day <$> pure d <*> EDB.selectDay db d
-
-nextDay :: EDB.MonadEntryDB m => Ti.Day -> m (Maybe Ti.Day)
-nextDay d = EDB.getEntryDB >>= \db ->
-    run_ =<< ($$ EL.head) <$> EDB.afterSavedDays db d
-
-previousDay :: EDB.MonadEntryDB m => Ti.Day -> m (Maybe Ti.Day)
-previousDay d = EDB.getEntryDB >>= \db ->
-    run_ =<< ($$ EL.head) <$> EDB.beforeSavedDays db d
