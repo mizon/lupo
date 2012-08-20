@@ -58,8 +58,8 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
 days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
-    days <- run_ =<< ($$ EL.take nDays) <$> EDB.beforeSavedDays db from
-    dayViews <- Prelude.mapM makeDayView $ from : days
+    days_ <- run_ =<< ($$ EL.take nDays) <$> EDB.beforeSavedDays db from
+    dayViews <- Prelude.mapM makeDayView $ from : days_
     title <- refLupoConfig lcSiteTitle
     H.renderWithSplices "index"
         [ ("page-title", textSplice title)
@@ -69,14 +69,6 @@ days from nDays = do
   where
     makeDayView d = EDB.getEntryDB >>= \db ->
         V.Day <$> pure d <*> EDB.selectDay db d
-
-packByDay :: Monad m => Enumeratee (EDB.Saved a) (V.Day a) m b
-packByDay = E.sequence $ EL.head >>= maybe (pure $ V.emptyDay) (\h -> do
-      es <- EL.takeWhile $ isSameCreatedDay h
-      return $ V.Day (EDB.getCreatedDay h) $ reverse (h : es)
-    )
-  where
-    isSameCreatedDay a b = EDB.getCreatedDay a == EDB.getCreatedDay b
 
 nextDay :: EDB.MonadEntryDB m => Ti.Day -> m (Maybe Ti.Day)
 nextDay d = EDB.getEntryDB >>= \db ->
