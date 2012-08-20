@@ -35,6 +35,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
         , ("admin/:id/delete", Admin.deleteEntry)
         , ("js", serveDirectory "static/js")
         , ("css", serveDirectory "static/css")
+        , ("search", Index.search)
         , (":query", Index.parseQuery =<< param "query")
         ]
     return $ Lupo h db lc

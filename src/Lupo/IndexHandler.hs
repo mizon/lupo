@@ -4,6 +4,7 @@
 module Lupo.IndexHandler
     ( top
     , parseQuery
+    , search
     ) where
 
 import qualified Lupo.EntryDB as EDB
@@ -55,11 +56,23 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
     dayParser = Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
 
+search :: Handler Lupo Lupo ()
+search = do
+    db <- EDB.getEntryDB
+    word <- param "word"
+    es <- run_ =<< ($$ EL.consume) <$> EDB.search db word
+    title <- refLupoConfig lcSiteTitle
+    H.renderWithSplices "search-result"
+        [ ("page-title", textSplice title)
+        , ("style-sheet", textSplice "diary")
+        , ("search-results", H.liftHeist $ V.searchResult es)
+        ]
+
 days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
     days_ <- run_ =<< ($$ EL.take nDays) <$> EDB.beforeSavedDays db from
-    dayViews <- Prelude.mapM makeDayView $ from : days_
+    dayViews <- Prelude.mapM makeDayView days_
     title <- refLupoConfig lcSiteTitle
     H.renderWithSplices "index"
         [ ("page-title", textSplice title)

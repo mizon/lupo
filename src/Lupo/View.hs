@@ -8,6 +8,7 @@ module Lupo.View
     , entryBody
     , entryInfo
     , day
+    , searchResult
     ) where
 
 import qualified Lupo.EntryDB as EDB
@@ -73,3 +74,12 @@ day Day {..} = return $ pure $
         <> [Element "p" [("class", "time")] [TextNode $ timeFormat createdAt]]
       where
         timeFormat = T.pack . Ti.formatTime L.defaultTimeLocale "(%H:%M)"
+
+searchResult :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
+searchResult = return . (result <$>)
+  where
+    result EDB.Saved {..} = Element "tr" []
+        [ Element "td" [] [TextNode $ timeToText createdAt]
+        , Element "td" [] [TextNode $ EDB.title refObject]
+        , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
+        ]
