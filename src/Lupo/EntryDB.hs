@@ -88,7 +88,7 @@ dbSelectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
 dbSelectDay (DB.toSql -> day) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day_id = ? ORDER BY created_at ASC"
+        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
         void $ DB.execute stmt [day]
         DB.fetchAllRows stmt
     Prelude.mapM fromSql rows
@@ -110,9 +110,7 @@ dbInsert Entry {..} = do
     conn <- connection <$> getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
-        void $ DB.run conn "INSERT INTO days (id) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM days WHERE id = ?)"
-            [DB.toSql $ zonedDay now, DB.toSql $ zonedDay now]
-        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day_id, title, body) VALUES (?, ?, ?, ?, ?)"
+        void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
             [ DB.toSql now
             , DB.toSql now
             , DB.toSql $ zonedDay now
@@ -144,14 +142,14 @@ dbDelete i = do
         if status /= 1 then
             throw RecordNotFound
         else do
-            void $ DB.run conn "DELETE FROM days WHERE id = ?" [DB.toSql created]
             DB.commit conn
 
 dbBeforeSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
 dbBeforeSavedDays (DB.toSql -> d) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM days WHERE id < ? ORDER BY id DESC"
+        stmt <- DB.prepare conn
+            "SELECT day FROM entries WHERE day < ? GROUP BY day ORDER BY day DESC"
         void $ DB.execute stmt [d]
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
@@ -160,16 +158,17 @@ dbAfterSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
 dbAfterSavedDays (DB.toSql -> d) = do
     (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM days WHERE id > ? ORDER BY id ASC"
+        stmt <- DB.prepare conn
+            "SELECT day FROM entries WHERE day > ? GROUP BY day ORDER BY day ASC"
         void $ DB.execute stmt [d]
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
 fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
 fromSql [ DB.fromSql -> id_
-        , _
         , DB.fromSql -> c_at
         , DB.fromSql -> m_at
+        , _
         , DB.fromSql -> t
         , DB.fromSql -> b ] = do
     return Saved
