@@ -68,6 +68,20 @@ dbTest = testGroup "database control"
         liftIO $ Prelude.length es @?= 5
         assertEntry (EDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
         assertEntry (EDB.Entry "title 8-16" "body 8-16") $ es !! 2
+
+    , dbTestCase "days before" $ do
+        db <- EDB.getEntryDB
+        days <- run_ =<< ($$ EL.consume) <$> EDB.beforeSavedDays db (Ti.fromGregorian 2012 8 20)
+        liftIO $ do
+            Prelude.length days @?= 2
+            days !! 1 < days !! 0 @? "must desc"
+
+    , dbTestCase "days after" $ do
+        db <- EDB.getEntryDB
+        days <- run_ =<< ($$ EL.consume) <$> EDB.afterSavedDays db (Ti.fromGregorian 2012 8 15)
+        liftIO $ do
+            Prelude.length days @?= 2
+            days !! 0 < days !! 1 @? "must asc"
     ]
 
 savedTest :: Test
