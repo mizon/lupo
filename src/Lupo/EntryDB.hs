@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings
-    , TemplateHaskell
     , PolymorphicComponents
     , DoAndIfThenElse
     , RecordWildCards
@@ -27,8 +26,6 @@ import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.CatchIO
 import Prelude hiding (all)
-
-import Development.Placeholders
 
 class (MonadCatchIO m, Applicative m, Functor m) => MonadEntryDB m where
     getEntryDB :: m EntryDB
@@ -95,7 +92,7 @@ dbSelectDay (DB.toSql -> day) = do
 
 dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
 dbAll = do
-    conn <- connection <$> getEntryDB
+    (connection -> conn) <- getEntryDB
     rows <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
         void $ DB.execute stmt []
@@ -103,11 +100,17 @@ dbAll = do
     return $ enumList 1 rows $= EL.mapM fromSql
 
 dbSearch :: MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
-dbSearch = $notImplemented
+dbSearch (DB.toSql -> word) = do
+    (connection -> conn) <- getEntryDB
+    rows <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM entries WHERE body LIKE '%' || ? || '%' ORDER BY id DESC"
+        void $ DB.execute stmt [word]
+        DB.fetchAllRows stmt
+    return $ enumList 1 rows $= EL.mapM fromSql
 
 dbInsert :: MonadEntryDB m => Entry -> m ()
 dbInsert Entry {..} = do
-    conn <- connection <$> getEntryDB
+    (connection -> conn) <- getEntryDB
     liftIO $ do
         now <- Ti.getZonedTime
         void $ DB.run conn "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"

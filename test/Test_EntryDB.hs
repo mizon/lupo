@@ -69,6 +69,12 @@ dbTest = testGroup "database control"
         assertEntry (EDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
         assertEntry (EDB.Entry "title 8-16" "body 8-16") $ es !! 2
 
+    , dbTestCase "search" $ do
+        db <- EDB.getEntryDB
+        es <- run_ =<< ($$ EL.consume) <$> EDB.search db "body 8-20"
+        liftIO $ Prelude.length es @?= 2
+        assertEntry (EDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
+
     , dbTestCase "days before" $ do
         db <- EDB.getEntryDB
         days <- run_ =<< ($$ EL.consume) <$> EDB.beforeSavedDays db (Ti.fromGregorian 2012 8 20)
