@@ -7,4 +7,4 @@ CREATE TABLE entries (
     body TEXT NOT NULL
 );
 
-CREATE INDEX entries_day_id_index ON entries (day);
+CREATE INDEX entries_day_index ON entries (day);
