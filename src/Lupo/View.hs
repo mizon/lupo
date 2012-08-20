@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings
     , RecordWildCards
-    , FlexibleInstances #-}
+    , FlexibleInstances
+    , ViewPatterns
+    , TemplateHaskell #-}
 module Lupo.View
     ( Day(..)
     , emptyDay
@@ -9,17 +11,24 @@ module Lupo.View
     , entryInfo
     , day
     , searchResult
+    , monthNavigation
+    , dayNavigation
     ) where
 
 import qualified Lupo.EntryDB as EDB
 import qualified Lupo.Syntax as S
+import Lupo.Application
+import Snap
 import Text.XmlHtml
 import qualified Data.Time as Ti
+import qualified Data.Enumerator.List as EL
+import Data.Enumerator hiding (concatMap)
 import qualified System.Locale as L
 import qualified Text.Templating.Heist as H
 import qualified Data.Text as T
 import Data.Monoid
-import Control.Applicative
+
+import Development.Placeholders
 
 data Day a = Day
     { entriesDay :: Ti.Day
@@ -29,10 +38,10 @@ data Day a = Day
 emptyDay :: Day a
 emptyDay = Day undefined []
 
-entry :: Monad m => EDB.Saved EDB.Entry -> H.Splice m
+entry :: (Monad m, Applicative m) => EDB.Saved EDB.Entry -> H.Splice m
 entry EDB.Saved {refObject = e@EDB.Entry {..}, ..} = do
     b <- entryBody e
-    return $
+    pure $
         [ Element "div" [("class", "entry")] $
           (Element "h2" [] [TextNode $ timeToText createdAt, TextNode " ", TextNode title]) : b ]
 
@@ -83,3 +92,29 @@ searchResult = return . (result <$>)
         , Element "td" [] [TextNode $ EDB.title refObject]
         , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
         ]
+
+monthNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
+monthNavigation = $notImplemented
+
+dayNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
+dayNavigation d = do
+    next <- getNextDay d
+    previous <- getPreviousDay d
+    pure $
+        [ Element "ul" [("class", "page-navigation")]
+            [ Element "li" [] [mkDayLink "Previous Day" previous]
+            , Element "li" [] [TextNode $ T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m" d]
+            , Element "li" [] [mkDayLink "Next Day" next]
+            ]
+        ]
+  where
+    mkDayLink body = maybe (TextNode body) $ \d_ ->
+        Element "a" [("href", T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m%d" d_)] [TextNode body]
+
+    getNextDay (Ti.addDays 1 -> tommorow) = do
+        db <- EDB.getEntryDB
+        run_ =<< (EL.head >>==) <$> EDB.afterSavedDays db tommorow
+
+    getPreviousDay (Ti.addDays (-1) -> yesterday) = do
+        db <- EDB.getEntryDB
+        run_ =<< (EL.head >>==) <$> EDB.beforeSavedDays db yesterday
