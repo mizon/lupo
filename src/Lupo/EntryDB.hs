@@ -80,7 +80,7 @@ dbSelect i = do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
         void $ DB.execute stmt [DB.toSql i]
         DB.fetchRow stmt
-    maybe (throw RecordNotFound) fromSql row
+    maybe (throw RecordNotFound) (pure . fromSql) row
 
 dbSelectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
 dbSelectDay (DB.toSql -> day) = do
@@ -89,7 +89,7 @@ dbSelectDay (DB.toSql -> day) = do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
         void $ DB.execute stmt [day]
         DB.fetchAllRows stmt
-    Prelude.mapM fromSql rows
+    pure $ fromSql <$> rows
 
 dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
 dbAll = do
@@ -98,7 +98,7 @@ dbAll = do
         stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
         void $ DB.execute stmt []
         DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.mapM fromSql
+    return $ enumList 1 rows $= EL.map fromSql
 
 dbSearch :: MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
 dbSearch (DB.toSql -> word) = do
@@ -110,7 +110,7 @@ dbSearch (DB.toSql -> word) = do
             <> "ORDER BY id DESC"
         void $ DB.execute stmt [word, word]
         DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.mapM fromSql
+    return $ enumList 1 rows $= EL.map fromSql
 
 dbInsert :: MonadEntryDB m => Entry -> m ()
 dbInsert Entry {..} = do
@@ -170,14 +170,13 @@ dbAfterSavedDays (DB.toSql -> d) = do
         DB.fetchAllRows stmt
     return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
-fromSql :: MonadEntryDB m => [DB.SqlValue] -> m (Saved Entry)
+fromSql :: [DB.SqlValue] -> Saved Entry
 fromSql [ DB.fromSql -> id_
         , DB.fromSql -> c_at
         , DB.fromSql -> m_at
         , _
         , DB.fromSql -> t
-        , DB.fromSql -> b ] = do
-    return Saved
+        , DB.fromSql -> b ] = Saved
         { idx = id_
         , createdAt = c_at
         , modifiedAt = m_at
