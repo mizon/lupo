@@ -33,7 +33,7 @@ top = do
     getDay = Ti.localDay . Ti.zonedTimeToLocalTime
 
 parseQuery :: T.Text -> Handler Lupo Lupo ()
-parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
+parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try single) <|> month)
   where
     multi = do
         from <- dayParser
@@ -49,8 +49,30 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> single)
             H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
-                , ("entries", H.liftHeist $ V.day $ V.Day day es)
+                , ("main-body", H.liftHeist $ V.day $ V.Day day es)
+                , ("page-navigation", H.liftHeist $ V.dayNavigation day)
                 ]
+
+    month = do
+        month <- monthParser
+        return $ do
+            db <- EDB.getEntryDB
+            days_ <- run_ =<< (toDays db >>==) <$> EDB.afterSavedDays db month
+            H.renderWithSplices "public"
+                [ ("page-title", textSplice "")
+                , ("style-sheet", textSplice "diary")
+                , ("main-body", H.liftHeist $ TH.mapSplices V.day days_)
+                , ("page-navigation", H.liftHeist $ V.monthNavigation month)
+                ]
+      where
+        toDays db = EL.mapM (\d -> V.Day <$> pure d <*> EDB.selectDay db d) =$ EL.consume
+
+        isSameMonth (Ti.toGregorian -> (year1, month1, _))
+                    (Ti.toGregorian -> (year2, month2, _)) =
+            year1 == year2 && month1 == month2
+
+        monthParser = Ti.readTime defaultTimeLocale "%Y%m" <$>
+            M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
     dayParser = Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
@@ -59,7 +81,7 @@ search :: Handler Lupo Lupo ()
 search = do
     db <- EDB.getEntryDB
     word <- param "word"
-    es <- run_ =<< ($$ EL.consume) <$> EDB.search db word
+    es <- run_ =<< (EL.consume >>==) <$> EDB.search db word
     title <- refLupoConfig lcSiteTitle
     H.renderWithSplices "search-result"
         [ ("page-title", textSplice title)
@@ -70,7 +92,7 @@ search = do
 days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
 days from nDays = do
     db <- EDB.getEntryDB
-    days_ <- run_ =<< ($$ EL.take nDays) <$> EDB.beforeSavedDays db from
+    days_ <- run_ =<< (EL.take nDays >>==) <$> EDB.beforeSavedDays db from
     dayViews <- Prelude.mapM makeDayView days_
     title <- refLupoConfig lcSiteTitle
     H.renderWithSplices "index"
