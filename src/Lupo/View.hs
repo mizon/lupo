@@ -5,7 +5,6 @@
     , TemplateHaskell #-}
 module Lupo.View
     ( Day(..)
-    , emptyDay
     , entryBody
     , entryInfo
     , day
@@ -32,9 +31,6 @@ data Day a = Day
     { entriesDay :: Ti.Day
     , entries :: [EDB.Saved a]
     }
-
-emptyDay :: Day a
-emptyDay = Day undefined []
 
 entryBody :: EDB.Entry -> [Node]
 entryBody EDB.Entry {..} = S.renderBody body
