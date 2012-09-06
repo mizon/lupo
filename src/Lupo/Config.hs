@@ -10,6 +10,7 @@ import Control.Applicative
 data LupoConfig = LupoConfig
     { lcSiteTitle :: T.Text
     , lcSqlitePath :: FilePath
+    , lcLocaleFile :: FilePath
     , lcDaysPerPage :: Integer
     } deriving Show
 

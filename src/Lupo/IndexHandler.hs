@@ -54,17 +54,17 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
                 ]
 
     month = do
-        month <- monthParser
+        reqMonth <- monthParser
         return $ do
             db <- EDB.getEntryDB
             days_ <- run_
-                =<< ((toDayViews db =$ EL.takeWhile (isSameMonth month . V.entriesDay)) >>==)
-                <$> EDB.afterSavedDays db month
+                =<< ((toDayViews db =$ EL.takeWhile (isSameMonth reqMonth . V.entriesDay)) >>==)
+                <$> EDB.afterSavedDays db reqMonth
             H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
                 , ("main-body", H.liftHeist $ TH.mapSplices V.day days_)
-                , ("page-navigation", H.liftHeist $ V.monthNavigation month)
+                , ("page-navigation", H.liftHeist $ V.monthNavigation reqMonth)
                 ]
       where
         toDayViews db = EL.mapM (\d -> V.Day <$> pure d <*> EDB.selectDay db d)

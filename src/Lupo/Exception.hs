@@ -3,6 +3,7 @@
 module Lupo.Exception
     ( LupoException
     , RecordNotFound(..)
+    , InvalidLocaleFile(..)
     ) where
 
 import Control.Exception
@@ -20,6 +21,13 @@ data RecordNotFound = RecordNotFound
     deriving (Typeable, Show)
 
 instance Exception RecordNotFound where
+    toException = toLupoException
+    fromException = fromLupoException
+
+data InvalidLocaleFile = InvalidLocaleFile
+    deriving (Typeable, Show)
+
+instance Exception InvalidLocaleFile where
     toException = toLupoException
     fromException = fromLupoException
 

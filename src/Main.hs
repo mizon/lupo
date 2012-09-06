@@ -5,6 +5,7 @@ module Main (main) where
 import qualified Lupo.AdminHandler as Admin
 import qualified Lupo.IndexHandler as Index
 import qualified Lupo.EntryDB as EDB
+import qualified Lupo.Locale as L
 import Lupo.Config
 import Lupo.Util
 import Lupo.Application
@@ -20,6 +21,7 @@ main :: IO ()
 main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
     { lcSiteTitle = "Lupo Web Dairy"
     , lcSqlitePath = "./development.sqlite3"
+    , lcLocaleFile = "./ja.yml"
     , lcDaysPerPage = 5
     }
 
@@ -27,6 +29,7 @@ lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
     h <- nestSnaplet "heist" heist $ H.heistInit "templates"
     db <- liftIO $ EDB.makeEntryDB . DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
+    l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
     addRoutes
         [ ("", Index.top)
         , ("admin", Admin.admin)
@@ -38,4 +41,4 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
         , ("search", Index.search)
         , (":query", Index.parseQuery =<< param "query")
         ]
-    return $ Lupo h db lc
+    return $ Lupo h db lc l

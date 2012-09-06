@@ -17,10 +17,10 @@ module Lupo.View
 
 import qualified Lupo.EntryDB as EDB
 import qualified Lupo.Syntax as S
+import qualified Lupo.Locale as LL
 import Lupo.Application
 import Snap
 import Text.XmlHtml
-import qualified Data.Time.Calendar.Julian as J
 import qualified Data.Time as Ti
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator hiding (concatMap)
@@ -28,8 +28,6 @@ import qualified System.Locale as L
 import qualified Text.Templating.Heist as H
 import qualified Data.Text as T
 import Data.Monoid
-
-import Development.Placeholders
 
 data Day a = Day
     { entriesDay :: Ti.Day
@@ -95,15 +93,17 @@ searchResult = return . (result <$>)
         ]
 
 monthNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
-monthNavigation m = do
+monthNavigation month = do
+    previousLabel <- LL.localize "Previous Month"
+    nextLabel <- LL.localize "Next Month"
     pure $
         [ Element "ul" [("class", "page-navigation")]
-            [ Element "li" [] [mkMonthLink "Previous Month" $ previousMonth m]
-            , Element "li" [] [mkMonthLink "Next Month" $ nextMonth m]
+            [ Element "li" [] [mkMonthLink previousLabel $ previousMonth month]
+            , Element "li" [] [mkMonthLink nextLabel $ nextMonth month]
             ]
         ]
   where
-    mkMonthLink body m_ = Element "a" [("href", monthLinkFormat m_)] [TextNode body]
+    mkMonthLink body m = Element "a" [("href", monthLinkFormat m)] [TextNode body]
       where
         monthLinkFormat = T.pack . Ti.formatTime L.defaultTimeLocale "/%Y%m"
 
@@ -115,13 +115,16 @@ monthNavigation m = do
 
 dayNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
 dayNavigation d = do
-    next <- getNextDay d
     previous <- getPreviousDay d
+    next <- getNextDay d
+    previousLabel <- LL.localize "Previous Day"
+    thisMonthLabel <- LL.localize "This Month"
+    nextLabel <- LL.localize "Next Day"
     pure $
         [ Element "ul" [("class", "page-navigation")]
-            [ Element "li" [] [mkDayLink "Previous Day" previous]
-            , Element "li" [] [thisMonthLink]
-            , Element "li" [] [mkDayLink "Next Day" next]
+            [ Element "li" [] [mkDayLink previousLabel previous]
+            , Element "li" [] [thisMonthLink thisMonthLabel]
+            , Element "li" [] [mkDayLink nextLabel next]
             ]
         ]
   where
@@ -130,9 +133,9 @@ dayNavigation d = do
             [("href", T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m%d" d_)]
             [TextNode body]
 
-    thisMonthLink = Element "a"
+    thisMonthLink body = Element "a"
         [("href", T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m" d)]
-        [TextNode "This Month"]
+        [TextNode body]
 
     getNextDay (Ti.addDays 1 -> tommorow) = do
         db <- EDB.getEntryDB
