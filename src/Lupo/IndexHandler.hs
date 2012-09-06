@@ -57,7 +57,9 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
         month <- monthParser
         return $ do
             db <- EDB.getEntryDB
-            days_ <- run_ =<< (toDays db >>==) <$> EDB.afterSavedDays db month
+            days_ <- run_
+                =<< ((toDayViews db =$ EL.takeWhile (isSameMonth month . V.entriesDay)) >>==)
+                <$> EDB.afterSavedDays db month
             H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
@@ -65,7 +67,7 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
                 , ("page-navigation", H.liftHeist $ V.monthNavigation month)
                 ]
       where
-        toDays db = EL.mapM (\d -> V.Day <$> pure d <*> EDB.selectDay db d) =$ EL.consume
+        toDayViews db = EL.mapM (\d -> V.Day <$> pure d <*> EDB.selectDay db d)
 
         isSameMonth (Ti.toGregorian -> (year1, month1, _))
                     (Ti.toGregorian -> (year2, month2, _)) =

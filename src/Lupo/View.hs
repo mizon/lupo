@@ -98,14 +98,20 @@ monthNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
 monthNavigation m = do
     pure $
         [ Element "ul" [("class", "page-navigation")]
-            [ Element "li" [] [mkMonthLink "Previous Month" $ J.addJulianMonthsClip (-1) m]
-            , Element "li" [] [mkMonthLink "Next Month" $ J.addJulianMonthsClip 1 m]
+            [ Element "li" [] [mkMonthLink "Previous Month" $ previousMonth m]
+            , Element "li" [] [mkMonthLink "Next Month" $ nextMonth m]
             ]
         ]
   where
     mkMonthLink body m_ = Element "a" [("href", monthLinkFormat m_)] [TextNode body]
       where
         monthLinkFormat = T.pack . Ti.formatTime L.defaultTimeLocale "/%Y%m"
+
+    nextMonth (Ti.toGregorian -> (y, 12, _)) = Ti.fromGregorian (y + 1) 1 1
+    nextMonth (Ti.toGregorian -> (y, m, _)) = Ti.fromGregorian y (m + 1) 1
+
+    previousMonth (Ti.toGregorian -> (y, 1, _)) = Ti.fromGregorian (y - 1) 12 1
+    previousMonth (Ti.toGregorian -> (y, m, _)) = Ti.fromGregorian y (m - 1) 1
 
 dayNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
 dayNavigation d = do
