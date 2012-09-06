@@ -49,7 +49,7 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
             H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
-                , ("main-body", H.liftHeist $ V.day $ V.Day day es)
+                , ("main-body", pure . pure $ V.day $ V.Day day es)
                 , ("page-navigation", H.liftHeist $ V.dayNavigation day)
                 ]
 
@@ -63,7 +63,7 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
             H.renderWithSplices "public"
                 [ ("page-title", textSplice "")
                 , ("style-sheet", textSplice "diary")
-                , ("main-body", H.liftHeist $ TH.mapSplices V.day days_)
+                , ("main-body", pure $ V.day <$> days_)
                 , ("page-navigation", H.liftHeist $ V.monthNavigation reqMonth)
                 ]
       where
@@ -100,7 +100,7 @@ days from nDays = do
     H.renderWithSplices "index"
         [ ("page-title", textSplice title)
         , ("style-sheet", textSplice "diary")
-        , ("entries", H.liftHeist $ TH.mapSplices V.day dayViews)
+        , ("entries", pure $ V.day <$> dayViews)
         ]
   where
     makeDayView d = EDB.getEntryDB >>= \db ->

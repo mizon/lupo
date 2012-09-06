@@ -25,7 +25,7 @@ admin = do
     db <- EDB.getEntryDB
     entries <- run_ =<< ($$) <$> EDB.all db <*> pure EL.consume
     H.renderWithSplices "admin"
-        [ ("entries-list", H.liftHeist $ V.entryInfo entries)
+        [ ("entries-list", pure $ V.entryInfo entries)
         , ("style-sheet", textSplice "admin")
         ]
 
@@ -86,7 +86,7 @@ showPreview prevTitle e@EDB.Entry {..} = do
         , ("submit-path", textSplice submitPath)
         , ("entry-title", textSplice title)
         , ("entry-body", textSplice body)
-        , ("rendered-body", H.liftHeist $ V.entryBody e)
+        , ("rendered-body", pure $ V.entryBody e)
         ]
 
 showEditor :: T.Text -> Maybe EDB.Entry -> Handler Lupo Lupo ()

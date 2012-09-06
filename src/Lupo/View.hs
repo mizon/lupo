@@ -6,7 +6,6 @@
 module Lupo.View
     ( Day(..)
     , emptyDay
-    , entry
     , entryBody
     , entryInfo
     , day
@@ -37,18 +36,11 @@ data Day a = Day
 emptyDay :: Day a
 emptyDay = Day undefined []
 
-entry :: (Monad m, Applicative m) => EDB.Saved EDB.Entry -> H.Splice m
-entry EDB.Saved {refObject = e@EDB.Entry {..}, ..} = do
-    b <- entryBody e
-    pure $
-        [ Element "div" [("class", "entry")] $
-          (Element "h2" [] [TextNode $ timeToText createdAt, TextNode " ", TextNode title]) : b ]
+entryBody :: EDB.Entry -> [Node]
+entryBody EDB.Entry {..} = S.renderBody body
 
-entryBody :: Monad m => EDB.Entry -> H.Splice m
-entryBody EDB.Entry {..} = return $ S.renderBody body
-
-entryInfo :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
-entryInfo es = return $ singleEntry <$> es
+entryInfo :: [EDB.Saved EDB.Entry] -> [Node]
+entryInfo es = singleEntry <$> es
   where
     singleEntry EDB.Saved {refObject = EDB.Entry {..}, ..} =
         Element "tr" []
@@ -67,8 +59,8 @@ entryInfo es = return $ singleEntry <$> es
 timeToText :: Ti.ZonedTime -> T.Text
 timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
 
-day :: Monad m => Day EDB.Entry -> H.Splice m
-day Day {..} = return $ pure $
+day :: Day EDB.Entry -> Node
+day Day {..} =
     Element "div" [("class", "day")] $
           (Element "h2" [] [Element "a" [("href", dayLinkFormat entriesDay)] [TextNode $ dayFormat entriesDay]])
         : concatMap anEntry entries
