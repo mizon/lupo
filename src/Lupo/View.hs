@@ -84,7 +84,7 @@ searchResult = (result <$>)
         , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
         ]
 
-monthNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
+monthNavigation :: Ti.Day -> H.Splice LupoHandler
 monthNavigation month = do
     previousLabel <- LL.localize "Previous Month"
     nextLabel <- LL.localize "Next Month"
@@ -105,7 +105,7 @@ monthNavigation month = do
     previousMonth (Ti.toGregorian -> (y, 1, _)) = Ti.fromGregorian (y - 1) 12 1
     previousMonth (Ti.toGregorian -> (y, m, _)) = Ti.fromGregorian y (m - 1) 1
 
-dayNavigation :: Ti.Day -> H.Splice (Handler Lupo Lupo)
+dayNavigation :: Ti.Day -> H.Splice LupoHandler
 dayNavigation d = do
     previous <- getPreviousDay d
     next <- getNextDay d

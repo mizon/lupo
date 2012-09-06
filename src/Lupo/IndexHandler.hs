@@ -24,14 +24,14 @@ import Control.Monad as M
 import System.Locale
 import Prelude hiding (filter)
 
-top :: Handler Lupo Lupo ()
+top :: LupoHandler ()
 top = do
     (getDay -> today) <- liftIO $ Ti.getZonedTime
     days today =<< refLupoConfig lcDaysPerPage
   where
     getDay = Ti.localDay . Ti.zonedTimeToLocalTime
 
-parseQuery :: T.Text -> Handler Lupo Lupo ()
+parseQuery :: T.Text -> LupoHandler ()
 parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try single) <|> month)
   where
     multi = do
@@ -78,7 +78,7 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
     dayParser = Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
 
-search :: Handler Lupo Lupo ()
+search :: LupoHandler ()
 search = do
     db <- EDB.getEntryDB
     word <- param "word"
@@ -90,7 +90,7 @@ search = do
         , ("search-results", pure $ V.searchResult es)
         ]
 
-days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
+days :: Ti.Day -> Integer -> LupoHandler ()
 days from nDays = do
     db <- EDB.getEntryDB
     days_ <- run_ =<< (EL.take nDays >>==) <$> EDB.beforeSavedDays db from

@@ -1,7 +1,9 @@
 {-# LANGUAGE TemplateHaskell
-    , FlexibleInstances #-}
+    , FlexibleInstances
+    , TypeSynonymInstances #-}
 module Lupo.Application
     ( Lupo(Lupo, entryDB)
+    , LupoHandler
     , heist
     ) where
 
@@ -21,20 +23,22 @@ data Lupo = Lupo
     }
 makeLens ''Lupo
 
+type LupoHandler = Handler Lupo Lupo
+
 instance SH.HasHeist Lupo where
     heistLens = subSnaplet heist
 
-instance EDB.MonadEntryDB (Handler Lupo Lupo) where
+instance EDB.MonadEntryDB LupoHandler where
     getEntryDB = gets entryDB
 
-instance EDB.MonadEntryDB (H.HeistT (Handler Lupo Lupo)) where
+instance EDB.MonadEntryDB (H.HeistT LupoHandler) where
     getEntryDB = gets entryDB
 
-instance GetLupoConfig (Handler Lupo Lupo) where
+instance GetLupoConfig LupoHandler where
     getLupoConfig = gets lupoConfig
 
-instance L.HasLocalizer (Handler Lupo Lupo) where
+instance L.HasLocalizer LupoHandler where
     refLocalizer = gets localizer
 
-instance L.HasLocalizer (H.HeistT (Handler Lupo Lupo)) where
+instance L.HasLocalizer (H.HeistT LupoHandler) where
     refLocalizer = gets localizer

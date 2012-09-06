@@ -20,7 +20,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text as T
 import Prelude hiding (filter)
 
-admin :: Handler Lupo Lupo ()
+admin :: LupoHandler ()
 admin = do
     db <- EDB.getEntryDB
     entries <- run_ =<< ($$) <$> EDB.all db <*> pure EL.consume
@@ -29,7 +29,7 @@ admin = do
         , ("style-sheet", textSplice "admin")
         ]
 
-newEntry :: Handler Lupo Lupo ()
+newEntry :: LupoHandler ()
 newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
   where
     submitEntry = do
@@ -47,7 +47,7 @@ newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
 
     newEntryEditor entry = showEditor "New Entry" entry
 
-editEntry :: Handler Lupo Lupo ()
+editEntry :: LupoHandler ()
 editEntry = method GET editor <|> method POST updateEntry
   where
     editor = do
@@ -71,13 +71,13 @@ editEntry = method GET editor <|> method POST updateEntry
 
     editEntryEditor entry = showEditor "Edit Entry" $ Just entry
 
-deleteEntry :: Handler Lupo Lupo ()
+deleteEntry :: LupoHandler ()
 deleteEntry = do
     db <- EDB.getEntryDB
     EDB.delete db =<< paramId
     redirect "/admin"
 
-showPreview :: T.Text -> EDB.Entry -> Handler Lupo Lupo ()
+showPreview :: T.Text -> EDB.Entry -> LupoHandler ()
 showPreview prevTitle e@EDB.Entry {..} = do
     (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
     H.renderWithSplices "preview-entry"
@@ -89,7 +89,7 @@ showPreview prevTitle e@EDB.Entry {..} = do
         , ("rendered-body", pure $ V.entryBody e)
         ]
 
-showEditor :: T.Text -> Maybe EDB.Entry -> Handler Lupo Lupo ()
+showEditor :: T.Text -> Maybe EDB.Entry -> LupoHandler ()
 showEditor title entry = do
     (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
     H.renderWithSplices "edit-entry"
