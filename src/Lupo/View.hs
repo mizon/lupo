@@ -7,7 +7,7 @@ module Lupo.View
     ( Day(..)
     , entryBody
     , entryInfo
-    , day
+    , dayView
     , searchResult
     , monthNavigation
     , dayNavigation
@@ -19,7 +19,7 @@ import qualified Lupo.Locale as LL
 import Lupo.Application
 import Snap
 import Text.XmlHtml
-import qualified Data.Time as Ti
+import qualified Data.Time as Time
 import qualified Data.Enumerator.List as EL
 import Data.Enumerator hiding (concatMap)
 import qualified System.Locale as L
@@ -28,7 +28,7 @@ import qualified Data.Text as T
 import Data.Monoid
 
 data Day a = Day
-    { entriesDay :: Ti.Day
+    { entriesDay :: Time.Day
     , entries :: [EDB.Saved a]
     }
 
@@ -49,24 +49,24 @@ entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
   where
     toText = T.pack . show
 
-timeToText :: Ti.ZonedTime -> T.Text
-timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
+timeToText :: Time.ZonedTime -> T.Text
+timeToText = formatTime "%Y-%m-%d"
 
-day :: Day EDB.Entry -> Node
-day Day {..} =
+dayView :: Day EDB.Entry -> Node
+dayView Day {..} =
     Element "div" [("class", "day")] $
           (Element "h2" [] [Element "a" [("href", dayLinkFormat entriesDay)] [TextNode $ dayFormat entriesDay]])
         : concatMap anEntry entries
   where
-    dayFormat = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
-    dayLinkFormat = T.pack . Ti.formatTime L.defaultTimeLocale "/%Y%m%d"
+    dayFormat = T.pack . Time.formatTime L.defaultTimeLocale "%Y-%m-%d"
+    dayLinkFormat = T.pack . Time.formatTime L.defaultTimeLocale "/%Y%m%d"
 
     anEntry EDB.Saved {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
          : S.renderBody (EDB.body refObject)
         <> [Element "p" [("class", "time")] [TextNode $ timeFormat createdAt]]
       where
-        timeFormat = T.pack . Ti.formatTime L.defaultTimeLocale "(%H:%M)"
+        timeFormat = T.pack . Time.formatTime L.defaultTimeLocale "(%H:%M)"
 
 searchResult :: [EDB.Saved EDB.Entry] -> [Node]
 searchResult = (result <$>)
@@ -77,7 +77,7 @@ searchResult = (result <$>)
         , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
         ]
 
-monthNavigation :: Ti.Day -> H.Splice LupoHandler
+monthNavigation :: Time.Day -> H.Splice LupoHandler
 monthNavigation month = do
     previousLabel <- LL.localize "Previous Month"
     nextLabel <- LL.localize "Next Month"
@@ -90,15 +90,15 @@ monthNavigation month = do
   where
     mkMonthLink body m = Element "a" [("href", monthLinkFormat m)] [TextNode body]
       where
-        monthLinkFormat = T.pack . Ti.formatTime L.defaultTimeLocale "/%Y%m"
+        monthLinkFormat = T.pack . Time.formatTime L.defaultTimeLocale "/%Y%m"
 
-    nextMonth (Ti.toGregorian -> (y, 12, _)) = Ti.fromGregorian (y + 1) 1 1
-    nextMonth (Ti.toGregorian -> (y, m, _)) = Ti.fromGregorian y (m + 1) 1
+    nextMonth (Time.toGregorian -> (y, 12, _)) = Time.fromGregorian (y + 1) 1 1
+    nextMonth (Time.toGregorian -> (y, m, _)) = Time.fromGregorian y (m + 1) 1
 
-    previousMonth (Ti.toGregorian -> (y, 1, _)) = Ti.fromGregorian (y - 1) 12 1
-    previousMonth (Ti.toGregorian -> (y, m, _)) = Ti.fromGregorian y (m - 1) 1
+    previousMonth (Time.toGregorian -> (y, 1, _)) = Time.fromGregorian (y - 1) 12 1
+    previousMonth (Time.toGregorian -> (y, m, _)) = Time.fromGregorian y (m - 1) 1
 
-dayNavigation :: Ti.Day -> H.Splice LupoHandler
+dayNavigation :: Time.Day -> H.Splice LupoHandler
 dayNavigation d = do
     previous <- getPreviousDay d
     next <- getNextDay d
@@ -115,17 +115,20 @@ dayNavigation d = do
   where
     mkDayLink body = maybe (TextNode body) $ \d_ ->
         Element "a"
-            [("href", T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m%d" d_)]
+            [("href", T.pack $ Time.formatTime L.defaultTimeLocale "/%Y%m%d" d_)]
             [TextNode body]
 
     thisMonthLink body = Element "a"
-        [("href", T.pack $ Ti.formatTime L.defaultTimeLocale "/%Y%m" d)]
+        [("href", T.pack $ Time.formatTime L.defaultTimeLocale "/%Y%m" d)]
         [TextNode body]
 
-    getNextDay (Ti.addDays 1 -> tommorow) = do
+    getNextDay (Time.addDays 1 -> tommorow) = do
         db <- EDB.getEntryDB
         run_ =<< (EL.head >>==) <$> EDB.afterSavedDays db tommorow
 
-    getPreviousDay (Ti.addDays (-1) -> yesterday) = do
+    getPreviousDay (Time.addDays (-1) -> yesterday) = do
         db <- EDB.getEntryDB
         run_ =<< (EL.head >>==) <$> EDB.beforeSavedDays db yesterday
+
+formatTime :: Time.FormatTime t => String -> t -> T.Text
+formatTime fmt d = T.pack $ Time.formatTime L.defaultTimeLocale fmt d
