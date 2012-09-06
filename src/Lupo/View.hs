@@ -75,8 +75,8 @@ day Day {..} =
       where
         timeFormat = T.pack . Ti.formatTime L.defaultTimeLocale "(%H:%M)"
 
-searchResult :: Monad m => [EDB.Saved EDB.Entry] -> H.Splice m
-searchResult = return . (result <$>)
+searchResult :: [EDB.Saved EDB.Entry] -> [Node]
+searchResult = (result <$>)
   where
     result EDB.Saved {..} = Element "tr" []
         [ Element "td" [] [TextNode $ timeToText createdAt]

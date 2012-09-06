@@ -12,7 +12,6 @@ import qualified Lupo.View as V
 import Lupo.Application
 import Lupo.Util
 import Lupo.Config
-import qualified Text.Templating.Heist as TH
 import qualified Snap.Snaplet.Heist as H
 import Snap
 import qualified Data.Enumerator.List as EL
@@ -88,7 +87,7 @@ search = do
     H.renderWithSplices "search-result"
         [ ("page-title", textSplice title)
         , ("style-sheet", textSplice "diary")
-        , ("search-results", H.liftHeist $ V.searchResult es)
+        , ("search-results", pure $ V.searchResult es)
         ]
 
 days :: Ti.Day -> Integer -> Handler Lupo Lupo ()
