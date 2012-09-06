@@ -35,22 +35,19 @@ data Day a = Day
 entryBody :: EDB.Entry -> [Node]
 entryBody EDB.Entry {..} = S.renderBody body
 
-entryInfo :: [EDB.Saved EDB.Entry] -> [Node]
-entryInfo es = singleEntry <$> es
+entryInfo :: EDB.Saved EDB.Entry -> Node
+entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
+    [ Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
+    , Element "td" [] [TextNode title]
+    , Element "td" [("class", "operation")]
+        [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
+        , TextNode " "
+        , Element "a" [ ("href", "/admin/" <> toText idx <> "/delete")
+                      , ("onclick", "return confirm(\"Are you sure?\")") ] [TextNode "Delete"]
+        ]
+    ]
   where
-    singleEntry EDB.Saved {refObject = EDB.Entry {..}, ..} =
-        Element "tr" []
-            [ Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
-            , Element "td" [] [TextNode title]
-            , Element "td" [("class", "operation")]
-                [ Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
-                , TextNode " "
-                , Element "a" [ ("href", "/admin/" <> toText idx <> "/delete")
-                              , ("onclick", "return confirm(\"Are you sure?\")") ] [TextNode "Delete"]
-                ]
-            ]
-      where
-        toText = T.pack . show
+    toText = T.pack . show
 
 timeToText :: Ti.ZonedTime -> T.Text
 timeToText = T.pack . Ti.formatTime L.defaultTimeLocale "%Y-%m-%d"
