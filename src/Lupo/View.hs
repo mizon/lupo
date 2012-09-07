@@ -50,12 +50,15 @@ entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
 
 dayView :: DayView EDB.Entry -> Node
 dayView DayView {..} =
-    Element "div" [("class", "day")] $
-          (Element "h2" [] [Element "a" [("href", dayLinkFormat entriesDay)] [TextNode $ dayFormat entriesDay]])
-        : concatMap anEntry entries
+    Element "div" [("class", "day")] $ dayTitle : (anEntry =<< entries)
   where
-    dayFormat = formatTime "%Y-%m-%d"
-    dayLinkFormat = formatTime "/%Y%m%d"
+    dayTitle = Element "h2" []
+        [ Element "a" [("href", dayLinkFormat entriesDay)]
+            [TextNode $ dayFormat entriesDay]
+        ]
+      where
+        dayFormat = formatTime "%Y-%m-%d"
+        dayLinkFormat = formatTime "/%Y%m%d"
 
     anEntry EDB.Saved {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
