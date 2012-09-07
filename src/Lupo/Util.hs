@@ -5,6 +5,7 @@ module Lupo.Util
     , param
     , textSplice
     , zonedDay
+    , toText
     ) where
 
 import qualified Text.Templating.Heist as TH
@@ -33,3 +34,6 @@ textSplice = H.liftHeist . TH.textSplice
 
 zonedDay :: Ti.ZonedTime -> Ti.Day
 zonedDay = Ti.localDay . Ti.zonedTimeToLocalTime
+
+toText :: Show a => a -> T.Text
+toText = T.pack . show

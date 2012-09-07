@@ -12,6 +12,7 @@ data LupoConfig = LupoConfig
     , lcSqlitePath :: FilePath
     , lcLocaleFile :: FilePath
     , lcDaysPerPage :: Integer
+    , lcFooterText :: T.Text
     } deriving Show
 
 class (Monad m, Applicative m, Functor m) => GetLupoConfig m where

@@ -4,7 +4,7 @@
     , ViewPatterns
     , TemplateHaskell #-}
 module Lupo.View
-    ( Day(..)
+    ( DayView(..)
     , entryBody
     , entryInfo
     , dayView
@@ -16,6 +16,7 @@ module Lupo.View
 import qualified Lupo.EntryDB as EDB
 import qualified Lupo.Syntax as S
 import qualified Lupo.Locale as LL
+import Lupo.Util
 import Lupo.Application
 import Snap
 import Text.XmlHtml
@@ -27,7 +28,7 @@ import qualified Text.Templating.Heist as H
 import qualified Data.Text as T
 import Data.Monoid
 
-data Day a = Day
+data DayView a = DayView
     { entriesDay :: Time.Day
     , entries :: [EDB.Saved a]
     }
@@ -46,32 +47,25 @@ entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
                       , ("onclick", "return confirm(\"Are you sure?\")") ] [TextNode "Delete"]
         ]
     ]
-  where
-    toText = T.pack . show
 
-timeToText :: Time.ZonedTime -> T.Text
-timeToText = formatTime "%Y-%m-%d"
-
-dayView :: Day EDB.Entry -> Node
-dayView Day {..} =
+dayView :: DayView EDB.Entry -> Node
+dayView DayView {..} =
     Element "div" [("class", "day")] $
           (Element "h2" [] [Element "a" [("href", dayLinkFormat entriesDay)] [TextNode $ dayFormat entriesDay]])
         : concatMap anEntry entries
   where
-    dayFormat = T.pack . Time.formatTime L.defaultTimeLocale "%Y-%m-%d"
-    dayLinkFormat = T.pack . Time.formatTime L.defaultTimeLocale "/%Y%m%d"
+    dayFormat = formatTime "%Y-%m-%d"
+    dayLinkFormat = formatTime "/%Y%m%d"
 
     anEntry EDB.Saved {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
          : S.renderBody (EDB.body refObject)
-        <> [Element "p" [("class", "time")] [TextNode $ timeFormat createdAt]]
-      where
-        timeFormat = T.pack . Time.formatTime L.defaultTimeLocale "(%H:%M)"
+        <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
 searchResult :: [EDB.Saved EDB.Entry] -> [Node]
-searchResult = (result <$>)
+searchResult = (row <$>)
   where
-    result EDB.Saved {..} = Element "tr" []
+    row EDB.Saved {..} = Element "tr" []
         [ Element "td" [] [TextNode $ timeToText createdAt]
         , Element "td" [] [TextNode $ EDB.title refObject]
         , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
@@ -129,6 +123,9 @@ dayNavigation d = do
     getPreviousDay (Time.addDays (-1) -> yesterday) = do
         db <- EDB.getEntryDB
         run_ =<< (EL.head >>==) <$> EDB.beforeSavedDays db yesterday
+
+timeToText :: Time.ZonedTime -> T.Text
+timeToText = formatTime "%Y-%m-%d"
 
 formatTime :: Time.FormatTime t => String -> t -> T.Text
 formatTime fmt d = T.pack $ Time.formatTime L.defaultTimeLocale fmt d

@@ -23,6 +23,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
     , lcSqlitePath = "./development.sqlite3"
     , lcLocaleFile = "./ja.yml"
     , lcDaysPerPage = 5
+    , lcFooterText = "Lupo Web Diary"
     }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo

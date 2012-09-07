@@ -20,6 +20,7 @@ import qualified Data.Time as Ti
 import qualified Data.Text as T
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Char as C
+import Data.Monoid
 import Control.Monad as M
 import System.Locale
 import Prelude hiding (filter)
@@ -42,13 +43,11 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
 
     single = do
         day <- dayParser
-        return $ do
+        return $ withBasicViewParams "fooo" $ do
             db <- EDB.getEntryDB
             es <- EDB.selectDay db day
             H.renderWithSplices "public"
-                [ ("page-title", textSplice "")
-                , ("style-sheet", textSplice "diary")
-                , ("main-body", pure . pure $ V.dayView $ V.Day day es)
+                [ ("main-body", pure . pure $ V.dayView $ V.DayView day es)
                 , ("page-navigation", H.liftHeist $ V.dayNavigation day)
                 ]
 
@@ -59,14 +58,12 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
             days_ <- run_
                 =<< ((toDayViews db =$ EL.takeWhile (isSameMonth reqMonth . V.entriesDay)) >>==)
                 <$> EDB.afterSavedDays db reqMonth
-            H.renderWithSplices "public"
-                [ ("page-title", textSplice "")
-                , ("style-sheet", textSplice "diary")
-                , ("main-body", pure $ V.dayView <$> days_)
+            withBasicViewParams "" $ H.renderWithSplices "public"
+                [ ("main-body", pure $ V.dayView <$> days_)
                 , ("page-navigation", H.liftHeist $ V.monthNavigation reqMonth)
                 ]
       where
-        toDayViews db = EL.mapM (\d -> V.Day <$> pure d <*> EDB.selectDay db d)
+        toDayViews db = EL.mapM (\d -> V.DayView <$> pure d <*> EDB.selectDay db d)
 
         isSameMonth (Ti.toGregorian -> (year1, month1, _))
                     (Ti.toGregorian -> (year2, month2, _)) =
@@ -84,10 +81,8 @@ search = do
     word <- param "word"
     es <- run_ =<< (EL.consume >>==) <$> EDB.search db word
     title <- refLupoConfig lcSiteTitle
-    H.renderWithSplices "search-result"
-        [ ("page-title", textSplice title)
-        , ("style-sheet", textSplice "diary")
-        , ("search-results", pure $ V.searchResult es)
+    withBasicViewParams title $ H.renderWithSplices "search-result"
+        [ ("search-results", pure $ V.searchResult es)
         ]
 
 days :: Ti.Day -> Integer -> LupoHandler ()
@@ -96,11 +91,20 @@ days from nDays = do
     days_ <- run_ =<< (EL.take nDays >>==) <$> EDB.beforeSavedDays db from
     dayViews <- Prelude.mapM makeDayView days_
     title <- refLupoConfig lcSiteTitle
-    H.renderWithSplices "index"
-        [ ("page-title", textSplice title)
-        , ("style-sheet", textSplice "diary")
-        , ("entries", pure $ V.dayView <$> dayViews)
+    withBasicViewParams title $ H.renderWithSplices "index"
+        [ ("entries", pure $ V.dayView <$> dayViews)
         ]
   where
     makeDayView d = EDB.getEntryDB >>= \db ->
-        V.Day <$> pure d <*> EDB.selectDay db d
+        V.DayView <$> pure d <*> EDB.selectDay db d
+
+withBasicViewParams :: T.Text -> LupoHandler () -> LupoHandler ()
+withBasicViewParams title h = do
+    siteTitle <- refLupoConfig lcSiteTitle
+    footerText <- refLupoConfig lcFooterText
+    H.withSplices
+        [ ("page-title", textSplice $ title <> " | " <> siteTitle)
+        , ("header-title", textSplice title)
+        , ("style-sheet", textSplice "diary")
+        , ("footer-body", textSplice footerText)
+        ] h
