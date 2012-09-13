@@ -8,6 +8,7 @@ module Lupo.View
     , entryBody
     , entryInfo
     , dayView
+    , emptyMonth
     , searchResult
     , monthNavigation
     , dayNavigation
@@ -64,6 +65,11 @@ dayView DayView {..} =
            Element "h3" [] [TextNode $ EDB.title refObject]
          : S.renderBody (EDB.body refObject)
         <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
+
+emptyMonth :: H.Splice LupoHandler
+emptyMonth = do
+    message <- LL.localize "no this month entries"
+    pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
 searchResult :: [EDB.Saved EDB.Entry] -> [Node]
 searchResult = (row <$>)

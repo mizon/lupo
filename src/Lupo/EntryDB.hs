@@ -44,11 +44,10 @@ data Saved o = Saved
     } deriving Show
 
 data EntryDB = EntryDB
-    { connection :: DB.ConnWrapper
-    , select :: MonadEntryDB m => Integer -> m (Saved Entry)
+    { select :: MonadEntryDB m => Integer -> m (Saved Entry)
     , selectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
-    , all :: forall m a. MonadEntryDB m => m (Enumerator (Saved Entry) m a)
-    , search :: forall m a. MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
+    , all :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
+    , search :: MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
     , insert :: MonadEntryDB m => Entry -> m ()
     , update :: MonadEntryDB m => Integer -> Entry -> m ()
     , delete :: MonadEntryDB m => Integer -> m ()
@@ -57,12 +56,11 @@ data EntryDB = EntryDB
     }
 
 getCreatedDay :: Saved a -> Ti.Day
-getCreatedDay = Ti.localDay . Ti.zonedTimeToLocalTime . createdAt
+getCreatedDay = zonedDay . createdAt
 
 makeEntryDB :: DB.IConnection conn => conn -> EntryDB
 makeEntryDB conn = EntryDB
-    { connection = DB.ConnWrapper conn
-    , select = dbSelect
+    { select = dbSelect
     , selectDay = dbSelectDay
     , all = dbAll
     , search = dbSearch
@@ -72,114 +70,96 @@ makeEntryDB conn = EntryDB
     , beforeSavedDays = dbBeforeSavedDays
     , afterSavedDays = dbAfterSavedDays
     }
+  where
+    dbSelect i = do
+        row <- liftIO $ do
+            stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
+            void $ DB.execute stmt [DB.toSql i]
+            DB.fetchRow stmt
+        maybe (throw RecordNotFound) (pure . fromSql) row
 
-dbSelect :: MonadEntryDB m => Integer -> m (Saved Entry)
-dbSelect i = do
-    conn <- connection <$> getEntryDB
-    row <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
-        void $ DB.execute stmt [DB.toSql i]
-        DB.fetchRow stmt
-    maybe (throw RecordNotFound) (pure . fromSql) row
+    dbSelectDay (DB.toSql -> day) = do
+        rows <- liftIO $ do
+            stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
+            void $ DB.execute stmt [day]
+            DB.fetchAllRows stmt
+        pure $ fromSql <$> rows
 
-dbSelectDay :: MonadEntryDB m => Ti.Day -> m [Saved Entry]
-dbSelectDay (DB.toSql -> day) = do
-    (connection -> conn) <- getEntryDB
-    rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
-        void $ DB.execute stmt [day]
-        DB.fetchAllRows stmt
-    pure $ fromSql <$> rows
+    dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
+    dbAll = do
+        rows <- liftIO $ do
+            stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
+            void $ DB.execute stmt []
+            DB.fetchAllRows stmt
+        pure $ enumList 1 rows $= EL.map fromSql
 
-dbAll :: MonadEntryDB m => m (Enumerator (Saved Entry) m a)
-dbAll = do
-    (connection -> conn) <- getEntryDB
-    rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
-        void $ DB.execute stmt []
-        DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.map fromSql
+    dbSearch (DB.toSql -> word) = do
+        rows <- liftIO $ do
+            stmt <- DB.prepare conn $
+                   "SELECT * FROM entries "
+                <> "WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' "
+                <> "ORDER BY id DESC"
+            void $ DB.execute stmt [word, word]
+            DB.fetchAllRows stmt
+        pure $ enumList 1 rows $= EL.map fromSql
 
-dbSearch :: MonadEntryDB m => T.Text -> m (Enumerator (Saved Entry) m a)
-dbSearch (DB.toSql -> word) = do
-    (connection -> conn) <- getEntryDB
-    rows <- liftIO $ do
-        stmt <- DB.prepare conn $
-               "SELECT * FROM entries "
-            <> "WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' "
-            <> "ORDER BY id DESC"
-        void $ DB.execute stmt [word, word]
-        DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.map fromSql
-
-dbInsert :: MonadEntryDB m => Entry -> m ()
-dbInsert Entry {..} = do
-    (connection -> conn) <- getEntryDB
-    liftIO $ do
-        now <- Ti.getZonedTime
-        void $ DB.run conn
-            "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
-            [ DB.toSql now
-            , DB.toSql now
-            , DB.toSql $ zonedDay now
-            , DB.toSql title
-            , DB.toSql body
-            ]
-        DB.commit conn
-
-dbUpdate :: MonadEntryDB m => Integer -> Entry -> m ()
-dbUpdate i Entry {..} = do
-    (connection -> conn) <- getEntryDB
-    liftIO $ do
-        now <- Ti.getZonedTime
-        void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
-            [ DB.toSql now
-            , DB.toSql title
-            , DB.toSql body
-            , DB.toSql i
-            ]
-        DB.commit conn
-
-dbDelete :: MonadEntryDB m => Integer -> m ()
-dbDelete i = do
-    (connection -> conn) <- getEntryDB
-    liftIO $ do
-        status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
-        if status /= 1 then
-            throw RecordNotFound
-        else do
+    dbInsert Entry {..} = do
+        liftIO $ do
+            now <- Ti.getZonedTime
+            void $ DB.run conn
+                "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
+                [ DB.toSql now
+                , DB.toSql now
+                , DB.toSql $ zonedDay now
+                , DB.toSql title
+                , DB.toSql body
+                ]
             DB.commit conn
 
-dbBeforeSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
-dbBeforeSavedDays (DB.toSql -> d) = do
-    (connection -> conn) <- getEntryDB
-    rows <- liftIO $ do
-        stmt <- DB.prepare conn
-            "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC"
-        void $ DB.execute stmt [d]
-        DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+    dbUpdate i Entry {..} = do
+        liftIO $ do
+            now <- Ti.getZonedTime
+            void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
+                [ DB.toSql now
+                , DB.toSql title
+                , DB.toSql body
+                , DB.toSql i
+                ]
+            DB.commit conn
 
-dbAfterSavedDays :: MonadEntryDB m => Ti.Day -> m (Enumerator Ti.Day m a)
-dbAfterSavedDays (DB.toSql -> d) = do
-    (connection -> conn) <- getEntryDB
-    rows <- liftIO $ do
-        stmt <- DB.prepare conn
-            "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC"
-        void $ DB.execute stmt [d]
-        DB.fetchAllRows stmt
-    return $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+    dbDelete i = do
+        liftIO $ do
+            status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
+            if status /= 1 then
+                throw RecordNotFound
+            else do
+                DB.commit conn
 
-fromSql :: [DB.SqlValue] -> Saved Entry
-fromSql [ DB.fromSql -> id_
-        , DB.fromSql -> c_at
-        , DB.fromSql -> m_at
-        , _
-        , DB.fromSql -> t
-        , DB.fromSql -> b ] = Saved
-        { idx = id_
-        , createdAt = c_at
-        , modifiedAt = m_at
-        , refObject = Entry {title = t, body = b}
-        }
-fromSql _ = undefined
+    dbBeforeSavedDays (DB.toSql -> d) = do
+        rows <- liftIO $ do
+            stmt <- DB.prepare conn
+                "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC"
+            void $ DB.execute stmt [d]
+            DB.fetchAllRows stmt
+        pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+
+    dbAfterSavedDays (DB.toSql -> d) = do
+        rows <- liftIO $ do
+            stmt <- DB.prepare conn
+                "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC"
+            void $ DB.execute stmt [d]
+            DB.fetchAllRows stmt
+        pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+
+    fromSql [ DB.fromSql -> id_
+            , DB.fromSql -> c_at
+            , DB.fromSql -> m_at
+            , _
+            , DB.fromSql -> t
+            , DB.fromSql -> b ] = Saved
+            { idx = id_
+            , createdAt = c_at
+            , modifiedAt = m_at
+            , refObject = Entry {title = t, body = b}
+            }
+    fromSql _ = undefined

@@ -59,10 +59,13 @@ parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try sing
                 =<< ((toDayViews db =$ EL.takeWhile (isSameMonth reqMonth . V.entriesDay)) >>==)
                 <$> EDB.afterSavedDays db reqMonth
             withBasicViewParams "" $ H.renderWithSplices "public"
-                [ ("main-body", pure $ V.dayView <$> days_)
+                [ ("main-body", H.liftHeist $ mkBody days_)
                 , ("page-navigation", H.liftHeist $ V.monthNavigation reqMonth)
                 ]
       where
+        mkBody [] = V.emptyMonth
+        mkBody days_ = pure $ V.dayView <$> days_
+
         toDayViews db = EL.mapM (\d -> V.DayView <$> pure d <*> EDB.selectDay db d)
 
         isSameMonth (Ti.toGregorian -> (year1, month1, _))

@@ -1,6 +1,10 @@
-{-# LANGUAGE OverloadedStrings
+{-# LANGUAGE
+      OverloadedStrings
     , ScopedTypeVariables
-    , FlexibleInstances #-}
+    , FlexibleInstances
+    , FlexibleContexts
+    , UndecidableInstances
+    , TypeFamilies #-}
 module Test_EntryDB
     ( dbTest
     , savedTest
@@ -23,8 +27,8 @@ import Control.Applicative
 import qualified Control.Exception as E
 import Prelude hiding (catch)
 
-instance (MonadCatchIO m, Applicative m, Functor m) =>
-        EDB.MonadEntryDB (ReaderT EDB.EntryDB m) where
+instance (MonadReader EDB.EntryDB m, MonadCatchIO m, Applicative m, Functor m) =>
+        EDB.MonadEntryDB m where
     getEntryDB = ask
 
 dbTest :: Test
