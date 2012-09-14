@@ -1,3 +1,57 @@
+* {
+  margin: 0;
+  padding: 0; }
+
 #container {
-  width: 70%;
+  width: 80%;
   margin: 0 auto; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: 16px; }
+
+#header {
+  padding: 0.5em 0; }
+
+.navigation {
+  float: left; }
+  .navigation ul.page-navigation {
+    float: left; }
+    .navigation ul.page-navigation li {
+      float: left;
+      list-style-type: none;
+      margin-right: 0.5em; }
+
+.navigation:after {
+  content: ".";
+  display: block;
+  clear: both;
+  height: 0;
+  visibility: hidden; }
+
+#search {
+  float: right; }
+  #search #search-field {
+    width: 20em; }
+  #search #search-button {
+    width: 6em; }
+
+#main .day {
+  background: #eeeeff;
+  margin: 2em 0;
+  padding: 1em; }
+  #main .day h2 {
+    background: #333399;
+    color: white;
+    padding: 0.25em 1em;
+    margin: -1em -1em -1.25em -1em; }
+    #main .day h2 a {
+      color: white; }
+  #main .day h3 {
+    margin: 2em 0 0.5em; }
+  #main .day p {
+    margin: 0.5em 0 1em; }
+#main p.empty-month {
+  text-align: center; }
+
+#footer {
+  padding: 0.5em 0; }

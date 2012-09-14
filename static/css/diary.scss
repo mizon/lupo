@@ -1,3 +1,78 @@
 @import "init";
 
-$gray-back: #999;
+$day-back: #EEF;
+$day-title-back: #339;
+$gray-border: solid 1px #CCC;
+
+#header {
+    padding: 0.5em 0;
+}
+
+.navigation {
+    float: left;
+
+    ul.page-navigation {
+        float: left;
+
+        li {
+            float: left;
+            list-style-type: none;
+            margin-right: 0.5em;
+        }
+    }
+}
+
+.navigation:after {
+    content: ".";
+    display: block;
+    clear: both;
+    height: 0;
+    visibility: hidden;
+}
+
+#search {
+    float: right;
+
+    #search-field {
+        width: 20em;
+    }
+
+    #search-button {
+        width: 6em;
+    }
+}
+
+#main {
+    .day {
+        background: $day-back;
+        margin: 2em 0;
+        padding: 1em;
+
+        h2 {
+            background: $day-title-back;
+            color: white;
+            padding: 0.25em 1em;
+            margin: -1em -1em -1.25em -1em;
+
+            a {
+                color: white;
+            }
+        }
+
+        h3 {
+            margin: 2em 0 0.5em;
+        }
+
+        p {
+            margin: 0.5em 0 1em;
+        }
+    }
+
+    p.empty-month {
+        text-align: center;
+    }
+}
+
+#footer {
+    padding: 0.5em 0;
+}
