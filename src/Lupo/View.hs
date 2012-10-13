@@ -1,8 +1,8 @@
-{-# LANGUAGE OverloadedStrings
-    , RecordWildCards
-    , FlexibleInstances
-    , ViewPatterns
-    , TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Lupo.View
     ( DayView(..)
     , entryBody
@@ -11,34 +11,33 @@ module Lupo.View
     , emptyMonth
     , searchResult
     , monthNavigation
-    , dayNavigation
+    , singleDayNavigation
+    , multiDaysNavigation
     ) where
 
-import qualified Lupo.EntryDB as EDB
-import qualified Lupo.Syntax as S
-import qualified Lupo.Locale as LL
-import Lupo.Util
-import Lupo.Application
-import Snap
-import Text.XmlHtml
-import qualified Data.Time as Time
-import qualified Data.Enumerator.List as EL
-import Data.Enumerator hiding (concatMap)
-import qualified System.Locale as L
-import qualified Text.Templating.Heist as H
-import qualified Data.Text as T
 import Data.Monoid
+import qualified Data.Time as Time
+import qualified Data.Text as T
+import Snap
+import qualified Text.Templating.Heist as H
+import Text.XmlHtml
+
+import qualified Lupo.Database as LDB
+import qualified Lupo.Locale as LL
+import qualified Lupo.Navigation as N
+import qualified Lupo.Syntax as S
+import Lupo.Util
 
 data DayView a = DayView
     { entriesDay :: Time.Day
-    , entries :: [EDB.Saved a]
+    , entries :: [LDB.Saved a]
     }
 
-entryBody :: EDB.Entry -> [Node]
-entryBody EDB.Entry {..} = S.renderBody body
+entryBody :: LDB.Entry -> H.Template
+entryBody LDB.Entry {..} = S.renderBody body
 
-entryInfo :: EDB.Saved EDB.Entry -> Node
-entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
+entryInfo :: LDB.Saved LDB.Entry -> Node
+entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} = Element "tr" []
     [ Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
     , Element "td" [] [TextNode title]
     , Element "td" [("class", "operation")]
@@ -49,7 +48,7 @@ entryInfo EDB.Saved {refObject = EDB.Entry {..}, ..} = Element "tr" []
         ]
     ]
 
-dayView :: DayView EDB.Entry -> Node
+dayView :: DayView LDB.Entry -> Node
 dayView DayView {..} =
     Element "div" [("class", "day")] $ dayTitle : (anEntry =<< entries)
   where
@@ -61,54 +60,52 @@ dayView DayView {..} =
         dayFormat = formatTime "%Y-%m-%d"
         dayLinkFormat = formatTime "/%Y%m%d"
 
-    anEntry EDB.Saved {..} =
-           Element "h3" [] [TextNode $ EDB.title refObject]
-         : S.renderBody (EDB.body refObject)
+    anEntry LDB.Saved {..} =
+           Element "h3" [] [TextNode $ LDB.title refObject]
+         : S.renderBody (LDB.body refObject)
         <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
-emptyMonth :: H.Splice LupoHandler
+emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do
     message <- LL.localize "no this month entries"
     pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
-searchResult :: [EDB.Saved EDB.Entry] -> [Node]
-searchResult = (row <$>)
+searchResult :: [LDB.Saved LDB.Entry] -> H.Template
+searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
   where
-    row EDB.Saved {..} = Element "tr" []
-        [ Element "td" [] [TextNode $ timeToText createdAt]
-        , Element "td" [] [TextNode $ EDB.title refObject]
-        , Element "td" [] [TextNode $ T.take 30 $ EDB.body refObject]
+    row LDB.Saved {..} = Element "tr" []
+        [ Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
+        , Element "th" [("class", "result-title")] [TextNode $ LDB.title refObject]
+        , Element "td" [] [TextNode $ T.take 30 $ LDB.body refObject]
         ]
 
-monthNavigation :: Time.Day -> H.Splice LupoHandler
-monthNavigation month = do
+monthNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) => N.Navigation m -> m H.Template
+monthNavigation nav = do
+    newest <- newestElement
+    previous <- N.getPreviousMonth nav
+    next <- N.getNextMonth nav
     previousLabel <- LL.localize "Previous Month"
     nextLabel <- LL.localize "Next Month"
-    pure $
+    pure
         [ Element "ul" [("class", "page-navigation")]
-            [ Element "li" [] [mkMonthLink previousLabel $ previousMonth month]
-            , Element "li" [] [mkMonthLink nextLabel $ nextMonth month]
+            [ Element "li" [] [mkMonthLink previousLabel previous]
+            , newest
+            , Element "li" [] [mkMonthLink nextLabel next]
             ]
         ]
   where
-    mkMonthLink body m = Element "a" [("href", monthLinkFormat m)] [TextNode body]
+    mkMonthLink body m = Element "a" [("href", formatMonthLink m)] [TextNode body]
       where
-        monthLinkFormat = T.pack . Time.formatTime L.defaultTimeLocale "/%Y%m"
+        formatMonthLink = formatTime "/%Y%m"
 
-    nextMonth (Time.toGregorian -> (y, 12, _)) = Time.fromGregorian (y + 1) 1 1
-    nextMonth (Time.toGregorian -> (y, m, _)) = Time.fromGregorian y (m + 1) 1
-
-    previousMonth (Time.toGregorian -> (y, 1, _)) = Time.fromGregorian (y - 1) 12 1
-    previousMonth (Time.toGregorian -> (y, m, _)) = Time.fromGregorian y (m - 1) 1
-
-dayNavigation :: Time.Day -> H.Splice LupoHandler
-dayNavigation d = do
-    previous <- getPreviousDay d
-    next <- getNextDay d
+singleDayNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) => N.Navigation m -> m H.Template
+singleDayNavigation nav = do
+    previous <- N.getPreviousDay nav
+    next <- N.getNextDay nav
     previousLabel <- LL.localize "Previous Day"
     thisMonthLabel <- LL.localize "This Month"
     nextLabel <- LL.localize "Next Day"
-    pure $
+    pure
         [ Element "ul" [("class", "page-navigation")]
             [ Element "li" [] [mkDayLink previousLabel previous]
             , Element "li" [] [thisMonthLink thisMonthLabel]
@@ -118,23 +115,41 @@ dayNavigation d = do
   where
     mkDayLink body = maybe (TextNode body) $ \d_ ->
         Element "a"
-            [("href", T.pack $ Time.formatTime L.defaultTimeLocale "/%Y%m%d" d_)]
+            [("href", formatTime "/%Y%m%d" d_)]
             [TextNode body]
 
     thisMonthLink body = Element "a"
-        [("href", T.pack $ Time.formatTime L.defaultTimeLocale "/%Y%m" d)]
+        [("href", formatTime "/%Y%m" $ N.getThisMonth nav)]
         [TextNode body]
 
-    getNextDay (Time.addDays 1 -> tommorow) = do
-        db <- EDB.getEntryDB
-        run_ =<< (EL.head >>==) <$> EDB.afterSavedDays db tommorow
-
-    getPreviousDay (Time.addDays (-1) -> yesterday) = do
-        db <- EDB.getEntryDB
-        run_ =<< (EL.head >>==) <$> EDB.beforeSavedDays db yesterday
+multiDaysNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) =>
+    N.Navigation m -> Integer -> m H.Template
+multiDaysNavigation nav nDays = do
+    previous <- N.getPreviousPageTop nav nDays
+    next <- N.getNextPageTop nav nDays
+    previousLabel <- LL.localize "Previous %d Days"
+    nextLabel <- LL.localize "Next %d Days"
+    newest <- newestElement
+    pure $
+        [ Element "ul" [("class", "page-navigation")]
+            [ Element "li" [] [mkDayLink previousLabel previous]
+            , newest
+            , Element "li" [] [mkDayLink nextLabel next]
+            ]
+        ]
+  where
+    mkDayLink body = maybe (TextNode formattedBody) $ \d_ ->
+        Element "a"
+            [("href", formatTime "/%Y%m%d-" d_ <> textNDays)]
+            [TextNode formattedBody]
+      where
+        formattedBody = T.replace "%d" textNDays body
+        textNDays = toText nDays
 
 timeToText :: Time.ZonedTime -> T.Text
 timeToText = formatTime "%Y-%m-%d"
 
-formatTime :: Time.FormatTime t => String -> t -> T.Text
-formatTime fmt d = T.pack $ Time.formatTime L.defaultTimeLocale fmt d
+newestElement :: LL.HasLocalizer m => m Node
+newestElement = do
+    label <- LL.localize "Newest"
+    pure $ Element "li" [] [Element "a" [("href", "/")] [TextNode label]]

@@ -4,15 +4,16 @@ module Lupo.Config
     , refLupoConfig
     ) where
 
-import qualified Data.Text as T
 import Control.Applicative
+import qualified Data.Text as T
+import Text.XmlHtml
 
 data LupoConfig = LupoConfig
     { lcSiteTitle :: T.Text
     , lcSqlitePath :: FilePath
     , lcLocaleFile :: FilePath
     , lcDaysPerPage :: Integer
-    , lcFooterText :: T.Text
+    , lcFooterBody :: [Node]
     } deriving Show
 
 class (Monad m, Applicative m, Functor m) => GetLupoConfig m where

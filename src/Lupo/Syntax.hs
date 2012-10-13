@@ -1,13 +1,13 @@
-{-# LANGUAGE OverloadedStrings
-    , ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Lupo.Syntax
     ( renderBody
     ) where
 
-import qualified Data.Attoparsec.Text as A
-import Text.XmlHtml
-import qualified Data.Text as T
 import Control.Applicative
+import qualified Data.Attoparsec.Text as A
+import qualified Data.Text as T
+import Text.XmlHtml
 
 renderBody :: T.Text -> [Node]
 renderBody = either (error "[BUG] in body parsing") id . A.parseOnly diaryParser
@@ -24,12 +24,12 @@ block = heading <|> blockQuote <|> unorderedList <|> paragraph
       where
         prefixStyle = do
             (syms, body) <- beginWith $ some $ A.char '#'
-            return $ makeElem (length syms) body
+            pure $ makeElem (length syms) body
 
         underlineStyle = A.try $ do
             body <- toEOL
             c <- (chars '=' <|> chars '-') <* A.endOfLine
-            return $ if c == '='
+            pure $ if c == '='
                      then makeElem 1 body
                      else makeElem 2 body
           where
@@ -40,29 +40,29 @@ block = heading <|> blockQuote <|> unorderedList <|> paragraph
     blockQuote = do
         begin <- bqLine
         follows <- T.concat <$> many (bqLine <|> plainLine)
-        return $ Element "blockquote" [] $ inlineElemnents $ T.append begin follows
+        pure $ Element "blockquote" [] $ inlineElemnents $ T.append begin follows
       where
         bqLine = snd <$> beginWith (A.char '>')
 
     unorderedList = do
         lis <- some $ snd <$> beginWith (A.satisfy $ A.inClass "*+-")
-        return $ Element "ul" [] $ makeElem <$> lis
+        pure $ Element "ul" [] $ makeElem <$> lis
       where
         makeElem body = Element "li" []  $ escapedText body
 
     paragraph = do
         ls <- some plainLine
-        return $ Element "p" [] $ inlineElemnents $ T.concat ls
+        pure $ Element "p" [] $ inlineElemnents $ T.concat ls
 
     plainLine = do
         (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
-        return $ T.append (T.singleton h) t
+        pure $ T.append (T.singleton h) t
 
     beginWith p = do
         begin <- p
         blanks
         body <- toEOL
-        return $ (begin, body)
+        pure $ (begin, body)
 
     specialSymbols = ['#', '*', '>', ' ', '\n']
     toEOL = A.takeTill A.isEndOfLine <* blanks <* A.option () A.endOfLine
@@ -75,18 +75,18 @@ inlineElemnents = either undefined id . parse
         anchor = do
             name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
             href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
-            return $ Element "a" [("href", htmlEscape href)] $ escapedText name
+            pure $ Element "a" [("href", escapeHtml href)] $ escapedText name
 
-        text = TextNode . htmlEscape . T.pack <$> some (A.satisfy (/= '['))
+        text = TextNode . escapeHtml . T.pack <$> some (A.satisfy (/= '['))
 
 blanks :: A.Parser ()
 blanks = A.skipWhile $ A.inClass " \t"
 
 escapedText :: T.Text -> [Node]
-escapedText = pure . TextNode . htmlEscape
+escapedText = pure . TextNode . escapeHtml
 
-htmlEscape :: T.Text -> T.Text
-htmlEscape = T.concatMap escape
+escapeHtml :: T.Text -> T.Text
+escapeHtml = T.concatMap escape
   where
     escape '<' = "&lt;"
     escape '>' = "&gt;"

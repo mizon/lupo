@@ -3,55 +3,94 @@
   padding: 0; }
 
 #container {
-  width: 80%;
+  width: 720px;
   margin: 0 auto; }
 
 h1, h2, h3, h4, h5, h6 {
   font-size: 16px; }
 
+body {
+  background-color: #EEE;
+  line-height: 1.4; }
+
 #header {
-  padding: 0.5em 0; }
+  background-color: #003399;
+  color: #FFF;
+  position: relative; }
+  #header h1 {
+    color: #FFF;
+    text-decoration: none;
+    padding: 0.5em; }
+
+#main {
+  background-color: white;
+  padding: 1em 1.6em;
+  border: solid 1px #cccccc;
+  border-width: 0px 1px; }
+
+#footer {
+  background-color: #CCC; }
 
 .navigation {
-  float: left; }
+  padding: 0 0.5em;
+  background-color: #666;
+  color: #CCC; }
   .navigation ul.page-navigation {
-    float: left; }
+    text-align: left; }
     .navigation ul.page-navigation li {
-      float: left;
+      display: inline;
       list-style-type: none;
       margin-right: 0.5em; }
-
-.navigation:after {
-  content: ".";
-  display: block;
-  clear: both;
-  height: 0;
-  visibility: hidden; }
+    .navigation ul.page-navigation a {
+      color: #FC0; }
 
 #search {
-  float: right; }
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.5em; }
   #search #search-field {
     width: 20em; }
   #search #search-button {
     width: 6em; }
 
 #main .day {
-  background: #eeeeff;
-  margin: 2em 0;
-  padding: 1em; }
+  background-color: #FFF;
+  padding-bottom: 1em; }
   #main .day h2 {
-    background: #333399;
-    color: white;
-    padding: 0.25em 1em;
-    margin: -1em -1em -1.25em -1em; }
+    margin: 0 0 1em;
+    padding: 0.5em 0;
+    border-bottom: solid 1px #999999; }
     #main .day h2 a {
-      color: white; }
+      color: #000; }
   #main .day h3 {
-    margin: 2em 0 0.5em; }
+    color: #039; }
   #main .day p {
     margin: 0.5em 0 1em; }
+  #main .day p.time {
+    margin-bottom: 2em; }
 #main p.empty-month {
   text-align: center; }
 
 #footer {
-  padding: 0.5em 0; }
+  text-align: center;
+  background-color: #cccccc; }
+  #footer p {
+    font-size: 80%;
+    padding: 0.5em; }
+
+#search-result {
+  width: 100%;
+  table-collapse: collapse;
+  font-size: 80%; }
+  #search-result tr th {
+    font-weight: normal; }
+  #search-result tr th.result-day {
+    width: 8em;
+    background-color: #EEF; }
+  #search-result tr th.result-title {
+    background-color: #EEF; }
+  #search-result tr td {
+    margin: 1px;
+    padding: 0 0.5em;
+    background-color: #EEE; }

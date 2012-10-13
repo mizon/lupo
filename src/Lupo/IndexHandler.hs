@@ -1,113 +1,131 @@
-{-# LANGUAGE OverloadedStrings
-    , ViewPatterns
-    , ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Lupo.IndexHandler
-    ( top
+    ( topPageHandler
     , parseQuery
-    , search
+    , searchHandler
     ) where
 
-import qualified Lupo.EntryDB as EDB
-import qualified Lupo.View as V
-import Lupo.Application
-import Lupo.Util
-import Lupo.Config
-import qualified Snap.Snaplet.Heist as H
-import Snap
-import qualified Data.Enumerator.List as EL
-import qualified Data.Attoparsec.Text as A
-import qualified Data.Time as Ti
-import qualified Data.Text as T
-import Data.Enumerator as E hiding (head, replicate)
-import qualified Data.Char as C
-import Data.Monoid
 import Control.Monad as M
-import System.Locale
+import qualified Data.Attoparsec.Text as A
+import qualified Data.Char as C
+import Data.Enumerator as E hiding (head, replicate)
+import qualified Data.Enumerator.List as EL
+import Data.Monoid
+import qualified Data.Text as T
+import qualified Data.Time as Time
 import Prelude hiding (filter)
+import Snap
+import qualified Snap.Snaplet.Heist as SH
+import System.Locale
 
-top :: LupoHandler ()
-top = do
-    (getDay -> today) <- liftIO $ Ti.getZonedTime
-    days today =<< refLupoConfig lcDaysPerPage
+import Lupo.Application
+import Lupo.Config
+import qualified Lupo.Database as LDB
+import qualified Lupo.Navigation as N
+import Lupo.Util
+import qualified Lupo.View as V
+
+topPageHandler :: LupoHandler ()
+topPageHandler = do
+    (getDay -> today) <- liftIO $ Time.getZonedTime
+    multiDays today =<< refLupoConfig lcDaysPerPage
   where
-    getDay = Ti.localDay . Ti.zonedTimeToLocalTime
+    getDay = Time.localDay . Time.zonedTimeToLocalTime
 
 parseQuery :: T.Text -> LupoHandler ()
-parseQuery = either (const pass) id . A.parseOnly ((A.try multi) <|> (A.try single) <|> month)
+parseQuery = parseQuery' $
+        A.try multiDaysResponse
+    <|> A.try singleDayResponse
+    <|> monthResponse
   where
-    multi = do
+    parseQuery' parser = either (const pass) id . A.parseOnly parser
+
+    multiDaysResponse = do
         from <- dayParser
         void $ A.char '-'
         nentries <- read . pure <$> number
-        return $ days from nentries
+        pure $ multiDays from nentries
 
-    single = do
+    singleDayResponse = do
         day <- dayParser
-        return $ withBasicViewParams "fooo" $ do
-            db <- EDB.getEntryDB
-            es <- EDB.selectDay db day
-            H.renderWithSplices "public"
-                [ ("main-body", pure . pure $ V.dayView $ V.DayView day es)
-                , ("page-navigation", H.liftHeist $ V.dayNavigation day)
+        pure $ withBasicViewParams (formatTime "%Y-%m-%d" day) $ do
+            db <- LDB.getDatabase
+            es <- LDB.selectDay db day
+            nav <- makeNavigation day
+            SH.renderWithSplices "public"
+                [ ("main-body", pure [V.dayView $ V.DayView day es])
+                , ("page-navigation", V.singleDayNavigation nav)
                 ]
 
-    month = do
+    monthResponse = do
         reqMonth <- monthParser
-        return $ do
-            db <- EDB.getEntryDB
-            days_ <- run_
-                =<< ((toDayViews db =$ EL.takeWhile (isSameMonth reqMonth . V.entriesDay)) >>==)
-                <$> EDB.afterSavedDays db reqMonth
-            withBasicViewParams "" $ H.renderWithSplices "public"
-                [ ("main-body", H.liftHeist $ mkBody days_)
-                , ("page-navigation", H.liftHeist $ V.monthNavigation reqMonth)
+        pure $ do
+            db <- LDB.getDatabase
+            days_ <- run_ =<< ((toDayViews db =$ takeMonthViews reqMonth) >>==)
+                <$> LDB.afterSavedDays db reqMonth
+            nav <- makeNavigation reqMonth
+            withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public"
+                [ ("main-body", mkBody days_)
+                , ("page-navigation", V.monthNavigation nav)
                 ]
       where
         mkBody [] = V.emptyMonth
         mkBody days_ = pure $ V.dayView <$> days_
 
-        toDayViews db = EL.mapM (\d -> V.DayView <$> pure d <*> EDB.selectDay db d)
+        takeMonthViews m = EL.takeWhile $ isSameMonth m . V.entriesDay
+          where
+            isSameMonth (Time.toGregorian -> (year1, month1, _))
+                        (Time.toGregorian -> (year2, month2, _)) =
+                year1 == year2 && month1 == month2
 
-        isSameMonth (Ti.toGregorian -> (year1, month1, _))
-                    (Ti.toGregorian -> (year2, month2, _)) =
-            year1 == year2 && month1 == month2
+        toDayViews db = EL.mapM (\d -> V.DayView <$> pure d <*> LDB.selectDay db d)
 
-        monthParser = Ti.readTime defaultTimeLocale "%Y%m" <$>
+        monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
             M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
-    dayParser = Ti.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
+    dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
 
-search :: LupoHandler ()
-search = do
-    db <- EDB.getEntryDB
+searchHandler :: LupoHandler ()
+searchHandler = do
+    db <- LDB.getDatabase
     word <- param "word"
-    es <- run_ =<< (EL.consume >>==) <$> EDB.search db word
-    title <- refLupoConfig lcSiteTitle
-    withBasicViewParams title $ H.renderWithSplices "search-result"
-        [ ("search-results", pure $ V.searchResult es)
+    es <- run_ =<< (EL.consume >>==) <$> LDB.search db word
+    withBasicViewParams word $ SH.renderWithSplices "search-result"
+        [ ("main-body", pure $ V.searchResult es)
         ]
 
-days :: Ti.Day -> Integer -> LupoHandler ()
-days from nDays = do
-    db <- EDB.getEntryDB
-    days_ <- run_ =<< (EL.take nDays >>==) <$> EDB.beforeSavedDays db from
+multiDays :: Time.Day -> Integer -> LupoHandler ()
+multiDays from nDays = do
+    db <- LDB.getDatabase
+    days_ <- run_ =<< (EL.take nDays >>==) <$> LDB.beforeSavedDays db from
     dayViews <- Prelude.mapM makeDayView days_
-    title <- refLupoConfig lcSiteTitle
-    withBasicViewParams title $ H.renderWithSplices "index"
-        [ ("entries", pure $ V.dayView <$> dayViews)
+    nav <- makeNavigation from
+    withBasicViewParams "" $ SH.renderWithSplices "public"
+        [ ("main-body", pure $ V.dayView <$> dayViews)
+        , ("page-navigation", V.multiDaysNavigation nav nDays)
         ]
   where
-    makeDayView d = EDB.getEntryDB >>= \db ->
-        V.DayView <$> pure d <*> EDB.selectDay db d
+    makeDayView d = do
+        db <- LDB.getDatabase
+        V.DayView <$> pure d <*> LDB.selectDay db d
 
 withBasicViewParams :: T.Text -> LupoHandler () -> LupoHandler ()
 withBasicViewParams title h = do
     siteTitle <- refLupoConfig lcSiteTitle
-    footerText <- refLupoConfig lcFooterText
-    H.withSplices
-        [ ("page-title", textSplice $ title <> " | " <> siteTitle)
-        , ("header-title", textSplice title)
+    footer <- refLupoConfig lcFooterBody
+    SH.withSplices
+        [ ("page-title", textSplice $ makePageTitle siteTitle)
+        , ("header-title", textSplice siteTitle)
         , ("style-sheet", textSplice "diary")
-        , ("footer-body", textSplice footerText)
+        , ("footer-body", pure footer)
         ] h
+  where
+    makePageTitle siteTitle = case title of
+        "" -> siteTitle
+        t -> siteTitle <> " | " <> t
+
+makeNavigation :: (LDB.HasDatabase m, LDB.DatabaseContext m, LDB.DatabaseContext n) => Time.Day -> m (N.Navigation n)
+makeNavigation current = N.initNavigation <$> LDB.getDatabase <*> pure current

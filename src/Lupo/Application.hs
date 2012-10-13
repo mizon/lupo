@@ -1,23 +1,26 @@
-{-# LANGUAGE TemplateHaskell
-    , FlexibleInstances
-    , TypeSynonymInstances #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Lupo.Application
     ( Lupo(Lupo, entryDB)
     , LupoHandler
     , heist
     ) where
 
-import qualified Lupo.EntryDB as EDB
-import qualified Lupo.Locale as L
-import Lupo.Config
-import qualified Snap.Snaplet.Heist as SH
-import qualified Text.Templating.Heist as H
-import Snap
+import Control.Monad.CatchIO hiding (Handler)
 import Prelude hiding (filter)
+import Snap
+import qualified Snap.Snaplet.Heist as SH
+
+import Lupo.Config
+import qualified Lupo.Database as LDB
+import qualified Lupo.Locale as L
 
 data Lupo = Lupo
     { _heist :: Snaplet (SH.Heist Lupo)
-    , entryDB :: EDB.EntryDB
+    , entryDB :: LDB.Database
     , lupoConfig :: LupoConfig
     , localizer :: L.Localizer
     }
@@ -28,17 +31,13 @@ type LupoHandler = Handler Lupo Lupo
 instance SH.HasHeist Lupo where
     heistLens = subSnaplet heist
 
-instance EDB.MonadEntryDB LupoHandler where
-    getEntryDB = gets entryDB
+instance MonadState Lupo m => LDB.HasDatabase m where
+    getDatabase = gets entryDB
 
-instance EDB.MonadEntryDB (H.HeistT LupoHandler) where
-    getEntryDB = gets entryDB
+instance (MonadCatchIO m, Applicative m, Functor m) => LDB.DatabaseContext m
 
-instance GetLupoConfig LupoHandler where
+instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
     getLupoConfig = gets lupoConfig
 
-instance L.HasLocalizer LupoHandler where
-    refLocalizer = gets localizer
-
-instance L.HasLocalizer (H.HeistT LupoHandler) where
+instance (MonadState Lupo m, Applicative m, Functor m) => L.HasLocalizer m where
     refLocalizer = gets localizer

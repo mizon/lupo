@@ -1,37 +1,71 @@
 @import "init";
 
-$day-back: #EEF;
-$day-title-back: #339;
-$gray-border: solid 1px #CCC;
+$base-color: #039;
+$header-back: $base-color;
+$main-back: #FFF;
+$footer-back: #CCC;
+$subsection-border: solid 1px #999;
+
+@mixin side-border($color) {
+    border: solid 1px $color;
+    border-width: 0px 1px;
+}
+
+body {
+    background-color: #EEE;
+    line-height: 1.4;
+}
+
+#container {
+}
 
 #header {
-    padding: 0.5em 0;
+    background-color: $header-back;
+    color: #FFF;
+    position: relative;
+
+    h1 {
+        color: #FFF;
+        text-decoration: none;
+        padding: 0.5em;
+    }
+}
+
+#main {
+    background-color: $main-back;
+    padding: 1em 1.6em;
+    @include side-border(#CCC);
+}
+
+#footer {
+    background-color: #CCC;
 }
 
 .navigation {
-    float: left;
+    padding: 0 0.5em;
+    background-color: #666;
+    color: #CCC;
 
     ul.page-navigation {
-        float: left;
+        text-align: left;
 
         li {
-            float: left;
+            display: inline;
             list-style-type: none;
             margin-right: 0.5em;
+        }
+
+        a {
+            color: #FC0;
         }
     }
 }
 
-.navigation:after {
-    content: ".";
-    display: block;
-    clear: both;
-    height: 0;
-    visibility: hidden;
-}
-
 #search {
-    float: right;
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.5em;
 
     #search-field {
         width: 20em;
@@ -44,27 +78,29 @@ $gray-border: solid 1px #CCC;
 
 #main {
     .day {
-        background: $day-back;
-        margin: 2em 0;
-        padding: 1em;
+        background-color: #FFF;
+        padding-bottom: 1em;
 
         h2 {
-            background: $day-title-back;
-            color: white;
-            padding: 0.25em 1em;
-            margin: -1em -1em -1.25em -1em;
+            margin: 0 0 1em;
+            padding: 0.5em 0;
+            border-bottom: $subsection-border;
 
             a {
-                color: white;
+                color: #000;
             }
         }
 
         h3 {
-            margin: 2em 0 0.5em;
+            color: #039;
         }
 
         p {
             margin: 0.5em 0 1em;
+        }
+
+        p.time {
+            margin-bottom: 2em;
         }
     }
 
@@ -74,5 +110,38 @@ $gray-border: solid 1px #CCC;
 }
 
 #footer {
-    padding: 0.5em 0;
+    text-align: center;
+    background-color: $footer-back;
+
+    p {
+        font-size: 80%;
+        padding: 0.5em;
+    }
+}
+
+#search-result {
+    width: 100%;
+    table-collapse: collapse;
+    font-size: 80%;
+
+    tr {
+        th {
+            font-weight: normal;
+        }
+
+        th.result-day {
+            width: 8em;
+            background-color: #EEF;
+        }
+
+        th.result-title {
+            background-color: #EEF;
+        }
+
+        td {
+            margin: 1px;
+            padding: 0 0.5em;
+            background-color: #EEE;
+        }
+    }
 }

@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Test_Syntax
+module Lupo.Test.Syntax
     ( syntaxTest
     ) where
 
-import qualified Lupo.Syntax as S
-import Text.XmlHtml
 import Test.HUnit hiding (Test)
-import Test.Framework.Providers.HUnit
 import Test.Framework
+import Test.Framework.Providers.HUnit
+import Text.XmlHtml
+
+import qualified Lupo.Syntax as S
 
 syntaxTest :: Test
 syntaxTest = testGroup "diary syntax"
