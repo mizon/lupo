@@ -18,13 +18,17 @@ import qualified Lupo.Navigation as N
 navigationTest :: Test
 navigationTest = testGroup "page navigation"
     [ testCase "getNextDay" $ do
-        next <- withDBMock makeNextDaysMock $ do
+        next <- withDBMock mockedDB
+                { DB.afterSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 2 2]
+                } $ do
             nav <- N.initNavigation <$> ask <*> pure (Time.fromGregorian 2000 1 1)
             N.getNextDay nav
         next @?= Just (Time.fromGregorian 2000 2 2)
 
     , testCase "getPreviousDay" $ do
-        previous <- withDBMock makePreviousDaysMock $ do
+        previous <- withDBMock mockedDB
+                { DB.beforeSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 1999 12 1]
+                } $ do
             nav <- N.initNavigation <$> ask <*> pure (Time.fromGregorian 2000 1 1)
             N.getPreviousDay nav
         previous @?= Just (Time.fromGregorian 1999 12 1)
@@ -36,7 +40,6 @@ navigationTest = testGroup "page navigation"
 
     -- , testCase "getNextPageTop" $ do
 
-
     -- , testCase "getPreviousPageTop"
 
     -- , testCase "getNextMonth"
@@ -44,14 +47,6 @@ navigationTest = testGroup "page navigation"
     -- , testCase "getPreviousMonth"
     ]
   where
-    makeNextDaysMock = mockedDB
-        { DB.afterSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 2 2]
-        }
-
-    makePreviousDaysMock = mockedDB
-        { DB.beforeSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 1999 12 1]
-        }
-
     withDBMock :: DB.Database -> ReaderT DB.Database IO a -> IO a
     withDBMock mock = flip runReaderT mock
 
