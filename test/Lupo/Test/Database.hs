@@ -28,9 +28,6 @@ import Lupo.Exception
 instance MonadReader LDB.Database m => LDB.HasDatabase m where
     getDatabase = ask
 
-instance (MonadReader LDB.Database m, MonadCatchIO m, Applicative m, Functor m) =>
-    LDB.DatabaseContext m
-
 dbTest :: Test
 dbTest = testGroup "database control"
     [ dbTestCase "select" $ do

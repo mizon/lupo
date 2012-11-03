@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lupo.Test.Util
     ( utilTest
     ) where
@@ -40,6 +41,7 @@ utilTest :: Test
 utilTest = testGroup "utilities"
     [ testProperty "safeLast exist" $ \lst ->
         U.safeLast ([1, 2, lst] :: [Integer]) == Just lst
+
     , testCase "safeLast empty" $
         U.safeLast ([] :: [Integer]) @?= Nothing
 

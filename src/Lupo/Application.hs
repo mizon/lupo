@@ -3,13 +3,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lupo.Application
     ( Lupo(Lupo, entryDB)
     , LupoHandler
     , heist
     ) where
 
-import Control.Monad.CatchIO hiding (Handler)
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Heist as SH
@@ -33,8 +33,6 @@ instance SH.HasHeist Lupo where
 
 instance MonadState Lupo m => LDB.HasDatabase m where
     getDatabase = gets entryDB
-
-instance (MonadCatchIO m, Applicative m, Functor m) => LDB.DatabaseContext m
 
 instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
     getLupoConfig = gets lupoConfig

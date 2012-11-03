@@ -1,9 +1,11 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolymorphicComponents #-}
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Lupo.Database
     ( HasDatabase(..)
     , DatabaseContext
@@ -33,6 +35,8 @@ class HasDatabase m where
     getDatabase :: m Database
 
 class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
+
+instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 
 data Entry = Entry
     { title :: T.Text
