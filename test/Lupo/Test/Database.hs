@@ -6,9 +6,9 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lupo.Test.Database
-    ( dbTest
-    , savedTest
-    ) where
+  ( dbTest
+  , savedTest
+  ) where
 
 import Control.Applicative
 import qualified Control.Exception as E
@@ -28,91 +28,91 @@ import qualified Lupo.Database as LDB
 import Lupo.Exception
 
 instance MonadReader (LDB.Database m) m => LDB.HasDatabase m where
-    getDatabase = ask
+  getDatabase = ask
 
 newtype TestEnv a = TestEnv
-    { unTestEnv :: ReaderT (LDB.Database TestEnv) IO a
-    } deriving
-        ( Functor
-        , Applicative
-        , Monad
-        , MonadIO
-        , MonadCatchIO
-        , MonadReader (LDB.Database TestEnv)
-        )
+  { unTestEnv :: ReaderT (LDB.Database TestEnv) IO a
+  } deriving
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , MonadCatchIO
+    , MonadReader (LDB.Database TestEnv)
+    )
 
 dbTest :: Test
 dbTest = testGroup "database control"
-    [ dbTestCase "select" $ do
-        db <- LDB.getDatabase
-        e3 <- LDB.select db 3
-        assertEntry (LDB.Entry "title 8-16" "body 8-16") e3
+  [ dbTestCase "select" $ do
+      db <- LDB.getDatabase
+      e3 <- LDB.select db 3
+      assertEntry (LDB.Entry "title 8-16" "body 8-16") e3
 
-    , dbTestCase "insert" $ do
-        db <- LDB.getDatabase
-        LDB.insert db $ LDB.Entry "title newest" "body newest"
-        e <- LDB.select db 6
-        assertEntry (LDB.Entry "title newest" "body newest") e
+  , dbTestCase "insert" $ do
+      db <- LDB.getDatabase
+      LDB.insert db $ LDB.Entry "title newest" "body newest"
+      e <- LDB.select db 6
+      assertEntry (LDB.Entry "title newest" "body newest") e
 
-    , dbTestCase "select by day" $ do
-        db <- LDB.getDatabase
-        es <- LDB.selectDay db $ Ti.fromGregorian 2012 8 15
-        liftIO $ Prelude.length es @?= 2
-        assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
-        assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
+  , dbTestCase "select by day" $ do
+      db <- LDB.getDatabase
+      es <- LDB.selectDay db $ Ti.fromGregorian 2012 8 15
+      liftIO $ Prelude.length es @?= 2
+      assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
+      assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
 
-    , dbTestCase "delete" $ do
-        db <- LDB.getDatabase
-        e1 <- LDB.select db 1
-        assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") e1
-        LDB.delete db 1
-        assertRaise RecordNotFound $
-            void $ LDB.select db 1
+  , dbTestCase "delete" $ do
+      db <- LDB.getDatabase
+      e1 <- LDB.select db 1
+      assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") e1
+      LDB.delete db 1
+      assertRaise RecordNotFound $
+        void $ LDB.select db 1
 
-    , dbTestCase "update" $ do
-        db <- LDB.getDatabase
-        LDB.update db 1 $ LDB.Entry "foo" "foooo"
-        e <- LDB.select db 1
-        assertEntry (LDB.Entry "foo" "foooo") e
+  , dbTestCase "update" $ do
+      db <- LDB.getDatabase
+      LDB.update db 1 $ LDB.Entry "foo" "foooo"
+      e <- LDB.select db 1
+      assertEntry (LDB.Entry "foo" "foooo") e
 
-    , dbTestCase "all" $ do
-        db <- LDB.getDatabase
-        enum <- LDB.all db
-        es <- run_ $ enum $$ EL.consume
-        liftIO $ Prelude.length es @?= 5
-        assertEntry (LDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
-        assertEntry (LDB.Entry "title 8-16" "body 8-16") $ es !! 2
+  , dbTestCase "all" $ do
+      db <- LDB.getDatabase
+      enum <- LDB.all db
+      es <- run_ $ enum $$ EL.consume
+      liftIO $ Prelude.length es @?= 5
+      assertEntry (LDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
+      assertEntry (LDB.Entry "title 8-16" "body 8-16") $ es !! 2
 
-    , dbTestCase "search" $ do
-        db <- LDB.getDatabase
-        es <- run_ =<< ($$ EL.consume) <$> LDB.search db "body 8-20"
-        liftIO $ Prelude.length es @?= 2
-        assertEntry (LDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
+  , dbTestCase "search" $ do
+      db <- LDB.getDatabase
+      es <- run_ =<< ($$ EL.consume) <$> LDB.search db "body 8-20"
+      liftIO $ Prelude.length es @?= 2
+      assertEntry (LDB.Entry "title 8-20-2" "body 8-20-2") $ es !! 0
 
-    , dbTestCase "days before" $ do
-        db <- LDB.getDatabase
-        days <- run_ =<< ($$ EL.consume) <$> LDB.beforeSavedDays db (Ti.fromGregorian 2012 8 20)
-        liftIO $ do
-            Prelude.length days @?= 3
-            days !! 0 > days !! 2 @? "must desc"
+  , dbTestCase "days before" $ do
+      db <- LDB.getDatabase
+      days <- run_ =<< ($$ EL.consume) <$> LDB.beforeSavedDays db (Ti.fromGregorian 2012 8 20)
+      liftIO $ do
+        Prelude.length days @?= 3
+        days !! 0 > days !! 2 @? "must desc"
 
-    , dbTestCase "days after" $ do
-        db <- LDB.getDatabase
-        days <- run_ =<< ($$ EL.consume) <$> LDB.afterSavedDays db (Ti.fromGregorian 2012 8 15)
-        liftIO $ do
-            Prelude.length days @?= 3
-            days !! 0 < days !! 2 @? "must asc"
-    ]
+  , dbTestCase "days after" $ do
+      db <- LDB.getDatabase
+      days <- run_ =<< ($$ EL.consume) <$> LDB.afterSavedDays db (Ti.fromGregorian 2012 8 15)
+      liftIO $ do
+        Prelude.length days @?= 3
+        days !! 0 < days !! 2 @? "must asc"
+  ]
 
 savedTest :: Test
 savedTest = testGroup "saved object"
-    [ testCase "getCreatedDay" $ do
-        now <- Ti.getZonedTime
-        LDB.getCreatedDay (LDB.Saved 1 now now ()) @?= getDay now
-        LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) @?= getDay now
-        LDB.getCreatedDay (LDB.Saved 1 (toNextDay now) now ()) /= getDay now @?
-            "must not true when not equal createdAt"
-    ]
+  [ testCase "getCreatedDay" $ do
+      now <- Ti.getZonedTime
+      LDB.getCreatedDay (LDB.Saved 1 now now ()) @?= getDay now
+      LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) @?= getDay now
+      LDB.getCreatedDay (LDB.Saved 1 (toNextDay now) now ()) /= getDay now @?
+        "must not true when not equal createdAt"
+  ]
   where
     toNextDay d = d {Ti.zonedTimeToLocalTime = (Ti.zonedTimeToLocalTime d) {Ti.localDay = getNextDay}}
       where
@@ -127,22 +127,22 @@ assertEntry expected actual
 
 dbTestCase :: String -> TestEnv () -> Test
 dbTestCase msg (unTestEnv -> m) = testCase msg $
-    bracket initialize finalize $ \conn ->
-        runReaderT m $ LDB.makeDatabase conn
+  bracket initialize finalize $ \conn ->
+    runReaderT m $ LDB.makeDatabase conn
   where
     initialize = do
-        conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
-        DB.runRaw conn =<< readFile "./test/fixture.sql"
-        DB.commit conn
-        return conn
+      conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
+      DB.runRaw conn =<< readFile "./test/fixture.sql"
+      DB.commit conn
+      return conn
 
     finalize conn = do
-        void $ DB.run conn "DELETE FROM entries" []
-        DB.commit conn
-        DB.disconnect conn
+      void $ DB.run conn "DELETE FROM entries" []
+      DB.commit conn
+      DB.disconnect conn
 
 assertRaise :: (MonadCatchIO m, E.Exception e) => e -> m () -> m ()
 assertRaise ex m = (m >> liftIO (assertFailure "exception doesn't be raised")) `catch`
-    \(raised :: LupoException) -> do
-        unless (show ex == show raised) $
-            liftIO $ assertFailure "an exception raised but it isn't expected"
+  \(raised :: LupoException) -> do
+    unless (show ex == show raised) $
+      liftIO $ assertFailure "an exception raised but it isn't expected"

@@ -1,40 +1,40 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Lupo.Exception
-    ( LupoException
-    , RecordNotFound(..)
-    , InvalidLocaleFile(..)
-    ) where
+  ( LupoException
+  , RecordNotFound(..)
+  , InvalidLocaleFile(..)
+  ) where
 
 import Control.Exception
 import Data.Typeable
 
 data LupoException = forall e. Exception e => LupoException e
-    deriving Typeable
+  deriving Typeable
 
 instance Exception LupoException
 
 instance Show LupoException where
-    show (LupoException e) = show e
+  show (LupoException e) = show e
 
 data RecordNotFound = RecordNotFound
-    deriving (Typeable, Show)
+  deriving (Typeable, Show)
 
 instance Exception RecordNotFound where
-    toException = toLupoException
-    fromException = fromLupoException
+  toException = toLupoException
+  fromException = fromLupoException
 
 data InvalidLocaleFile = InvalidLocaleFile
-    deriving (Typeable, Show)
+  deriving (Typeable, Show)
 
 instance Exception InvalidLocaleFile where
-    toException = toLupoException
-    fromException = fromLupoException
+  toException = toLupoException
+  fromException = fromLupoException
 
 toLupoException :: Exception e => e -> SomeException
 toLupoException = toException . LupoException
 
 fromLupoException :: Exception e => SomeException -> Maybe e
 fromLupoException e = do
-    LupoException e1 <- fromException e
-    cast e1
+  LupoException e1 <- fromException e
+  cast e1

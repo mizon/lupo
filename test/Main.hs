@@ -7,9 +7,9 @@ import Lupo.Test.Util
 
 main :: IO ()
 main = defaultMain
-    [ dbTest
-    , savedTest
-    , navigationTest
-    , syntaxTest
-    , utilTest
-    ]
+  [ dbTest
+  , savedTest
+  , navigationTest
+  , syntaxTest
+  , utilTest
+  ]

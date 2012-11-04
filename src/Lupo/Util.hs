@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lupo.Util
-    ( paramId
-    , paramNum
-    , param
-    , textSplice
-    , zonedDay
-    , toText
-    , safeLast
-    , formatTime
-    ) where
+  ( paramId
+  , paramNum
+  , param
+  , textSplice
+  , zonedDay
+  , toText
+  , safeLast
+  , formatTime
+  ) where
 
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
