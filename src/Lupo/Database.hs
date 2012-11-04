@@ -142,7 +142,6 @@ makeDatabase conn = Database
         pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
     }
   where
-    dbAll :: DatabaseContext m => m (Enumerator (Saved Entry) m a)
     dbAll = do
         rows <- liftIO $ do
             stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"

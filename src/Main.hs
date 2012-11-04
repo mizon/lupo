@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Main (main) where
 
@@ -36,7 +37,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
     h <- nestSnaplet "heist" heist $ H.heistInit "templates"
-    db <- liftIO $ EDB.makeDatabase . DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
+    conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
     l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
     addRoutes
         [ ("", Index.topPageHandler)
@@ -49,4 +50,4 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
         , ("search", Index.searchHandler)
         , (":query", Index.parseQuery =<< param "query")
         ]
-    return $ Lupo h db lc l
+    pure $ Lupo h (EDB.makeDatabase conn) lc l

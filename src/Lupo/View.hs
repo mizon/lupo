@@ -123,8 +123,8 @@ singleDayNavigation nav = do
         [TextNode body]
 
 multiDaysNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) =>
-    N.Navigation m -> Integer -> m H.Template
-multiDaysNavigation nav nDays = do
+    Integer -> N.Navigation m -> m H.Template
+multiDaysNavigation nDays nav = do
     previous <- N.getPreviousPageTop nav nDays
     next <- N.getNextPageTop nav nDays
     previousLabel <- LL.localize "Previous %d Days"

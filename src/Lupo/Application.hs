@@ -1,6 +1,7 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -20,7 +21,7 @@ import qualified Lupo.Locale as L
 
 data Lupo = Lupo
     { _heist :: Snaplet (SH.Heist Lupo)
-    , entryDB :: LDB.Database
+    , entryDB :: LDB.DatabaseContext m => LDB.Database m
     , lupoConfig :: LupoConfig
     , localizer :: L.Localizer
     }
@@ -31,7 +32,7 @@ type LupoHandler = Handler Lupo Lupo
 instance SH.HasHeist Lupo where
     heistLens = subSnaplet heist
 
-instance MonadState Lupo m => LDB.HasDatabase m where
+instance (LDB.DatabaseContext m, MonadState Lupo m) => LDB.HasDatabase m where
     getDatabase = gets entryDB
 
 instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where

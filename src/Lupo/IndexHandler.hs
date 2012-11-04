@@ -56,7 +56,7 @@ parseQuery = parseQuery' $
             nav <- makeNavigation day
             SH.renderWithSplices "public"
                 [ ("main-body", pure [V.dayView $ V.DayView day es])
-                , ("page-navigation", V.singleDayNavigation nav)
+                , ("page-navigation", V.singleDayNavigation =<< nav)
                 ]
 
     monthResponse = do
@@ -68,7 +68,7 @@ parseQuery = parseQuery' $
             nav <- makeNavigation reqMonth
             withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public"
                 [ ("main-body", mkBody days_)
-                , ("page-navigation", V.monthNavigation nav)
+                , ("page-navigation", V.monthNavigation =<< nav)
                 ]
       where
         mkBody [] = V.emptyMonth
@@ -105,7 +105,7 @@ multiDays from nDays = do
     nav <- makeNavigation from
     withBasicViewParams "" $ SH.renderWithSplices "public"
         [ ("main-body", pure $ V.dayView <$> dayViews)
-        , ("page-navigation", V.multiDaysNavigation nav nDays)
+        , ("page-navigation", V.multiDaysNavigation nDays =<< nav)
         ]
   where
     makeDayView d = do
@@ -127,5 +127,8 @@ withBasicViewParams title h = do
         "" -> siteTitle
         t -> siteTitle <> " | " <> t
 
-makeNavigation :: (LDB.HasDatabase m, LDB.DatabaseContext m, LDB.DatabaseContext n) => Time.Day -> m (N.Navigation n)
-makeNavigation current = N.initNavigation <$> LDB.getDatabase <*> pure current
+makeNavigation ::
+    ( Applicative m
+    , Functor n, Applicative n, Monad n, LDB.HasDatabase n
+    ) => Time.Day -> m (n (N.Navigation n))
+makeNavigation current = pure $ N.initNavigation <$> LDB.getDatabase <*> pure current
