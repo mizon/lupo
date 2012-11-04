@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolymorphicComponents #-}
 {-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -32,7 +32,7 @@ import Lupo.Exception
 import Lupo.Util
 
 class HasDatabase m where
-    getDatabase :: m Database
+    getDatabase :: m (Database m)
 
 class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 
@@ -50,22 +50,22 @@ data Saved o = Saved
     , refObject :: o
     } deriving Show
 
-data Database = Database
-    { select :: DatabaseContext m => Integer -> m (Saved Entry)
-    , selectDay :: DatabaseContext m => Time.Day -> m [Saved Entry]
-    , all :: DatabaseContext m => m (Enumerator (Saved Entry) m a)
-    , search :: DatabaseContext m => T.Text -> m (Enumerator (Saved Entry) m a)
-    , insert :: DatabaseContext m => Entry -> m ()
-    , update :: DatabaseContext m => Integer -> Entry -> m ()
-    , delete :: DatabaseContext m => Integer -> m ()
-    , beforeSavedDays :: DatabaseContext m => Time.Day -> m (Enumerator Time.Day m a)
-    , afterSavedDays :: DatabaseContext m => Time.Day -> m (Enumerator Time.Day m a)
+data Database m = Database
+    { select :: Integer -> m (Saved Entry)
+    , selectDay :: Time.Day -> m [Saved Entry]
+    , all :: forall a. m (Enumerator (Saved Entry) m a)
+    , search :: forall a. T.Text -> m (Enumerator (Saved Entry) m a)
+    , insert :: Entry -> m ()
+    , update :: Integer -> Entry -> m ()
+    , delete :: Integer -> m ()
+    , beforeSavedDays :: forall a. Time.Day -> m (Enumerator Time.Day m a)
+    , afterSavedDays :: forall a. Time.Day -> m (Enumerator Time.Day m a)
     }
 
 getCreatedDay :: Saved a -> Time.Day
 getCreatedDay = zonedDay . createdAt
 
-makeDatabase :: DB.IConnection conn => conn -> Database
+makeDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> Database m
 makeDatabase conn = Database
     { select = \i -> do
         row <- liftIO $ do

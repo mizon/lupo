@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lupo.Test.Database
     ( dbTest
@@ -25,8 +27,19 @@ import Prelude hiding (catch)
 import qualified Lupo.Database as LDB
 import Lupo.Exception
 
-instance MonadReader LDB.Database m => LDB.HasDatabase m where
+instance MonadReader (LDB.Database m) m => LDB.HasDatabase m where
     getDatabase = ask
+
+newtype TestEnv a = TestEnv
+    { unTestEnv :: ReaderT (LDB.Database TestEnv) IO a
+    } deriving
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadIO
+        , MonadCatchIO
+        , MonadReader (LDB.Database TestEnv)
+        )
 
 dbTest :: Test
 dbTest = testGroup "database control"
@@ -112,8 +125,8 @@ assertEntry expected actual
     | expected == LDB.refObject actual = return ()
     | otherwise = liftIO $ assertFailure "invlaid entry"
 
-dbTestCase :: String -> ReaderT LDB.Database IO () -> Test
-dbTestCase msg m = testCase msg $
+dbTestCase :: String -> TestEnv () -> Test
+dbTestCase msg (unTestEnv -> m) = testCase msg $
     bracket initialize finalize $ \conn ->
         runReaderT m $ LDB.makeDatabase conn
   where

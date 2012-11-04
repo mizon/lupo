@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.Test.Navigation
@@ -5,6 +6,7 @@ module Lupo.Test.Navigation
     ) where
 
 import Control.Applicative
+import Control.Monad.CatchIO
 import Control.Monad.Reader
 import qualified Data.Enumerator as E
 import qualified Data.Time as Time
@@ -14,6 +16,17 @@ import Test.HUnit hiding (Test)
 
 import qualified Lupo.Database as DB
 import qualified Lupo.Navigation as N
+
+newtype TestEnv a = TestEnv
+    { unTestEnv :: ReaderT (DB.Database TestEnv) IO a
+    } deriving
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadIO
+        , MonadCatchIO
+        , MonadReader (DB.Database TestEnv)
+        )
 
 navigationTest :: Test
 navigationTest = testGroup "page navigation"
@@ -38,19 +51,39 @@ navigationTest = testGroup "page navigation"
                 N.initNavigation mockedDB $ Time.fromGregorian 2000 1 1 :: N.Navigation IO
         month @?= Time.fromGregorian 2000 1 1
 
-    -- , testCase "getNextPageTop" $ do
+   , testCase "getNextPageTop" $ do
+        next <- withDBMock mockedDB
+                { DB.afterSavedDays = const $ pure $ E.enumList 1
+                    [ Time.fromGregorian 2000 1 1
+                    , Time.fromGregorian 2000 1 2
+                    , Time.fromGregorian 2000 1 3
+                    ]
+                } $ do
+            nav <- N.initNavigation <$> ask <*> pure (Time.fromGregorian 2000 1 1)
+            N.getNextPageTop nav 3
+        next @?= Just (Time.fromGregorian 2000 1 3)
 
-    -- , testCase "getPreviousPageTop"
+    , testCase "getPreviousPageTop" $ do
+        previous <- withDBMock mockedDB
+                { DB.beforeSavedDays = const $ pure $ E.enumList 1
+                    [ Time.fromGregorian 2000 12 31
+                    , Time.fromGregorian 2000 12 30
+                    , Time.fromGregorian 2000 12 29
+                    ]
+                } $ do
+            nav <- N.initNavigation <$> ask <*> pure (Time.fromGregorian 2000 1 1)
+            N.getPreviousPageTop nav 3
+        previous @?= Just (Time.fromGregorian 2000 12 29)
 
     -- , testCase "getNextMonth"
 
     -- , testCase "getPreviousMonth"
     ]
   where
-    withDBMock :: DB.Database -> ReaderT DB.Database IO a -> IO a
-    withDBMock mock = flip runReaderT mock
+    withDBMock :: DB.Database TestEnv -> TestEnv a -> IO a
+    withDBMock mock (unTestEnv -> m) = runReaderT m mock
 
-mockedDB :: DB.Database
+mockedDB :: (Functor m, Applicative m, Monad m) => DB.Database m
 mockedDB = DB.Database
     { DB.select = undefined
     , DB.selectDay = undefined

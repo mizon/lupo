@@ -22,8 +22,8 @@ data Navigation m = Navigation
     , getPreviousMonth :: m Time.Day
     }
 
-initNavigation :: LDB.DatabaseContext m =>
-    LDB.Database -> Time.Day -> Navigation m
+initNavigation :: (Functor m, Applicative m, Monad m) =>
+    LDB.DatabaseContext m =>LDB.Database m -> Time.Day -> Navigation m
 initNavigation db base = Navigation
     { getNextDay = run_ =<< (EL.head >>==) <$> daysAfterTommorow
     , getPreviousDay = run_ =<< (EL.head >>==) <$> daysBeforeYesterday
