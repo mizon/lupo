@@ -1,9 +1,7 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.Database
@@ -31,12 +29,11 @@ import Prelude hiding (all)
 import Lupo.Exception
 import Lupo.Util
 
-class HasDatabase m where
-  getDatabase :: m (Database m)
-
 class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
-
 instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
+
+class HasDatabase m where
+  getDatabase :: DatabaseContext n => m (Database n)
 
 data Entry = Entry
   { title :: T.Text
