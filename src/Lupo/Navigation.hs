@@ -1,7 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.Navigation
   ( Navigation(..)
-  , initNavigation
+  , makeNavigation
   ) where
 
 import Control.Applicative
@@ -22,9 +22,9 @@ data Navigation m = Navigation
   , getPreviousMonth :: m Time.Day
   }
 
-initNavigation :: (Functor m, Applicative m, Monad m) =>
+makeNavigation :: (Functor m, Applicative m, Monad m) =>
     LDB.Database m -> Time.Day -> Navigation m
-initNavigation db base = Navigation
+makeNavigation db base = Navigation
   { getNextDay = run_ =<< (EL.head >>==) <$> daysAfterTommorow
   , getPreviousDay = run_ =<< (EL.head >>==) <$> daysBeforeYesterday
 

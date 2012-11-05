@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Lupo.IndexHandler
   ( topPageHandler
   , parseQuery
@@ -131,4 +131,4 @@ makeNavigation ::
   ( Applicative m
   , Functor n, Applicative n, Monad n, LDB.HasDatabase n
   ) => Time.Day -> m (n (N.Navigation n))
-makeNavigation current = pure $ N.initNavigation <$> LDB.getDatabase <*> pure current
+makeNavigation current = pure $ N.makeNavigation <$> LDB.getDatabase <*> pure current
