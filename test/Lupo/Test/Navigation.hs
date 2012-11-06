@@ -95,12 +95,12 @@ navigationTest = testGroup "page navigation"
       arg @?= [Time.fromGregorian 1999 12 31]
 
   , testCase "getNextMonth" $ do
-      let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15 :: N.Navigation IO
+      let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15
       month <- N.getNextMonth nav
       month @?= Time.fromGregorian 2000 2 1
 
   , testCase "getPreviousMonth" $ do
-      let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15 :: N.Navigation IO
+      let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15
       month <- N.getPreviousMonth nav
       month @?= Time.fromGregorian 1999 12 1
   ]
