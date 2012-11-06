@@ -16,7 +16,7 @@ import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Data.Enumerator
 import qualified Data.Enumerator.List as EL
-import qualified Data.Time as Ti
+import qualified Data.Time as Time
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import Test.Framework
@@ -42,7 +42,7 @@ dbTest = testGroup "database control"
 
   , testCase "select by day" $
       withDB $ \db -> do
-        es <- LDB.selectDay db $ Ti.fromGregorian 2012 8 15
+        es <- LDB.selectDay db $ Time.fromGregorian 2012 8 15
         Prelude.length es @?= 2
         assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
         assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
@@ -77,13 +77,15 @@ dbTest = testGroup "database control"
 
   , testCase "days before" $
       withDB $ \db -> do
-        days <- run_ =<< ($$ EL.consume) <$> LDB.beforeSavedDays db (Ti.fromGregorian 2012 8 20)
+        days <- run_ =<< ($$ EL.consume) <$>
+          LDB.beforeSavedDays db (Time.fromGregorian 2012 8 20)
         Prelude.length days @?= 3
         days !! 0 > days !! 2 @? "must desc"
 
   , testCase "days after" $
       withDB $ \db -> do
-        days <- run_ =<< ($$ EL.consume) <$> LDB.afterSavedDays db (Ti.fromGregorian 2012 8 15)
+        days <- run_ =<< ($$ EL.consume) <$>
+          LDB.afterSavedDays db (Time.fromGregorian 2012 8 15)
         Prelude.length days @?= 3
         days !! 0 < days !! 2 @? "must asc"
   ]
@@ -91,7 +93,7 @@ dbTest = testGroup "database control"
 savedTest :: Test
 savedTest = testGroup "saved object"
   [ testCase "getCreatedDay" $ do
-      now <- Ti.getZonedTime
+      now <- Time.getZonedTime
       LDB.getCreatedDay (LDB.Saved 1 now now ()) @?= getDay now
       LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) @?= getDay now
       LDB.getCreatedDay (LDB.Saved 1 (toNextDay now) now ()) /= getDay now @?
@@ -99,17 +101,19 @@ savedTest = testGroup "saved object"
   ]
   where
     toNextDay d = d
-      { Ti.zonedTimeToLocalTime = (Ti.zonedTimeToLocalTime d) {Ti.localDay = getNextDay}
+      { Time.zonedTimeToLocalTime = (Time.zonedTimeToLocalTime d)
+        { Time.localDay = getNextDay
+        }
       }
       where
-        getNextDay = Ti.addDays 1 $ getDay d
+        getNextDay = Time.addDays 1 $ getDay d
 
-    getDay = Ti.localDay . Ti.zonedTimeToLocalTime
+    getDay = Time.localDay . Time.zonedTimeToLocalTime
 
-assertEntry :: MonadIO m => LDB.Entry -> LDB.Saved LDB.Entry -> m ()
+assertEntry :: LDB.Entry -> LDB.Saved LDB.Entry -> Assertion
 assertEntry expected actual
-  | expected == LDB.refObject actual = return ()
-  | otherwise = liftIO $ assertFailure "invlaid entry"
+  | expected == LDB.refObject actual = pure ()
+  | otherwise = assertFailure "invlaid entry"
 
 withDB :: (LDB.Database IO -> Assertion) -> Assertion
 withDB testBody = bracket initialize finalize $ \conn ->
@@ -119,7 +123,7 @@ withDB testBody = bracket initialize finalize $ \conn ->
       conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
       DB.runRaw conn =<< readFile "./test/fixture.sql"
       DB.commit conn
-      return conn
+      pure conn
 
     finalize conn = do
       void $ DB.run conn "DELETE FROM entries" []
@@ -127,7 +131,8 @@ withDB testBody = bracket initialize finalize $ \conn ->
       DB.disconnect conn
 
 assertRaise :: (MonadCatchIO m, E.Exception e) => e -> m () -> m ()
-assertRaise ex m = (m >> liftIO (assertFailure "exception doesn't be raised")) `catch`
-  \(raised :: LupoException) -> do
-    unless (show ex == show raised) $
-      liftIO $ assertFailure "an exception raised but it isn't expected"
+assertRaise ex m = (m >> liftIO (assertFailure "exception doesn't be raised"))
+  `catch`
+    \(raised :: LupoException) -> do
+      unless (show ex == show raised) $
+        liftIO $ assertFailure "an exception raised but it isn't expected"
