@@ -5,8 +5,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Application
-  ( Lupo(Lupo, entryDB)
+module Lupo.Application (
+    Lupo(Lupo, entryDB)
   , LupoHandler
   , heist
   ) where
@@ -19,8 +19,8 @@ import Lupo.Config
 import qualified Lupo.Database as LDB
 import qualified Lupo.Locale as L
 
-data Lupo = Lupo
-  { _heist :: Snaplet (SH.Heist Lupo)
+data Lupo = Lupo {
+    _heist :: Snaplet (SH.Heist Lupo)
   , entryDB :: LDB.DatabaseContext m => LDB.Database m
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer

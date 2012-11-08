@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.AdminHandler
-  ( admin
+module Lupo.AdminHandler (
+    admin
   , newEntry
   , editEntry
   , deleteEntry
@@ -25,8 +25,8 @@ admin :: LupoHandler ()
 admin = do
   db <- LDB.getDatabase
   entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
-  H.renderWithSplices "admin"
-    [ ("entries-list", pure $ V.entryInfo <$> entries)
+  H.renderWithSplices "admin" [
+      ("entries-list", pure $ V.entryInfo <$> entries)
     , ("style-sheet", textSplice "admin")
     ]
 
@@ -81,8 +81,8 @@ deleteEntry = do
 showPreview :: T.Text -> LDB.Entry -> LupoHandler ()
 showPreview prevTitle e@LDB.Entry {..} = do
   (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-  H.renderWithSplices "preview-entry"
-    [ ("style-sheet", textSplice "admin")
+  H.renderWithSplices "preview-entry" [
+      ("style-sheet", textSplice "admin")
     , ("preview-title", textSplice prevTitle)
     , ("submit-path", textSplice submitPath)
     , ("entry-title", textSplice title)
@@ -93,8 +93,8 @@ showPreview prevTitle e@LDB.Entry {..} = do
 showEditor :: T.Text -> Maybe LDB.Entry -> LupoHandler ()
 showEditor title entry = do
   (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-  H.renderWithSplices "edit-entry"
-    [ ("style-sheet", textSplice "admin")
+  H.renderWithSplices "edit-entry" [
+      ("style-sheet", textSplice "admin")
     , ("edit-title", textSplice title)
     , ("submit-path", textSplice submitPath)
     , ("default-title", textSplice $ maybe "" LDB.title entry)

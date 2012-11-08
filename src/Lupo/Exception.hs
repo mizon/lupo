@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ExistentialQuantification #-}
-module Lupo.Exception
-  ( LupoException
+module Lupo.Exception (
+    LupoException
   , RecordNotFound(..)
   , InvalidLocaleFile(..)
   ) where

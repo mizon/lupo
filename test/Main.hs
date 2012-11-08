@@ -1,5 +1,5 @@
-module Main
-  ( main
+module Main (
+    main
   , fast
   ) where
 
@@ -17,8 +17,8 @@ main = defaultMain $ slowTests <> fastTests
 fast = defaultMain fastTests
 
 fastTests, slowTests :: [Test]
-fastTests =
-  [ D.savedTest
+fastTests = [
+    D.savedTest
   , navigationTest
   , syntaxTest
   , utilTest

@@ -5,8 +5,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Test.Database
-  ( dbTest
+module Lupo.Test.Database (
+    dbTest
   , savedTest
   ) where
 
@@ -28,8 +28,8 @@ import qualified Lupo.Database as LDB
 import Lupo.Exception
 
 dbTest :: Test
-dbTest = testGroup "database control"
-  [ testCase "select" $
+dbTest = testGroup "database control" [
+    testCase "select" $
       withDB $ \db -> do
         e3 <- LDB.select db 3
         assertEntry (LDB.Entry "title 8-16" "body 8-16") e3
@@ -91,8 +91,8 @@ dbTest = testGroup "database control"
   ]
 
 savedTest :: Test
-savedTest = testGroup "saved object"
-  [ testCase "getCreatedDay" $ do
+savedTest = testGroup "saved object" [
+    testCase "getCreatedDay" $ do
       now <- Time.getZonedTime
       LDB.getCreatedDay (LDB.Saved 1 now now ()) @?= getDay now
       LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) @?= getDay now
@@ -100,9 +100,9 @@ savedTest = testGroup "saved object"
         "must not true when not equal createdAt"
   ]
   where
-    toNextDay d = d
-      { Time.zonedTimeToLocalTime = (Time.zonedTimeToLocalTime d)
-        { Time.localDay = getNextDay
+    toNextDay d = d {
+        Time.zonedTimeToLocalTime = (Time.zonedTimeToLocalTime d) {
+          Time.localDay = getNextDay
         }
       }
       where

@@ -1,5 +1,5 @@
-module Lupo.Locale
-  ( Localizer
+module Lupo.Locale (
+    Localizer
   , HasLocalizer(..)
   , localize
   , loadYamlLocalizer

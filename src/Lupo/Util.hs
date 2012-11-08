@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lupo.Util
-  ( paramId
+module Lupo.Util (
+    paramId
   , paramNum
   , param
   , textSplice

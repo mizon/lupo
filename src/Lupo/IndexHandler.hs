@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.IndexHandler
-  ( topPageHandler
+module Lupo.IndexHandler (
+    topPageHandler
   , parseQuery
   , searchHandler
   ) where
@@ -29,10 +29,8 @@ import qualified Lupo.View as V
 
 topPageHandler :: LupoHandler ()
 topPageHandler = do
-  (getDay -> today) <- liftIO $ Time.getZonedTime
+  (zonedDay -> today) <- liftIO $ Time.getZonedTime
   multiDays today =<< refLupoConfig lcDaysPerPage
-  where
-    getDay = Time.localDay . Time.zonedTimeToLocalTime
 
 parseQuery :: T.Text -> LupoHandler ()
 parseQuery = parseQuery' $
@@ -54,8 +52,8 @@ parseQuery = parseQuery' $
         db <- LDB.getDatabase
         es <- LDB.selectDay db day
         nav <- makeNavigation day
-        SH.renderWithSplices "public"
-          [ ("main-body", pure [V.dayView $ V.DayView day es])
+        SH.renderWithSplices "public" [
+            ("main-body", pure [V.dayView $ V.DayView day es])
           , ("page-navigation", V.singleDayNavigation nav)
           ]
 
@@ -66,8 +64,8 @@ parseQuery = parseQuery' $
         days_ <- run_ =<< ((toDayViews db =$ takeMonthViews reqMonth) >>==)
           <$> LDB.afterSavedDays db reqMonth
         nav <- makeNavigation reqMonth
-        withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public"
-          [ ("main-body", mkBody days_)
+        withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public" [
+            ("main-body", mkBody days_)
           , ("page-navigation", V.monthNavigation nav)
           ]
       where
@@ -93,8 +91,8 @@ searchHandler = do
   db <- LDB.getDatabase
   word <- param "word"
   es <- run_ =<< (EL.consume >>==) <$> LDB.search db word
-  withBasicViewParams word $ SH.renderWithSplices "search-result"
-    [ ("main-body", pure $ V.searchResult es)
+  withBasicViewParams word $ SH.renderWithSplices "search-result" [
+      ("main-body", pure $ V.searchResult es)
     ]
 
 multiDays :: Time.Day -> Integer -> LupoHandler ()
@@ -103,8 +101,8 @@ multiDays from nDays = do
   days_ <- run_ =<< (EL.take nDays >>==) <$> LDB.beforeSavedDays db from
   dayViews <- Prelude.mapM makeDayView days_
   nav <- makeNavigation from
-  withBasicViewParams "" $ SH.renderWithSplices "public"
-    [ ("main-body", pure $ V.dayView <$> dayViews)
+  withBasicViewParams "" $ SH.renderWithSplices "public" [
+      ("main-body", pure $ V.dayView <$> dayViews)
     , ("page-navigation", V.multiDaysNavigation nDays nav)
     ]
   where
@@ -116,8 +114,8 @@ withBasicViewParams :: T.Text -> LupoHandler () -> LupoHandler ()
 withBasicViewParams title h = do
   siteTitle <- refLupoConfig lcSiteTitle
   footer <- refLupoConfig lcFooterBody
-  SH.withSplices
-    [ ("page-title", textSplice $ makePageTitle siteTitle)
+  SH.withSplices [
+      ("page-title", textSplice $ makePageTitle siteTitle)
     , ("header-title", textSplice siteTitle)
     , ("style-sheet", textSplice "diary")
     , ("footer-body", pure footer)

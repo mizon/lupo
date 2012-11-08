@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Test.Util
-  ( utilTest
+module Lupo.Test.Util (
+    utilTest
   ) where
 
 import Control.Applicative
@@ -38,8 +38,8 @@ instance Arbitrary Time.Day where
     pure $ Time.fromGregorian y m d
 
 utilTest :: Test
-utilTest = testGroup "utilities"
-  [ testProperty "safeLast exist" $ \lst ->
+utilTest = testGroup "utilities" [
+    testProperty "safeLast exist" $ \lst ->
       U.safeLast ([1, 2, lst] :: [Integer]) == Just lst
 
   , testCase "safeLast empty" $

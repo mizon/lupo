@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lupo.Test.Syntax
-  ( syntaxTest
+module Lupo.Test.Syntax (
+    syntaxTest
   ) where
 
 import Test.HUnit hiding (Test)
@@ -11,8 +11,8 @@ import Text.XmlHtml
 import qualified Lupo.Syntax as S
 
 syntaxTest :: Test
-syntaxTest = testGroup "diary syntax"
-  [ testCase "paragraph" $ S.renderBody "foo" @?= [Element "p" [] [TextNode "foo"]]
+syntaxTest = testGroup "diary syntax" [
+    testCase "paragraph" $ S.renderBody "foo" @?= [Element "p" [] [TextNode "foo"]]
   , testCase "blockquote" $ S.renderBody "> foo" @?= [Element "blockquote" [] [TextNode "foo"]]
 
   , testCase "unordered list" $

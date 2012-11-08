@@ -2,8 +2,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Test.Navigation
-  ( navigationTest
+module Lupo.Test.Navigation (
+    navigationTest
   ) where
 
 import Control.Applicative
@@ -20,8 +20,8 @@ import qualified Lupo.Navigation as N
 
 instance (Functor m, Applicative m, Monad m) =>
     Default (DB.Database m) where
-  def = DB.Database
-    { DB.select = undefined
+  def = DB.Database {
+      DB.select = undefined
     , DB.selectDay = undefined
     , DB.all = undefined
     , DB.search = undefined
@@ -33,10 +33,10 @@ instance (Functor m, Applicative m, Monad m) =>
     }
 
 navigationTest :: Test
-navigationTest = testGroup "page navigation"
-  [ testCase "getNextDay" $ do
-      let db = def
-            { DB.afterSavedDays = \day -> do
+navigationTest = testGroup "page navigation" [
+    testCase "getNextDay" $ do
+      let db = def {
+              DB.afterSavedDays = \day -> do
                 tell [day]
                 pure $ E.enumList 1 [Time.fromGregorian 2000 1 2]
             }
@@ -47,8 +47,8 @@ navigationTest = testGroup "page navigation"
       arg @?= [Time.fromGregorian 2000 1 2]
 
   , testCase "getPreviousDay" $ do
-      let db = def
-            { DB.beforeSavedDays = \day -> do
+      let db = def {
+              DB.beforeSavedDays = \day -> do
                 tell [day]
                 pure $ E.enumList 1 [Time.fromGregorian 1999 12 31]
             }
@@ -63,11 +63,11 @@ navigationTest = testGroup "page navigation"
       N.getThisMonth nav @?= Time.fromGregorian 2000 1 1
 
   , testCase "getNextPageTop" $ do
-      let db = def
-            { DB.afterSavedDays = \day -> do
+      let db = def {
+              DB.afterSavedDays = \day -> do
                 tell [day]
-                pure $ E.enumList 1
-                  [ Time.fromGregorian 2000 1 1
+                pure $ E.enumList 1 [
+                    Time.fromGregorian 2000 1 1
                   , Time.fromGregorian 2000 1 2
                   , Time.fromGregorian 2000 1 3
                   ]
@@ -79,11 +79,11 @@ navigationTest = testGroup "page navigation"
       arg @?= [Time.fromGregorian 2000 1 2]
 
   , testCase "getPreviousPageTop" $ do
-      let db = def
-            { DB.beforeSavedDays = \day -> do
+      let db = def {
+              DB.beforeSavedDays = \day -> do
                 tell [day]
-                pure $ E.enumList 1
-                  [ Time.fromGregorian 1999 12 31
+                pure $ E.enumList 1 [
+                    Time.fromGregorian 1999 12 31
                   , Time.fromGregorian 1999 12 30
                   , Time.fromGregorian 1999 12 29
                   ]

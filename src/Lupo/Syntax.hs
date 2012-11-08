@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Lupo.Syntax
-  ( renderBody
+module Lupo.Syntax (
+    renderBody
   ) where
 
 import Control.Applicative
