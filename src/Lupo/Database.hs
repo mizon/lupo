@@ -94,14 +94,14 @@ makeDatabase conn = Database {
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
         void $ DB.execute stmt [DB.toSql i]
         DB.fetchRow stmt
-      maybe (throw RecordNotFound) (pure . fromSql) row
+      maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
   , selectDay = \(DB.toSql -> day) -> do
       rows <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
         void $ DB.execute stmt [day]
         DB.fetchAllRows stmt
-      pure $ fromSql <$> rows
+      pure $ sqlToEntry <$> rows
 
   , all = dbAll
 
@@ -113,7 +113,7 @@ makeDatabase conn = Database {
           <> "ORDER BY id DESC"
         void $ DB.execute stmt [word, word]
         DB.fetchAllRows stmt
-      pure $ enumList 1 rows $= EL.map fromSql
+      pure $ enumList 1 rows $= EL.map sqlToEntry
 
   , insert = \Entry {..} -> do
       liftIO $ do
@@ -169,9 +169,9 @@ makeDatabase conn = Database {
         stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
         void $ DB.execute stmt []
         DB.fetchAllRows stmt
-      pure $ enumList 1 rows $= EL.map fromSql
+      pure $ enumList 1 rows $= EL.map sqlToEntry
 
-    fromSql [
+    sqlToEntry [
         DB.fromSql -> id_
       , DB.fromSql -> c_at
       , DB.fromSql -> m_at
@@ -184,4 +184,4 @@ makeDatabase conn = Database {
       , modifiedAt = m_at
       , refObject = Entry {title = t, body = b}
       }
-    fromSql _ = undefined
+    sqlToEntry _ = undefined
