@@ -8,6 +8,7 @@ module Lupo.View (
   , entryBody
   , entryInfo
   , dayView
+  , dayView'
   , emptyMonth
   , searchResult
   , monthNavigation
@@ -59,6 +60,25 @@ dayView DayView {..} =
       Element "h2" [] [
         Element "a" [("href", dayLinkFormat entriesDay)] [
           TextNode $ dayFormat entriesDay
+        ]
+      ]
+      where
+        dayFormat = formatTime "%Y-%m-%d"
+        dayLinkFormat = formatTime "/%Y%m%d"
+
+    anEntry LDB.Saved {..} =
+         Element "h3" [] [TextNode $ LDB.title refObject]
+       : S.renderBody (LDB.body refObject)
+      <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
+
+dayView' :: LDB.Day -> Node
+dayView' LDB.Day {..} =
+  Element "div" [("class", "day")] $ dayTitle : (anEntry =<< dayEntries)
+  where
+    dayTitle =
+      Element "h2" [] [
+        Element "a" [("href", dayLinkFormat day)] [
+          TextNode $ dayFormat day
         ]
       ]
       where
