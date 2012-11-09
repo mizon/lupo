@@ -23,6 +23,7 @@ instance (Functor m, Applicative m, Monad m) =>
   def = DB.Database {
       DB.select = undefined
     , DB.selectDay = undefined
+    , DB.selectDay' = undefined
     , DB.all = undefined
     , DB.search = undefined
     , DB.insert = undefined
@@ -30,6 +31,7 @@ instance (Functor m, Applicative m, Monad m) =>
     , DB.delete = undefined
     , DB.beforeSavedDays = undefined
     , DB.afterSavedDays = undefined
+    , DB.insertComment = undefined
     }
 
 navigationTest :: Test
