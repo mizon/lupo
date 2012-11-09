@@ -5,13 +5,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.Database (
-    HasDatabase(..)
-  , DatabaseContext
+    DatabaseContext
+  , HasDatabase(..)
+  , Day(..)
+  , Saved(..)
   , Entry(..)
   , Comment(..)
-  , Saved(..)
-  , getCreatedDay
   , Database(..)
+  , getCreatedDay
   , makeDatabase
   ) where
 
@@ -68,6 +69,7 @@ data Comment = Comment {
 data Database m = Database {
     select :: Integer -> m (Saved Entry)
   , selectDay :: Time.Day -> m [Saved Entry]
+  , selectDay' :: Time.Day -> m Day
   , all :: forall a. m (Enumerator (Saved Entry) m a)
   , search :: forall a. T.Text -> m (Enumerator (Saved Entry) m a)
   , insert :: Entry -> m ()
@@ -80,14 +82,6 @@ data Database m = Database {
 
 getCreatedDay :: Saved a -> Time.Day
 getCreatedDay = zonedDay . createdAt
-
-makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
-makeDay d es cs = Day {
-    day = d
-  , dayEntries = es
-  , dayComments = cs
-  , numOfComments = Prelude.length cs
-  }
 
 makeDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> Database m
 makeDatabase conn = Database {
@@ -104,6 +98,17 @@ makeDatabase conn = Database {
         void $ DB.execute stmt [day]
         DB.fetchAllRows stmt
       pure $ sqlToEntry <$> rows
+
+  , selectDay' = \d@(DB.toSql -> sqlDay) -> do
+      entries <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
+        void $ DB.execute stmt [sqlDay]
+        (sqlToEntry <$>) <$> DB.fetchAllRows stmt
+      comments <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM comments WHERE day = ? ORDER BY created_at ASC"
+        void $ DB.execute stmt [sqlDay]
+        (sqlToComment <$>) <$> DB.fetchAllRows stmt
+      pure $ makeDay d entries comments
 
   , all = dbAll
 
@@ -197,6 +202,29 @@ makeDatabase conn = Database {
         idx = id_
       , createdAt = c_at
       , modifiedAt = m_at
-      , refObject = Entry {title = t, body = b}
+      , refObject = Entry t b
       }
-    sqlToEntry _ = undefined
+    sqlToEntry _ = error "in sql->entry conversion"
+
+    sqlToComment [
+        DB.fromSql -> id_
+      , DB.fromSql -> c_at
+      , DB.fromSql -> m_at
+      , _
+      , DB.fromSql -> n
+      , DB.fromSql -> b
+      ] = Saved {
+        idx = id_
+      , createdAt = c_at
+      , modifiedAt = m_at
+      , refObject = Comment n b
+      }
+    sqlToComment _ = error "in sql->comment conversion"
+
+makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
+makeDay d es cs = Day {
+    day = d
+  , dayEntries = es
+  , dayComments = cs
+  , numOfComments = Prelude.length cs
+  }
