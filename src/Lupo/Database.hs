@@ -68,8 +68,7 @@ data Comment = Comment {
 
 data Database m = Database {
     select :: Integer -> m (Saved Entry)
-  , selectDay :: Time.Day -> m [Saved Entry]
-  , selectDay' :: Time.Day -> m Day
+  , selectDay :: Time.Day -> m Day
   , all :: forall a. m (Enumerator (Saved Entry) m a)
   , search :: forall a. T.Text -> m (Enumerator (Saved Entry) m a)
   , insert :: Entry -> m ()
@@ -92,14 +91,7 @@ makeDatabase conn = Database {
         DB.fetchRow stmt
       maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
-  , selectDay = \(DB.toSql -> day) -> do
-      rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
-        void $ DB.execute stmt [day]
-        DB.fetchAllRows stmt
-      pure $ sqlToEntry <$> rows
-
-  , selectDay' = \d@(DB.toSql -> sqlDay) -> do
+  , selectDay = \d@(DB.toSql -> sqlDay) -> do
       entries <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
         void $ DB.execute stmt [sqlDay]

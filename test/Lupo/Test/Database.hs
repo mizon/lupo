@@ -40,16 +40,9 @@ dbTest = testGroup "database control" [
         e <- LDB.select db 6
         assertEntry (LDB.Entry "title newest" "body newest") e
 
-  , testCase "select by day" $
-      withDB $ \db -> do
-        es <- LDB.selectDay db $ Time.fromGregorian 2012 8 15
-        Prelude.length es @?= 2
-        assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
-        assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
-
   , testCase "select by day'" $
       withDB $ \db -> do
-        d <- LDB.selectDay' db $ Time.fromGregorian 2012 8 15
+        d <- LDB.selectDay db $ Time.fromGregorian 2012 8 15
         LDB.numOfComments d @?= 0
         let es = LDB.dayEntries d
         Prelude.length es @?= 2
@@ -102,7 +95,7 @@ dbTest = testGroup "database control" [
       withDB $ \db -> do
         let new = LDB.Comment "taro" "hello, there."
         LDB.insertComment db (Time.fromGregorian 2012 8 16) new
-        d <- LDB.selectDay' db $ Time.fromGregorian 2012 8 16
+        d <- LDB.selectDay db $ Time.fromGregorian 2012 8 16
         LDB.numOfComments d @?= 1
         let saved = LDB.refObject $ Prelude.head $ LDB.dayComments d
         LDB.commentName saved @?= "taro"

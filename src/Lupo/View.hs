@@ -4,11 +4,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.View (
-    DayView(..)
-  , entryBody
+    entryBody
   , entryInfo
   , dayView
-  , dayView'
   , emptyMonth
   , searchResult
   , monthNavigation
@@ -29,11 +27,6 @@ import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
 import Lupo.Util
 
-data DayView a = DayView {
-    entriesDay :: Time.Day
-  , entries :: [LDB.Saved a]
-  }
-
 entryBody :: LDB.Entry -> H.Template
 entryBody LDB.Entry {..} = S.renderBody body
 
@@ -52,27 +45,8 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
     ]
   ]
 
-dayView :: DayView LDB.Entry -> Node
-dayView DayView {..} =
-  Element "div" [("class", "day")] $ dayTitle : (anEntry =<< entries)
-  where
-    dayTitle =
-      Element "h2" [] [
-        Element "a" [("href", dayLinkFormat entriesDay)] [
-          TextNode $ dayFormat entriesDay
-        ]
-      ]
-      where
-        dayFormat = formatTime "%Y-%m-%d"
-        dayLinkFormat = formatTime "/%Y%m%d"
-
-    anEntry LDB.Saved {..} =
-         Element "h3" [] [TextNode $ LDB.title refObject]
-       : S.renderBody (LDB.body refObject)
-      <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
-
-dayView' :: LDB.Day -> Node
-dayView' LDB.Day {..} =
+dayView :: LDB.Day -> Node
+dayView LDB.Day {..} =
   Element "div" [("class", "day")] $ dayTitle : (anEntry =<< dayEntries)
   where
     dayTitle =

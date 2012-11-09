@@ -50,10 +50,10 @@ parseQuery = parseQuery' $
       reqDay <- dayParser
       pure $ withBasicViewParams (formatTime "%Y-%m-%d" reqDay) $ do
         db <- LDB.getDatabase
-        day <- LDB.selectDay' db reqDay
+        day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
         SH.renderWithSplices "public" [
-            ("main-body", pure [V.dayView' day])
+            ("main-body", pure [V.dayView day])
           , ("page-navigation", V.singleDayNavigation nav)
           ]
 
@@ -70,7 +70,7 @@ parseQuery = parseQuery' $
           ]
       where
         mkBody [] = V.emptyMonth
-        mkBody days_ = pure $ V.dayView' <$> days_
+        mkBody days_ = pure $ V.dayView <$> days_
 
         takeMonthViews m = EL.takeWhile $ isSameMonth m . LDB.day
           where
@@ -78,7 +78,7 @@ parseQuery = parseQuery' $
                         (Time.toGregorian -> (year2, month2, _)) =
               year1 == year2 && month1 == month2
 
-        toDayViews db = EL.mapM (\d -> LDB.selectDay' db d)
+        toDayViews db = EL.mapM (\d -> LDB.selectDay db d)
 
         monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
           M.sequence (replicate 6 $ A.satisfy C.isDigit)
@@ -99,10 +99,10 @@ multiDays :: Time.Day -> Integer -> LupoHandler ()
 multiDays from nDays = do
   db <- LDB.getDatabase
   targetDays <- run_ =<< (EL.take nDays >>==) <$> LDB.beforeSavedDays db from
-  days <- Prelude.mapM (LDB.selectDay' db) targetDays
+  days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
   withBasicViewParams "" $ SH.renderWithSplices "public" [
-      ("main-body", pure $ V.dayView' <$> days)
+      ("main-body", pure $ V.dayView <$> days)
     , ("page-navigation", V.multiDaysNavigation nDays nav)
     ]
 

@@ -23,7 +23,6 @@ instance (Functor m, Applicative m, Monad m) =>
   def = DB.Database {
       DB.select = undefined
     , DB.selectDay = undefined
-    , DB.selectDay' = undefined
     , DB.all = undefined
     , DB.search = undefined
     , DB.insert = undefined
