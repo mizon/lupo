@@ -8,6 +8,7 @@ module Lupo.Database (
     HasDatabase(..)
   , DatabaseContext
   , Entry(..)
+  , Comment(..)
   , Saved(..)
   , getCreatedDay
   , Database(..)
@@ -74,6 +75,7 @@ data Database m = Database {
   , delete :: Integer -> m ()
   , beforeSavedDays :: forall a. Time.Day -> m (Enumerator Time.Day m a)
   , afterSavedDays :: forall a. Time.Day -> m (Enumerator Time.Day m a)
+  , insertComment :: Time.Day -> Comment -> m ()
   }
 
 getCreatedDay :: Saved a -> Time.Day
@@ -162,6 +164,19 @@ makeDatabase conn = Database {
         void $ DB.execute stmt [d]
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
+
+  , insertComment = \d Comment {..} -> do
+      liftIO $ do
+        now <- Time.getZonedTime
+        void $ DB.run conn
+          "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)" [
+              DB.toSql now
+            , DB.toSql now
+            , DB.toSql d
+            , DB.toSql commentName
+            , DB.toSql commentBody
+            ]
+        DB.commit conn
   }
   where
     dbAll = do
