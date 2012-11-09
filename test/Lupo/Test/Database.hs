@@ -47,6 +47,15 @@ dbTest = testGroup "database control" [
         assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
         assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
 
+  , testCase "select by day'" $
+      withDB $ \db -> do
+        d <- LDB.selectDay' db $ Time.fromGregorian 2012 8 15
+        LDB.numOfComments d @?= 0
+        let es = LDB.dayEntries d
+        Prelude.length es @?= 2
+        assertEntry (LDB.Entry "title 8-15-1" "body 8-15-1") $ es !! 0
+        assertEntry (LDB.Entry "title 8-15-2" "body 8-15-2") $ es !! 1
+
   , testCase "delete" $
       withDB $ \db -> do
         e1 <- LDB.select db 1
