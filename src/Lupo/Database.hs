@@ -35,10 +35,12 @@ instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 class HasDatabase m where
   getDatabase :: DatabaseContext n => m (Database n)
 
-data Entry = Entry {
-    title :: T.Text
-  , body :: T.Text
-  } deriving (Show, Eq)
+data Day = Day {
+    day :: Time.Day
+  , dayEntries :: [Saved Entry]
+  , numOfComments :: Int
+  , dayComments :: [Saved Comment]
+  } deriving (Eq, Show)
 
 data Saved o = Saved {
     idx :: Integer
@@ -46,6 +48,21 @@ data Saved o = Saved {
   , modifiedAt :: Time.ZonedTime
   , refObject :: o
   } deriving Show
+
+instance Eq o => Eq (Saved o) where
+    self == other =
+         idx self == idx other
+      && refObject self == refObject other
+
+data Entry = Entry {
+    title :: T.Text
+  , body :: T.Text
+  } deriving (Eq, Show)
+
+data Comment = Comment {
+    commentName :: T.Text
+  , commentBody :: T.Text
+  } deriving (Eq, Show)
 
 data Database m = Database {
     select :: Integer -> m (Saved Entry)
@@ -61,6 +78,14 @@ data Database m = Database {
 
 getCreatedDay :: Saved a -> Time.Day
 getCreatedDay = zonedDay . createdAt
+
+makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
+makeDay d es cs = Day {
+    day = d
+  , dayEntries = es
+  , dayComments = cs
+  , numOfComments = Prelude.length cs
+  }
 
 makeDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> Database m
 makeDatabase conn = Database {
