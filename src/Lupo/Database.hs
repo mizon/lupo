@@ -52,9 +52,9 @@ data Saved o = Saved {
   } deriving Show
 
 instance Eq o => Eq (Saved o) where
-    self == other =
-         idx self == idx other
-      && refObject self == refObject other
+  self == other =
+       idx self == idx other
+    && refObject self == refObject other
 
 data Entry = Entry {
     title :: T.Text
