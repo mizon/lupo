@@ -28,8 +28,9 @@ makeNavigation db base = Navigation {
     getNextDay = run_ =<< (EL.head >>==) <$> daysAfterTommorow
   , getPreviousDay = run_ =<< (EL.head >>==) <$> daysBeforeYesterday
 
-  , getThisMonth = case Time.toGregorian base of
-      (y, m, _) -> Time.fromGregorian y m 1
+  , getThisMonth =
+      case Time.toGregorian base of
+        (y, m, _) -> Time.fromGregorian y m 1
 
   , getNextPageTop = \nDays -> do
       nextDays <- run_ =<< (EL.take nDays >>==) <$> daysAfterTommorow
@@ -39,13 +40,15 @@ makeNavigation db base = Navigation {
       previousDays <- run_ =<< (EL.take nDays >>==) <$> daysBeforeYesterday
       pure $ safeLast previousDays
 
-  , getNextMonth = pure $ case Time.toGregorian base of
-      (y, 12, _) -> Time.fromGregorian (y + 1) 1 1
-      (y, m, _) -> Time.fromGregorian y (m + 1) 1
+  , getNextMonth = pure $
+      case Time.toGregorian base of
+        (y, 12, _) -> Time.fromGregorian (y + 1) 1 1
+        (y, m, _) -> Time.fromGregorian y (m + 1) 1
 
-  , getPreviousMonth = pure $ case Time.toGregorian base of
-      (y, 1, _) -> Time.fromGregorian (y - 1) 12 1
-      (y, m, _) -> Time.fromGregorian y (m - 1) 1
+  , getPreviousMonth = pure $
+      case Time.toGregorian base of
+        (y, 1, _) -> Time.fromGregorian (y - 1) 12 1
+        (y, m, _) -> Time.fromGregorian y (m - 1) 1
   }
   where
     daysBeforeYesterday = LDB.beforeSavedDays db yesterday
