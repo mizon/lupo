@@ -88,6 +88,16 @@ dbTest = testGroup "database control" [
           LDB.afterSavedDays db (Time.fromGregorian 2012 8 15)
         Prelude.length days @?= 3
         days !! 0 < days !! 2 @? "must asc"
+
+  , testCase "insert comment" $
+      withDB $ \db -> do
+        let new = LDB.Comment "taro" "hello, there."
+        LDB.insertComment db (Time.fromGregorian 2012 8 16) new
+        d <- LDB.selectDay' db $ Time.fromGregorian 2012 8 16
+        LDB.numOfComments d @?= 1
+        let saved = LDB.refObject $ Prelude.head $ LDB.dayComments d
+        LDB.commentName saved @?= "taro"
+        LDB.commentBody saved @?= "hello, there."
   ]
 
 savedTest :: Test
@@ -127,6 +137,7 @@ withDB testBody = bracket initialize finalize $ \conn ->
 
     finalize conn = do
       void $ DB.run conn "DELETE FROM entries" []
+      void $ DB.run conn "DELETE FROM comments" []
       DB.commit conn
       DB.disconnect conn
 
