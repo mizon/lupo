@@ -124,21 +124,25 @@ makeDatabase conn = Database {
 
   , insert = \Entry {..} -> do
       liftIO $ do
+        let sql = "INSERT INTO entries (created_at, modified_at, day, title, body) "
+               <> "VALUES (?, ?, ?, ?, ?)"
         now <- Time.getZonedTime
-        void $ DB.run conn
-          "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)" [
-              DB.toSql now
-            , DB.toSql now
-            , DB.toSql $ zonedDay now
-            , DB.toSql title
-            , DB.toSql body
-            ]
+        void $ DB.run conn sql [
+            DB.toSql now
+          , DB.toSql now
+          , DB.toSql $ zonedDay now
+          , DB.toSql title
+          , DB.toSql body
+          ]
         DB.commit conn
 
   , update = \i Entry {..} -> do
       liftIO $ do
+        let sql = "UPDATE entries "
+               <> "SET modified_at = ?, title = ?, body = ? "
+               <> "WHERE id = ?"
         now <- Time.getZonedTime
-        void $ DB.run conn "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?" [
+        void $ DB.run conn sql [
             DB.toSql now
           , DB.toSql title
           , DB.toSql body
