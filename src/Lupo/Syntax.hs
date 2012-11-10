@@ -20,24 +20,6 @@ diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
 block :: A.Parser Node
 block = heading <|> blockQuote <|> unorderedList <|> paragraph
   where
-    heading = prefixStyle <|> underlineStyle
-      where
-        prefixStyle = do
-          (syms, body) <- beginWith $ some $ A.char '#'
-          pure $ makeElem (length syms) body
-
-        underlineStyle = A.try $ do
-          body <- toEOL
-          c <- (chars '=' <|> chars '-') <* A.endOfLine
-          pure $ if c == '='
-                 then makeElem 1 body
-                 else makeElem 2 body
-          where
-            chars symbol = A.char symbol <* some (A.char symbol)
-
-        makeElem (level :: Int) body =
-          Element (T.concat ["h", T.pack $ show level]) [] $ inlineElemnents body
-
     blockQuote = do
       begin <- bqLine
       follows <- T.concat <$> many (bqLine <|> plainLine)
@@ -59,14 +41,36 @@ block = heading <|> blockQuote <|> unorderedList <|> paragraph
       (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
       pure $ T.append (T.singleton h) t
 
-    beginWith p = do
-      begin <- p
-      blanks
-      body <- toEOL
-      pure $ (begin, body)
-
     specialSymbols = ['#', '*', '>', ' ', '\n']
-    toEOL = A.takeTill A.isEndOfLine <* blanks <* A.option () A.endOfLine
+
+heading :: A.Parser Node
+heading = prefixStyle <|> underlineStyle
+  where
+    prefixStyle = do
+      (syms, body) <- beginWith $ some $ A.char '#'
+      pure $ makeElem (length syms) body
+
+    underlineStyle = A.try $ do
+      body <- toEOL
+      c <- (chars '=' <|> chars '-') <* A.endOfLine
+      pure $ if c == '='
+             then makeElem 1 body
+             else makeElem 2 body
+      where
+        chars symbol = A.char symbol <* some (A.char symbol)
+
+    makeElem (level :: Int) body =
+      Element (T.concat ["h", T.pack $ show level]) [] $ inlineElemnents body
+
+beginWith :: A.Parser t -> A.Parser (t, T.Text)
+beginWith p = do
+  begin <- p
+  blanks
+  body <- toEOL
+  pure $ (begin, body)
+
+toEOL :: A.Parser T.Text
+toEOL = A.takeTill A.isEndOfLine <* blanks <* A.option () A.endOfLine
 
 inlineElemnents :: T.Text -> [Node]
 inlineElemnents = either undefined id . parse

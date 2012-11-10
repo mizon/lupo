@@ -60,34 +60,35 @@ handleEntries = parseQuery $
           , ("page-navigation", V.singleDayNavigation nav)
           ]
 
-    monthResponse = do
-      reqMonth <- monthParser
-      pure $ do
-        db <- LDB.getDatabase
-        days_ <- run_ =<< ((toDayViews db =$ takeMonthViews reqMonth) >>==)
-          <$> LDB.afterSavedDays db reqMonth
-        nav <- makeNavigation reqMonth
-        withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public" [
-            ("main-body", mkBody days_)
-          , ("page-navigation", V.monthNavigation nav)
-          ]
-      where
-        mkBody [] = V.emptyMonth
-        mkBody days_ = pure $ V.daySummary <$> days_
-
-        takeMonthViews m = EL.takeWhile $ isSameMonth m . LDB.day
-          where
-            isSameMonth (Time.toGregorian -> (year1, month1, _))
-                        (Time.toGregorian -> (year2, month2, _)) =
-              year1 == year2 && month1 == month2
-
-        toDayViews db = EL.mapM (\d -> LDB.selectDay db d)
-
-        monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
-          M.sequence (replicate 6 $ A.satisfy C.isDigit)
-
     dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
+
+monthResponse :: A.Parser (LupoHandler ())
+monthResponse = do
+  reqMonth <- monthParser
+  pure $ do
+    db <- LDB.getDatabase
+    days_ <- run_ =<< ((toDayViews db =$ takeMonthViews reqMonth) >>==)
+      <$> LDB.afterSavedDays db reqMonth
+    nav <- makeNavigation reqMonth
+    withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public" [
+        ("main-body", mkBody days_)
+      , ("page-navigation", V.monthNavigation nav)
+      ]
+  where
+    mkBody [] = V.emptyMonth
+    mkBody days_ = pure $ V.daySummary <$> days_
+
+    takeMonthViews m = EL.takeWhile $ isSameMonth m . LDB.day
+      where
+        isSameMonth (Time.toGregorian -> (year1, month1, _))
+                    (Time.toGregorian -> (year2, month2, _)) =
+          year1 == year2 && month1 == month2
+
+    toDayViews db = EL.mapM (\d -> LDB.selectDay db d)
+
+    monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
+      M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
 handleSearch :: LupoHandler ()
 handleSearch = do
