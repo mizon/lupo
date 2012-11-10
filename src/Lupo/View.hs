@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -19,6 +20,7 @@ import Data.Monoid
 import qualified Data.Time as Time
 import qualified Data.Text as T
 import Snap
+import Text.Shakespeare.Text hiding (toText)
 import qualified Text.Templating.Heist as H
 import Text.XmlHtml
 
@@ -37,10 +39,10 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
     Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
   , Element "td" [] [TextNode entryTitle]
   , Element "td" [("class", "operation")] [
-      Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
+      Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
     , TextNode " "
     , Element "a" [
-        ("href", "/admin/" <> toText idx <> "/delete")
+        ("href", [st|/admin/#{toText idx}/delete|])
       , ("onclick", "return confirm(\"Are you sure?\")")
       ] [TextNode "Delete"]
     ]
