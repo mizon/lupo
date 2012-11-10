@@ -50,7 +50,10 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
 
 daySummary :: LDB.Day -> Node
 daySummary LDB.Day {..} =
-  Element "div" [("class", "day")] $ dayTitle : (anEntry =<< dayEntries)
+  Element "div" [("class", "day")] $
+       dayTitle
+     : (anEntry =<< dayEntries)
+    <> commentsSummary
   where
     dayTitle =
       Element "h2" [] [
@@ -67,7 +70,15 @@ daySummary LDB.Day {..} =
        : S.renderBody (LDB.entryBody refObject)
       <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
-comment :: LDB.Saved LDB.Comment -> [Node]
+    commentsSummary
+      | numOfComments > 0 = [
+          Element "p" [] [TextNode [st|Comments (#{toText numOfComments})|]]
+        ]
+      | otherwise = [
+          Element "p" [] [TextNode "Comment"]
+        ]
+
+comment :: LDB.Saved LDB.Comment -> H.Template
 comment LDB.Saved {..} = [
     Element "dt" [] [
       TextNode $ LDB.commentName refObject
