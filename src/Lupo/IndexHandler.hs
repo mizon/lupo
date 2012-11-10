@@ -68,11 +68,11 @@ monthResponse = do
   reqMonth <- monthParser
   pure $ do
     db <- LDB.getDatabase
-    days_ <- run_ =<< ((toDayViews db =$ takeMonthViews reqMonth) >>==)
-      <$> LDB.afterSavedDays db reqMonth
+    enum <- LDB.afterSavedDays db reqMonth
+    days <- run_ $ enum $$ toDayViews db =$ takeMonthViews reqMonth
     nav <- makeNavigation reqMonth
     withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public" [
-        ("main-body", mkBody days_)
+        ("main-body", mkBody days)
       , ("page-navigation", V.monthNavigation nav)
       ]
   where
@@ -85,7 +85,7 @@ monthResponse = do
                     (Time.toGregorian -> (year2, month2, _)) =
           year1 == year2 && month1 == month2
 
-    toDayViews db = EL.mapM (\d -> LDB.selectDay db d)
+    toDayViews db = EL.mapM $ LDB.selectDay db
 
     monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
       M.sequence (replicate 6 $ A.satisfy C.isDigit)
@@ -94,7 +94,8 @@ handleSearch :: LupoHandler ()
 handleSearch = do
   db <- LDB.getDatabase
   word <- param "word"
-  es <- run_ =<< (EL.consume >>==) <$> LDB.search db word
+  enum <- LDB.search db word
+  es <- run_ $ enum $$ EL.consume
   withBasicViewParams word $ SH.renderWithSplices "search-result" [
       ("main-body", pure $ V.searchResult es)
     ]
@@ -102,7 +103,8 @@ handleSearch = do
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = do
   db <- LDB.getDatabase
-  targetDays <- run_ =<< (EL.take nDays >>==) <$> LDB.beforeSavedDays db from
+  enum <- LDB.beforeSavedDays db from
+  targetDays <- run_ $ enum $$ EL.take nDays
   days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
   withBasicViewParams "" $ SH.renderWithSplices "public" [
