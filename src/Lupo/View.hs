@@ -7,6 +7,7 @@ module Lupo.View (
     renderBody
   , entryInfo
   , dayView
+  , comment
   , emptyMonth
   , searchResult
   , monthNavigation
@@ -63,6 +64,16 @@ dayView LDB.Day {..} =
          Element "h3" [] [TextNode $ LDB.entryTitle refObject]
        : S.renderBody (LDB.entryBody refObject)
       <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
+
+comment :: LDB.Saved LDB.Comment -> [Node]
+comment LDB.Saved {..} = [
+    Element "dt" [] [
+      TextNode $ LDB.commentName refObject
+    ]
+  , Element "dd" [] [
+      TextNode $ LDB.commentBody refObject
+    ]
+  ]
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do
