@@ -6,7 +6,7 @@
 module Lupo.View (
     renderBody
   , entryInfo
-  , dayView
+  , daySummary
   , comment
   , emptyMonth
   , searchResult
@@ -46,8 +46,8 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
     ]
   ]
 
-dayView :: LDB.Day -> Node
-dayView LDB.Day {..} =
+daySummary :: LDB.Day -> Node
+daySummary LDB.Day {..} =
   Element "div" [("class", "day")] $ dayTitle : (anEntry =<< dayEntries)
   where
     dayTitle =
