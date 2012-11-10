@@ -85,9 +85,9 @@ showPreview prevTitle e@LDB.Entry {..} = do
       ("style-sheet", textSplice "admin")
     , ("preview-title", textSplice prevTitle)
     , ("submit-path", textSplice submitPath)
-    , ("entry-title", textSplice title)
-    , ("entry-body", textSplice body)
-    , ("rendered-body", pure $ V.entryBody e)
+    , ("entry-title", textSplice entryTitle)
+    , ("entry-body", textSplice entryBody)
+    , ("rendered-body", pure $ V.renderBody e)
     ]
 
 showEditor :: T.Text -> Maybe LDB.Entry -> LupoHandler ()
@@ -97,6 +97,6 @@ showEditor title entry = do
       ("style-sheet", textSplice "admin")
     , ("edit-title", textSplice title)
     , ("submit-path", textSplice submitPath)
-    , ("default-title", textSplice $ maybe "" LDB.title entry)
-    , ("default-body", textSplice $ maybe "" LDB.body entry)
+    , ("default-title", textSplice $ maybe "" LDB.entryTitle entry)
+    , ("default-body", textSplice $ maybe "" LDB.entryBody entry)
     ]

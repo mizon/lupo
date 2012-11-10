@@ -57,8 +57,8 @@ instance Eq o => Eq (Saved o) where
     && refObject self == refObject other
 
 data Entry = Entry {
-    title :: T.Text
-  , body :: T.Text
+    entryTitle :: T.Text
+  , entryBody :: T.Text
   } deriving (Eq, Show)
 
 data Comment = Comment {
@@ -123,8 +123,8 @@ makeDatabase conn = Database {
             DB.toSql now
           , DB.toSql now
           , DB.toSql $ zonedDay now
-          , DB.toSql title
-          , DB.toSql body
+          , DB.toSql entryTitle
+          , DB.toSql entryBody
           ]
         DB.commit conn
 
@@ -136,8 +136,8 @@ makeDatabase conn = Database {
         now <- Time.getZonedTime
         void $ DB.run conn sql [
             DB.toSql now
-          , DB.toSql title
-          , DB.toSql body
+          , DB.toSql entryTitle
+          , DB.toSql entryBody
           , DB.toSql i
           ]
         DB.commit conn

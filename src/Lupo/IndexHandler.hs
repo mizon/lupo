@@ -12,6 +12,7 @@ import qualified Data.Attoparsec.Text as A
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
+import Data.Maybe
 import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Time as Time
@@ -29,8 +30,10 @@ import qualified Lupo.View as V
 
 topPageHandler :: LupoHandler ()
 topPageHandler = do
+  db <- LDB.getDatabase
   (zonedDay -> today) <- liftIO $ Time.getZonedTime
-  multiDays today =<< refLupoConfig lcDaysPerPage
+  latest <- run_ =<< (EL.head >>==) <$> LDB.beforeSavedDays db today
+  multiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
 
 parseQuery :: T.Text -> LupoHandler ()
 parseQuery = parseQuery' $

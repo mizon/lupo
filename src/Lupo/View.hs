@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.View (
-    entryBody
+    renderBody
   , entryInfo
   , dayView
   , emptyMonth
@@ -27,14 +27,14 @@ import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
 import Lupo.Util
 
-entryBody :: LDB.Entry -> H.Template
-entryBody LDB.Entry {..} = S.renderBody body
+renderBody :: LDB.Entry -> H.Template
+renderBody LDB.Entry {..} = S.renderBody entryBody
 
 entryInfo :: LDB.Saved LDB.Entry -> Node
 entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
   Element "tr" [] [
     Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
-  , Element "td" [] [TextNode title]
+  , Element "td" [] [TextNode entryTitle]
   , Element "td" [("class", "operation")] [
       Element "a" [("href", "/admin/" <> toText idx <> "/edit")] [TextNode "Edit"]
     , TextNode " "
@@ -60,8 +60,8 @@ dayView LDB.Day {..} =
         dayLinkFormat = formatTime "/%Y%m%d"
 
     anEntry LDB.Saved {..} =
-         Element "h3" [] [TextNode $ LDB.title refObject]
-       : S.renderBody (LDB.body refObject)
+         Element "h3" [] [TextNode $ LDB.entryTitle refObject]
+       : S.renderBody (LDB.entryBody refObject)
       <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
@@ -75,8 +75,8 @@ searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
     row LDB.Saved {..} =
       Element "tr" [] [
         Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
-      , Element "th" [("class", "result-title")] [TextNode $ LDB.title refObject]
-      , Element "td" [] [TextNode $ T.take 30 $ LDB.body refObject]
+      , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle refObject]
+      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody refObject]
       ]
 
 monthNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) => N.Navigation m -> m H.Template
