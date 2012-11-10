@@ -102,7 +102,12 @@ makeDatabase conn = Database {
         (sqlToComment <$>) <$> DB.fetchAllRows stmt
       pure $ makeDay d entries comments
 
-  , all = dbAll
+  , all = do
+      rows <- liftIO $ do
+        stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
+        void $ DB.execute stmt []
+        DB.fetchAllRows stmt
+      pure $ enumList 1 rows $= EL.map sqlToEntry
 
   , search = \(DB.toSql -> word) -> do
       rows <- liftIO $ do
@@ -180,13 +185,6 @@ makeDatabase conn = Database {
         DB.commit conn
   }
   where
-    dbAll = do
-      rows <- liftIO $ do
-        stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
-        void $ DB.execute stmt []
-        DB.fetchAllRows stmt
-      pure $ enumList 1 rows $= EL.map sqlToEntry
-
     sqlToEntry [
         DB.fromSql -> id_
       , DB.fromSql -> c_at
