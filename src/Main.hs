@@ -42,14 +42,14 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   addRoutes [
-      ("", Index.topPageHandler)
+      ("", Index.handleTop)
     , ("admin", Admin.admin)
     , ("admin/new", Admin.newEntry)
     , ("admin/:id/edit", Admin.editEntry)
     , ("admin/:id/delete", Admin.deleteEntry)
     , ("js", serveDirectory "static/js")
     , ("css", serveDirectory "static/css")
-    , ("search", Index.searchHandler)
-    , (":query", Index.parseQuery =<< param "query")
+    , ("search", Index.handleSearch)
+    , (":query", Index.handleEntries =<< param "query")
     ]
   pure $ Lupo h (EDB.makeDatabase conn) lc l

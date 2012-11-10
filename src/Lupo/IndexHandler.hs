@@ -2,9 +2,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.IndexHandler (
-    topPageHandler
-  , parseQuery
-  , searchHandler
+    handleTop
+  , handleEntries
+  , handleSearch
   ) where
 
 import Control.Monad as M
@@ -28,26 +28,26 @@ import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.View as V
 
-topPageHandler :: LupoHandler ()
-topPageHandler = do
+handleTop :: LupoHandler ()
+handleTop = do
   db <- LDB.getDatabase
   (zonedDay -> today) <- liftIO $ Time.getZonedTime
   latest <- run_ =<< (EL.head >>==) <$> LDB.beforeSavedDays db today
-  multiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
+  renderMultiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
 
-parseQuery :: T.Text -> LupoHandler ()
-parseQuery = parseQuery' $
+handleEntries :: T.Text -> LupoHandler ()
+handleEntries = parseQuery $
       A.try multiDaysResponse
   <|> A.try singleDayResponse
   <|> monthResponse
   where
-    parseQuery' parser = either (const pass) id . A.parseOnly parser
+    parseQuery parser = either (const pass) id . A.parseOnly parser
 
     multiDaysResponse = do
       from <- dayParser
       void $ A.char '-'
       nentries <- read . pure <$> number
-      pure $ multiDays from nentries
+      pure $ renderMultiDays from nentries
 
     singleDayResponse = do
       reqDay <- dayParser
@@ -89,8 +89,8 @@ parseQuery = parseQuery' $
     dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
     number = A.satisfy C.isDigit
 
-searchHandler :: LupoHandler ()
-searchHandler = do
+handleSearch :: LupoHandler ()
+handleSearch = do
   db <- LDB.getDatabase
   word <- param "word"
   es <- run_ =<< (EL.consume >>==) <$> LDB.search db word
@@ -98,8 +98,8 @@ searchHandler = do
       ("main-body", pure $ V.searchResult es)
     ]
 
-multiDays :: Time.Day -> Integer -> LupoHandler ()
-multiDays from nDays = do
+renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
+renderMultiDays from nDays = do
   db <- LDB.getDatabase
   targetDays <- run_ =<< (EL.take nDays >>==) <$> LDB.beforeSavedDays db from
   days <- Prelude.mapM (LDB.selectDay db) targetDays
@@ -120,9 +120,10 @@ withBasicViewParams title h = do
     , ("footer-body", pure footer)
     ] h
   where
-    makePageTitle siteTitle = case title of
-      "" -> siteTitle
-      t -> siteTitle <> " | " <> t
+    makePageTitle siteTitle =
+      case title of
+        "" -> siteTitle
+        t -> siteTitle <> " | " <> t
 
 makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n) =>
   Time.Day -> m (N.Navigation n)
