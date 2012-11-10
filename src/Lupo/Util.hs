@@ -8,12 +8,14 @@ module Lupo.Util (
   , toText
   , safeLast
   , formatTime
+  , safeIndex
   ) where
 
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.Text.Encoding as TE
+import qualified Data.Ix as Ix
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
@@ -47,3 +49,8 @@ safeLast xs = Just $ last xs
 
 formatTime :: Time.FormatTime t => String -> t -> T.Text
 formatTime fmt d = T.pack $ Time.formatTime L.defaultTimeLocale fmt d
+
+safeIndex :: [b] -> Int -> Maybe b
+safeIndex xs i
+  | Ix.inRange (0, length xs - 1) i = Just $ xs !! i
+  | otherwise = Nothing

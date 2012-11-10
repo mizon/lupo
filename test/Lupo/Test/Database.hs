@@ -40,7 +40,7 @@ dbTest = testGroup "database control" [
         e <- LDB.select db 6
         assertEntry (LDB.Entry "title newest" "body newest") e
 
-  , testCase "select by day'" $
+  , testCase "select by day" $
       withDB $ \db -> do
         d <- LDB.selectDay db $ Time.fromGregorian 2012 8 15
         LDB.numOfComments d @?= 0

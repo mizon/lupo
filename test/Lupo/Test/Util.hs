@@ -34,7 +34,7 @@ instance Arbitrary Time.Day where
   arbitrary = do
     y <- elements [2000..2020]
     m <- elements [1..12]
-    d <- elements [1..30]
+    d <- elements [1..31]
     pure $ Time.fromGregorian y m d
 
 utilTest :: Test
@@ -50,4 +50,9 @@ utilTest = testGroup "utilities" [
 
   , testProperty "toText" $ \(v :: Integer) ->
       U.toText v == T.pack (show v)
+
+  , testProperty "safeIndex" $ \(xs :: [Int]) (i :: Int) ->
+      case U.safeIndex xs i of
+        Just x -> x == xs !! i
+        Nothing -> i < 0 || length xs <= i
   ]
