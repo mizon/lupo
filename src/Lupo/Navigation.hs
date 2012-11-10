@@ -12,8 +12,6 @@ import qualified Data.Time as Time
 import qualified Lupo.Database as LDB
 import Lupo.Util
 
-import Debug.Trace
-
 data Navigation m = Navigation {
     getNextDay :: m (Maybe Time.Day)
   , getPreviousDay :: m (Maybe Time.Day)
@@ -36,12 +34,11 @@ makeNavigation db base = Navigation {
 
   , getNextPageTop = \nDays -> do
       nextDays <- run_ =<< (EL.take nDays >>==) <$> daysAfterTommorow
-      pure $ safeLast nextDays
+      pure $ safeIndex nextDays $ fromIntegral $ nDays - 1
 
   , getPreviousPageTop = \nDays -> do
       previousDays <- run_ =<< (EL.take nDays >>==) <$> daysBeforeYesterday
-      traceShow (safeLast previousDays) $
-        pure $ safeLast previousDays
+      pure $ safeIndex previousDays $ fromIntegral $ nDays - 1
 
   , getNextMonth = pure $
       case Time.toGregorian base of

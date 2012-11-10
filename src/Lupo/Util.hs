@@ -6,7 +6,6 @@ module Lupo.Util (
   , textSplice
   , zonedDay
   , toText
-  , safeLast
   , formatTime
   , safeIndex
   ) where
@@ -42,10 +41,6 @@ zonedDay = Time.localDay . Time.zonedTimeToLocalTime
 
 toText :: Show a => a -> T.Text
 toText = T.pack . show
-
-safeLast :: [a] -> Maybe a
-safeLast [] = Nothing
-safeLast xs = Just $ last xs
 
 formatTime :: Time.FormatTime t => String -> t -> T.Text
 formatTime fmt d = T.pack $ Time.formatTime L.defaultTimeLocale fmt d

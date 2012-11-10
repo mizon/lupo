@@ -9,9 +9,7 @@ import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Test.Framework
-import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2
-import Test.HUnit hiding (Test)
 import Test.QuickCheck
 
 import qualified Lupo.Util as U
@@ -39,13 +37,7 @@ instance Arbitrary Time.Day where
 
 utilTest :: Test
 utilTest = testGroup "utilities" [
-    testProperty "safeLast exist" $ \lst ->
-      U.safeLast ([1, 2, lst] :: [Integer]) == Just lst
-
-  , testCase "safeLast empty" $
-      U.safeLast ([] :: [Integer]) @?= Nothing
-
-  , testProperty "zonedDay" $ \zoned ->
+    testProperty "zonedDay" $ \zoned ->
       U.zonedDay zoned == Time.localDay (Time.zonedTimeToLocalTime zoned)
 
   , testProperty "toText" $ \(v :: Integer) ->
