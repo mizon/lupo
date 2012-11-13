@@ -8,6 +8,8 @@ module Lupo.View (
     renderBody
   , entryInfo
   , daySummary
+  , dayTitle
+  , anEntry
   , comment
   , emptyMonth
   , searchResult
@@ -51,25 +53,10 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
 daySummary :: LDB.Day -> Node
 daySummary LDB.Day {..} =
   Element "div" [("class", "day")] $
-       dayTitle
-     : (anEntry =<< dayEntries)
+       dayTitle day
+    <> (anEntry =<< dayEntries)
     <> commentsSummary
   where
-    dayTitle =
-      Element "h2" [] [
-        Element "a" [("href", dayLinkFormat day)] [
-          TextNode $ dayFormat day
-        ]
-      ]
-      where
-        dayFormat = formatTime "%Y-%m-%d"
-        dayLinkFormat = formatTime "/%Y%m%d"
-
-    anEntry LDB.Saved {..} =
-         Element "h3" [] [TextNode $ LDB.entryTitle refObject]
-       : S.renderBody (LDB.entryBody refObject)
-      <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
-
     commentsSummary
       | numOfComments > 0 = [
           Element "p" [] [TextNode [st|Comments (#{toText numOfComments})|]]
@@ -77,6 +64,23 @@ daySummary LDB.Day {..} =
       | otherwise = [
           Element "p" [] [TextNode "Comment"]
         ]
+
+dayTitle :: Time.Day -> H.Template
+dayTitle d = pure $
+  Element "h2" [] [
+    Element "a" [("href", dayLinkFormat d)] [
+      TextNode $ dayFormat d
+    ]
+  ]
+  where
+    dayFormat = formatTime "%Y-%m-%d"
+    dayLinkFormat = formatTime "/%Y%m%d"
+
+anEntry :: LDB.Saved LDB.Entry -> H.Template
+anEntry LDB.Saved {..} =
+     Element "h3" [] [TextNode $ LDB.entryTitle refObject]
+   : S.renderBody (LDB.entryBody refObject)
+  <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
 comment :: LDB.Saved LDB.Comment -> H.Template
 comment LDB.Saved {..} = [
