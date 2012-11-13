@@ -55,9 +55,13 @@ handleEntries = parseQuery $
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
-        SH.renderWithSplices "public" [
-            ("main-body", pure $ V.daySummary day)
+        SH.renderWithSplices "day" [
+            ("day-title", pure $ V.dayTitle reqDay)
+          , ("entries", pure $ V.anEntry =<< LDB.dayEntries day)
+          , ("comments", pure $ V.comment =<< LDB.dayComments day)
           , ("page-navigation", V.singleDayNavigation nav)
+          , ("comment-name", textSplice "")
+          , ("comment-body", textSplice "")
           ]
 
     dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
