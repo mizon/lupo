@@ -64,9 +64,6 @@ handleEntries = parseQuery $
           , ("comment-body", textSplice "")
           ]
 
-    dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
-    number = A.satisfy C.isDigit
-
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
@@ -135,3 +132,9 @@ withBasicViewParams title h = do
 makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n) =>
   Time.Day -> m (N.Navigation n)
 makeNavigation current = N.makeNavigation <$> LDB.getDatabase <*> pure current
+
+dayParser :: A.Parser Time.Day
+dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
+
+number :: A.Parser Char
+number = A.satisfy C.isDigit
