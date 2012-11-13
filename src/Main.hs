@@ -51,5 +51,6 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("css", serveDirectory "static/css")
     , ("search", Index.handleSearch)
     , (":query", Index.handleEntries =<< param "query")
+    , ("comment/:day", Index.handleComment)
     ]
   pure $ Lupo h (EDB.makeDatabase conn) lc l

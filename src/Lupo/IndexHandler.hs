@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.IndexHandler (
     handleTop
   , handleEntries
   , handleSearch
+  , handleComment
   ) where
 
 import Control.Monad as M
@@ -15,10 +17,12 @@ import qualified Data.Enumerator.List as EL
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Heist as SH
+import Text.Shakespeare.Text
 import System.Locale
 
 import Lupo.Application
@@ -60,9 +64,29 @@ handleEntries = parseQuery $
           , ("entries", pure $ V.anEntry =<< LDB.dayEntries day)
           , ("comments", pure $ V.comment =<< LDB.dayComments day)
           , ("page-navigation", V.singleDayNavigation nav)
+          , ("new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
           , ("comment-name", textSplice "")
           , ("comment-body", textSplice "")
           ]
+
+handleSearch :: LupoHandler ()
+handleSearch = do
+  db <- LDB.getDatabase
+  word <- param "word"
+  enum <- LDB.search db word
+  es <- run_ $ enum $$ EL.consume
+  withBasicViewParams word $ SH.renderWithSplices "search-result" [
+      ("main-body", pure $ V.searchResult es)
+    ]
+
+handleComment :: LupoHandler ()
+handleComment = do
+  dayStr <- param "day"
+  day <- either (error . show) pure $ A.parseOnly dayParser dayStr
+  comment <- LDB.Comment <$> param "name" <*> param "body"
+  db <- LDB.getDatabase
+  LDB.insertComment db day comment
+  redirect $ "/" <> TE.encodeUtf8 dayStr
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
@@ -90,16 +114,6 @@ monthResponse = do
 
     monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
       M.sequence (replicate 6 $ A.satisfy C.isDigit)
-
-handleSearch :: LupoHandler ()
-handleSearch = do
-  db <- LDB.getDatabase
-  word <- param "word"
-  enum <- LDB.search db word
-  es <- run_ $ enum $$ EL.consume
-  withBasicViewParams word $ SH.renderWithSplices "search-result" [
-      ("main-body", pure $ V.searchResult es)
-    ]
 
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = do
