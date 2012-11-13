@@ -18,9 +18,9 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
-import qualified Snap.Snaplet.Heist as H
 import qualified System.Locale as L
-import qualified Text.Templating.Heist as TH
+import qualified Text.Templating.Heist as H
+import Text.XmlHtml
 
 paramId :: (MonadSnap m, Integral a) => m a
 paramId = paramNum "id"
@@ -33,8 +33,8 @@ paramNum name = either (error "invalid param type") id . toIntegral <$> param na
 param :: MonadSnap m => BS.ByteString -> m T.Text
 param name = maybe (error "missing param") TE.decodeUtf8 <$> getParam name
 
-textSplice :: T.Text -> H.SnapletSplice a b
-textSplice = H.liftHeist . TH.textSplice
+textSplice :: (Applicative m, Monad m) => T.Text -> m H.Template
+textSplice = pure . pure . TextNode
 
 zonedDay :: Time.ZonedTime -> Time.Day
 zonedDay = Time.localDay . Time.zonedTimeToLocalTime
