@@ -35,8 +35,8 @@ import Lupo.Util
 renderBody :: LDB.Entry -> H.Template
 renderBody LDB.Entry {..} = S.renderBody entryBody
 
-entryInfo :: LDB.Saved LDB.Entry -> Node
-entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
+entryInfo :: LDB.Saved LDB.Entry -> H.Template
+entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} = pure $
   Element "tr" [] [
     Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
   , Element "td" [] [TextNode entryTitle]
@@ -50,8 +50,8 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} =
     ]
   ]
 
-daySummary :: LDB.Day -> Node
-daySummary LDB.Day {..} =
+daySummary :: LDB.Day -> H.Template
+daySummary LDB.Day {..} = pure $
   Element "div" [("class", "day")] $
        dayTitle day
     <> (anEntry =<< dayEntries)

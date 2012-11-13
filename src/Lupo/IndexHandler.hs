@@ -56,7 +56,7 @@ handleEntries = parseQuery $
         day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
         SH.renderWithSplices "public" [
-            ("main-body", pure [V.daySummary day])
+            ("main-body", pure $ V.daySummary day)
           , ("page-navigation", V.singleDayNavigation nav)
           ]
 
@@ -77,7 +77,7 @@ monthResponse = do
       ]
   where
     mkBody [] = V.emptyMonth
-    mkBody days_ = pure $ V.daySummary <$> days_
+    mkBody days_ = pure $ V.daySummary =<< days_
 
     takeMonthViews m = EL.takeWhile $ isSameMonth m . LDB.day
       where
@@ -108,7 +108,7 @@ renderMultiDays from nDays = do
   days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
   withBasicViewParams "" $ SH.renderWithSplices "public" [
-      ("main-body", pure $ V.daySummary <$> days)
+      ("main-body", pure $ V.daySummary =<< days)
     , ("page-navigation", V.multiDaysNavigation nDays nav)
     ]
 

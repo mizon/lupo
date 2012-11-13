@@ -26,7 +26,7 @@ admin = do
   db <- LDB.getDatabase
   entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
   H.renderWithSplices "admin" [
-      ("entries-list", pure $ V.entryInfo <$> entries)
+      ("entries-list", pure $ V.entryInfo =<< entries)
     , ("style-sheet", textSplice "admin")
     ]
 
