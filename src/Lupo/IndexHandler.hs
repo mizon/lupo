@@ -80,7 +80,7 @@ handleSearch = do
     ]
 
 handleComment :: LupoHandler ()
-handleComment = do
+handleComment = method POST $ do
   dayStr <- param "day"
   day <- either (error . show) pure $ A.parseOnly dayParser dayStr
   comment <- LDB.Comment <$> param "name" <*> param "body"
