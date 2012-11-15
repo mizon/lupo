@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -127,7 +128,8 @@ renderMultiDays from nDays = do
     , ("page-navigation", V.multiDaysNavigation nDays nav)
     ]
 
-withBasicViewParams :: T.Text -> LupoHandler () -> LupoHandler ()
+withBasicViewParams :: (SH.HasHeist b, GetLupoConfig (Handler b v))
+                    => T.Text -> Handler b v () -> Handler b v ()
 withBasicViewParams title h = do
   siteTitle <- refLupoConfig lcSiteTitle
   footer <- refLupoConfig lcFooterBody
@@ -143,8 +145,8 @@ withBasicViewParams title h = do
         "" -> siteTitle
         t -> siteTitle <> " | " <> t
 
-makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n) =>
-  Time.Day -> m (N.Navigation n)
+makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n)
+               => Time.Day -> m (N.Navigation n)
 makeNavigation current = N.makeNavigation <$> LDB.getDatabase <*> pure current
 
 dayParser :: A.Parser Time.Day
