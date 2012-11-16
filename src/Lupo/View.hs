@@ -126,7 +126,7 @@ monthNavigation nav = do
       where
         formatMonthLink = formatTime "/%Y%m"
 
-singleDayNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) => N.Navigation m -> m H.Template
+singleDayNavigation :: LL.HasLocalizer m => N.Navigation m -> m H.Template
 singleDayNavigation nav = do
   previous <- N.getPreviousDay nav
   next <- N.getNextDay nav

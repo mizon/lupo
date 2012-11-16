@@ -23,7 +23,6 @@ import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Heist as SH
-import Text.Shakespeare.Text
 import System.Locale
 
 import Lupo.Application
@@ -32,6 +31,7 @@ import qualified Lupo.Database as LDB
 import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.View as V
+import qualified Lupo.ViewWrapper as VW
 
 handleTop :: LupoHandler ()
 handleTop = do
@@ -56,19 +56,11 @@ handleEntries = parseQuery $
 
     singleDayResponse = do
       reqDay <- dayParser
-      pure $ withBasicViewParams (formatTime "%Y-%m-%d" reqDay) $ do
+      pure $ do
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
-        SH.renderWithSplices "day" [
-            ("day-title", pure $ V.dayTitle reqDay)
-          , ("entries", pure $ V.anEntry =<< LDB.dayEntries day)
-          , ("comments", pure $ V.comment =<< LDB.dayComments day)
-          , ("page-navigation", V.singleDayNavigation nav)
-          , ("new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
-          , ("comment-name", textSplice "")
-          , ("comment-body", textSplice "")
-          ]
+        VW.render $ VW.singleDayView day nav $ LDB.Comment "" ""
 
 handleSearch :: LupoHandler ()
 handleSearch = do
