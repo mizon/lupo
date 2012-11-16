@@ -109,10 +109,7 @@ renderMultiDays from nDays = do
   targetDays <- run_ $ enum $$ EL.take nDays
   days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
-  withBasicViewParams "" $ SH.renderWithSplices "public" [
-      ("main-body", pure $ V.daySummary =<< days)
-    , ("page-navigation", V.multiDaysNavigation nDays nav)
-    ]
+  VW.render $ VW.multiDaysView nav days
 
 withBasicViewParams :: (SH.HasHeist b, GetLupoConfig (Handler b v))
                     => T.Text -> Handler b v () -> Handler b v ()

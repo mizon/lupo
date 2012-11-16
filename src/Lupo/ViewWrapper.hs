@@ -7,6 +7,7 @@
 module Lupo.ViewWrapper (
     View(..)
   , singleDayView
+  , multiDaysView
   , monthView
   ) where
 
@@ -15,7 +16,7 @@ import Data.Monoid
 import qualified Data.Text as T
 import Snap
 import qualified Snap.Snaplet.Heist as SH
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text hiding (toText)
 import qualified Text.Templating.Heist as H
 
 import Lupo.Config
@@ -53,6 +54,22 @@ singleDayView day nav c = makeView $ do
     ]
   where
     reqDay = DB.day day
+
+multiDaysView :: (
+    m ~ H.HeistT (Handler b b)
+  , SH.HasHeist b
+  , L.HasLocalizer m
+  , GetLupoConfig m
+  ) => N.Navigation m -> [DB.Day] -> View (Handler b v)
+multiDaysView nav days = makeView $ do
+  bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
+  H.modifyTS $ H.bindSplices [
+      ("page-navigation", V.multiDaysNavigation numOfDays nav)
+    ]
+  pure $ V.daySummary =<< days
+  where
+    firstDay = DB.day $ head days
+    numOfDays = fromIntegral $ length days
 
 monthView :: (
     m ~ H.HeistT (Handler b b)
