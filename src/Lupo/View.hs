@@ -36,13 +36,9 @@ newtype View m = View {
 render :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
 render (getSplice -> s) = SH.heistLocal (H.bindSplice "main-body" s) $ SH.render "public"
 
-singleDayView :: (
-    m ~ H.HeistT (Handler b b)
-  , GetLupoConfig m
-  , L.HasLocalizer m
-  , SH.HasHeist b
-  ) => DB.Day -> N.Navigation m -> DB.Comment -> View (Handler b b)
-singleDayView day nav c = makeView $ do
+singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
+              => DB.Day -> N.Navigation m -> DB.Comment -> View n
+singleDayView day nav c = View $ do
   bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
   H.callTemplate "day" [
       ("day-title", pure $ V.dayTitle reqDay)
@@ -56,13 +52,9 @@ singleDayView day nav c = makeView $ do
   where
     reqDay = DB.day day
 
-multiDaysView :: (
-    m ~ H.HeistT (Handler b b)
-  , SH.HasHeist b
-  , L.HasLocalizer m
-  , GetLupoConfig m
-  ) => N.Navigation m -> [DB.Day] -> View (Handler b b)
-multiDaysView nav days = makeView $ do
+multiDaysView :: (m ~ H.HeistT n, Monad n, L.HasLocalizer m, GetLupoConfig m)
+              => N.Navigation m -> [DB.Day] -> View n
+multiDaysView nav days = View $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
   H.modifyTS $ H.bindSplices [
@@ -73,13 +65,9 @@ multiDaysView nav days = makeView $ do
     firstDay = DB.day $ head days
     numOfDays = length days
 
-monthView :: (
-    m ~ H.HeistT (Handler b b)
-  , L.HasLocalizer m
-  , GetLupoConfig m
-  , SH.HasHeist b
-  ) => N.Navigation m -> [DB.Day] -> View (Handler b b)
-monthView nav days = makeView $ do
+monthView :: (m ~ H.HeistT n, L.HasLocalizer m, GetLupoConfig m, Monad n)
+          => N.Navigation m -> [DB.Day] -> View n
+monthView nav days = View $ do
   bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
   H.modifyTS $ H.bindSplices [
       ("page-navigation", V.monthNavigation nav)
@@ -89,12 +77,9 @@ monthView nav days = makeView $ do
   else
     pure $ V.daySummary =<< days
 
-searchResultView :: (
-    m ~ H.HeistT (Handler b b)
-  , GetLupoConfig m
-  , SH.HasHeist b
-  ) => T.Text -> [DB.Saved DB.Entry] -> View (Handler b b)
-searchResultView word es = makeView $ do
+searchResultView :: (Monad m, GetLupoConfig (H.HeistT m))
+                 => T.Text -> [DB.Saved DB.Entry] -> View m
+searchResultView word es = View $ do
   bindBasicSplices word
   void $ H.callTemplate "search-result" []
   pure $ V.searchResult es
@@ -115,6 +100,3 @@ bindBasicSplices title = do
       case title of
         "" -> siteTitle
         t -> siteTitle <> " | " <> t
-
-makeView :: H.Splice m -> View m
-makeView = View

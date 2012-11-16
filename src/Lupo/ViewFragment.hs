@@ -107,7 +107,7 @@ searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
       , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody refObject]
       ]
 
-monthNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) => N.Navigation m -> m H.Template
+monthNavigation :: LL.HasLocalizer m => N.Navigation m -> m H.Template
 monthNavigation nav = do
   newest <- newestElement
   previous <- N.getPreviousMonth nav
@@ -151,8 +151,8 @@ singleDayNavigation nav = do
         ("href", formatTime "/%Y%m" $ N.getThisMonth nav)
       ] [TextNode body]
 
-multiDaysNavigation :: (LDB.DatabaseContext m, LL.HasLocalizer m) =>
-  Integer -> N.Navigation m -> m H.Template
+multiDaysNavigation :: LL.HasLocalizer m
+                    => Integer -> N.Navigation m -> m H.Template
 multiDaysNavigation nDays nav = do
   previous <- N.getPreviousPageTop nav nDays
   next <- N.getNextPageTop nav nDays
