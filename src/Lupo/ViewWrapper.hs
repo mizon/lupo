@@ -22,11 +22,11 @@ import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.View as V
 
-data View b = View {
-    render :: forall v. Handler b v ()
+data View m = View {
+    render :: m ()
   }
 
-makeView :: SH.HasHeist b => H.Splice (Handler b b) -> View b
+makeView :: SH.HasHeist b => H.Splice (Handler b b) -> View (Handler b v)
 makeView ss = View {
     render = SH.heistLocal (H.bindSplice "main-body" ss) $ SH.render "public"
   }
@@ -35,7 +35,7 @@ singleDayView :: (
     GetLupoConfig (H.HeistT (Handler b b))
   , L.HasLocalizer (H.HeistT (Handler b b))
   , SH.HasHeist b
-  ) => DB.Day -> N.Navigation (H.HeistT (Handler b b)) -> DB.Comment -> View b
+  ) => DB.Day -> N.Navigation (H.HeistT (Handler b b)) -> DB.Comment -> View (Handler b v)
 singleDayView day nav c = makeView $ do
   bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
   H.callTemplate "day" [
