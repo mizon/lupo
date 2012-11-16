@@ -29,7 +29,7 @@ import Lupo.Config
 import qualified Lupo.Database as LDB
 import qualified Lupo.Navigation as N
 import Lupo.Util
-import qualified Lupo.ViewWrapper as VW
+import qualified Lupo.View as V
 
 handleTop :: LupoHandler ()
 handleTop = do
@@ -58,7 +58,7 @@ handleEntries = parseQuery $
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
-        VW.render $ VW.singleDayView day nav $ LDB.Comment "" ""
+        V.render $ V.singleDayView day nav $ LDB.Comment "" ""
 
 handleSearch :: LupoHandler ()
 handleSearch = do
@@ -66,7 +66,7 @@ handleSearch = do
   word <- param "word"
   enum <- LDB.search db word
   es <- run_ $ enum $$ EL.consume
-  VW.render $ VW.searchResultView word es
+  V.render $ V.searchResultView word es
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
@@ -85,7 +85,7 @@ monthResponse = do
     db <- LDB.getDatabase
     enum <- LDB.afterSavedDays db reqMonth
     days <- run_ $ enum $$ toDayContents db =$ takeSameMonthDays reqMonth
-    VW.render $ VW.monthView nav days
+    V.render $ V.monthView nav days
   where
     takeSameMonthDays m = EL.takeWhile $ isSameMonth m . LDB.day
       where
@@ -105,7 +105,7 @@ renderMultiDays from nDays = do
   targetDays <- run_ $ enum $$ EL.take nDays
   days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
-  VW.render $ VW.multiDaysView nav days
+  V.render $ V.multiDaysView nav days
 
 makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n)
                => Time.Day -> m (N.Navigation n)

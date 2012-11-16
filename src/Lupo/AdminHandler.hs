@@ -19,7 +19,7 @@ import qualified Snap.Snaplet.Heist as H
 import Lupo.Application
 import qualified Lupo.Database as LDB
 import Lupo.Util
-import qualified Lupo.View as V
+import qualified Lupo.ViewFragment as V
 
 admin :: LupoHandler ()
 admin = do
