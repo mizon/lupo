@@ -22,7 +22,6 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
-import qualified Snap.Snaplet.Heist as SH
 import System.Locale
 
 import Lupo.Application
@@ -30,7 +29,6 @@ import Lupo.Config
 import qualified Lupo.Database as LDB
 import qualified Lupo.Navigation as N
 import Lupo.Util
-import qualified Lupo.View as V
 import qualified Lupo.ViewWrapper as VW
 
 handleTop :: LupoHandler ()
@@ -68,9 +66,7 @@ handleSearch = do
   word <- param "word"
   enum <- LDB.search db word
   es <- run_ $ enum $$ EL.consume
-  withBasicViewParams word $ SH.renderWithSplices "search-result" [
-      ("main-body", pure $ V.searchResult es)
-    ]
+  VW.render $ VW.searchResultView word es
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
@@ -110,23 +106,6 @@ renderMultiDays from nDays = do
   days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
   VW.render $ VW.multiDaysView nav days
-
-withBasicViewParams :: (SH.HasHeist b, GetLupoConfig (Handler b v))
-                    => T.Text -> Handler b v () -> Handler b v ()
-withBasicViewParams title h = do
-  siteTitle <- refLupoConfig lcSiteTitle
-  footer <- refLupoConfig lcFooterBody
-  SH.withSplices [
-      ("page-title", textSplice $ makePageTitle siteTitle)
-    , ("header-title", textSplice siteTitle)
-    , ("style-sheet", textSplice "diary")
-    , ("footer-body", pure footer)
-    ] h
-  where
-    makePageTitle siteTitle =
-      case title of
-        "" -> siteTitle
-        t -> siteTitle <> " | " <> t
 
 makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n)
                => Time.Day -> m (N.Navigation n)

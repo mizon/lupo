@@ -9,6 +9,7 @@ module Lupo.ViewWrapper (
   , singleDayView
   , multiDaysView
   , monthView
+  , searchResultView
   ) where
 
 import Control.Applicative
@@ -86,6 +87,16 @@ monthView nav days = makeView $ do
     V.emptyMonth
   else
     pure $ V.daySummary =<< days
+
+searchResultView :: (
+    m ~ H.HeistT (Handler b b)
+  , GetLupoConfig m
+  , SH.HasHeist b
+  ) => T.Text -> [DB.Saved DB.Entry] -> View (Handler b v)
+searchResultView word es = makeView $ do
+  bindBasicSplices word
+  H.callTemplate "search-result" []
+  pure $ V.searchResult es
 
 bindBasicSplices :: (Monad m, GetLupoConfig (H.HeistT m))
                  => T.Text -> H.HeistT m ()
