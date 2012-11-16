@@ -85,18 +85,12 @@ monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
   pure $ do
+    nav <- makeNavigation reqMonth
     db <- LDB.getDatabase
     enum <- LDB.afterSavedDays db reqMonth
     days <- run_ $ enum $$ toDayViews db =$ takeMonthViews reqMonth
-    nav <- makeNavigation reqMonth
-    withBasicViewParams (formatTime "%Y-%m" reqMonth) $ SH.renderWithSplices "public" [
-        ("main-body", mkBody days)
-      , ("page-navigation", V.monthNavigation nav)
-      ]
+    VW.render $ VW.monthView nav days
   where
-    mkBody [] = V.emptyMonth
-    mkBody days_ = pure $ V.daySummary =<< days_
-
     takeMonthViews m = EL.takeWhile $ isSameMonth m . LDB.day
       where
         isSameMonth (Time.toGregorian -> (year1, month1, _))

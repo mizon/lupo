@@ -1,10 +1,13 @@
+{-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
 module Lupo.ViewWrapper (
     View(..)
   , singleDayView
+  , monthView
   ) where
 
 import Control.Applicative
@@ -32,10 +35,11 @@ makeView ss = View {
   }
 
 singleDayView :: (
-    GetLupoConfig (H.HeistT (Handler b b))
-  , L.HasLocalizer (H.HeistT (Handler b b))
+    m ~ H.HeistT (Handler b b)
+  , GetLupoConfig m
+  , L.HasLocalizer m
   , SH.HasHeist b
-  ) => DB.Day -> N.Navigation (H.HeistT (Handler b b)) -> DB.Comment -> View (Handler b v)
+  ) => DB.Day -> N.Navigation m -> DB.Comment -> View (Handler b v)
 singleDayView day nav c = makeView $ do
   bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
   H.callTemplate "day" [
@@ -49,6 +53,22 @@ singleDayView day nav c = makeView $ do
     ]
   where
     reqDay = DB.day day
+
+monthView :: (
+    m ~ H.HeistT (Handler b b)
+  , L.HasLocalizer m
+  , GetLupoConfig m
+  , SH.HasHeist b
+  ) => N.Navigation m -> [DB.Day] -> View (Handler b v)
+monthView nav days = makeView $ do
+  bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
+  H.modifyTS $ H.bindSplices [
+      ("page-navigation", V.monthNavigation nav)
+    ]
+  if null days then
+    V.emptyMonth
+  else
+    pure $ V.daySummary =<< days
 
 bindBasicSplices :: (Monad m, GetLupoConfig (H.HeistT m))
                  => T.Text -> H.HeistT m ()
