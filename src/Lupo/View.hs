@@ -4,8 +4,10 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 module Lupo.View (
     View(..)
+  , render
   , singleDayView
   , multiDaysView
   , monthView
@@ -27,21 +29,19 @@ import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.ViewFragment as V
 
-data View m = View {
-    render :: m ()
+newtype View m = View {
+    getSplice :: H.Splice m
   }
 
-makeView :: SH.HasHeist b => H.Splice (Handler b b) -> View (Handler b v)
-makeView ss = View {
-    render = SH.heistLocal (H.bindSplice "main-body" ss) $ SH.render "public"
-  }
+render :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
+render (getSplice -> s) = SH.heistLocal (H.bindSplice "main-body" s) $ SH.render "public"
 
 singleDayView :: (
     m ~ H.HeistT (Handler b b)
   , GetLupoConfig m
   , L.HasLocalizer m
   , SH.HasHeist b
-  ) => DB.Day -> N.Navigation m -> DB.Comment -> View (Handler b v)
+  ) => DB.Day -> N.Navigation m -> DB.Comment -> View (Handler b b)
 singleDayView day nav c = makeView $ do
   bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
   H.callTemplate "day" [
@@ -61,7 +61,7 @@ multiDaysView :: (
   , SH.HasHeist b
   , L.HasLocalizer m
   , GetLupoConfig m
-  ) => N.Navigation m -> [DB.Day] -> View (Handler b v)
+  ) => N.Navigation m -> [DB.Day] -> View (Handler b b)
 multiDaysView nav days = makeView $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
@@ -78,7 +78,7 @@ monthView :: (
   , L.HasLocalizer m
   , GetLupoConfig m
   , SH.HasHeist b
-  ) => N.Navigation m -> [DB.Day] -> View (Handler b v)
+  ) => N.Navigation m -> [DB.Day] -> View (Handler b b)
 monthView nav days = makeView $ do
   bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
   H.modifyTS $ H.bindSplices [
@@ -93,7 +93,7 @@ searchResultView :: (
     m ~ H.HeistT (Handler b b)
   , GetLupoConfig m
   , SH.HasHeist b
-  ) => T.Text -> [DB.Saved DB.Entry] -> View (Handler b v)
+  ) => T.Text -> [DB.Saved DB.Entry] -> View (Handler b b)
 searchResultView word es = makeView $ do
   bindBasicSplices word
   void $ H.callTemplate "search-result" []
@@ -115,3 +115,6 @@ bindBasicSplices title = do
       case title of
         "" -> siteTitle
         t -> siteTitle <> " | " <> t
+
+makeView :: H.Splice m -> View m
+makeView = View
