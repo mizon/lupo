@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -107,38 +108,36 @@ searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
       , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody refObject]
       ]
 
-monthNavigation :: LL.HasLocalizer m => N.Navigation m -> m H.Template
+monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+                => N.Navigation (H.HeistT m) -> H.Splice m
 monthNavigation nav = do
   newest <- newestElement
   previous <- N.getPreviousMonth nav
   next <- N.getNextMonth nav
   previousLabel <- LL.localize "Previous Month"
   nextLabel <- LL.localize "Next Month"
-  pure [
-      Element "ul" [("class", "page-navigation")] [
-        Element "li" [] [mkMonthLink previousLabel previous]
-      , newest
-      , Element "li" [] [mkMonthLink nextLabel next]
-      ]
+  H.callTemplate "_navigation" [
+      ("previous-link", pure [mkMonthLink previousLabel previous])
+    , ("middle-link", pure [newest])
+    , ("next-link", pure [mkMonthLink nextLabel next])
     ]
   where
     mkMonthLink body m = Element "a" [("href", formatMonthLink m)] [TextNode body]
       where
         formatMonthLink = formatTime "/%Y%m"
 
-singleDayNavigation :: LL.HasLocalizer m => N.Navigation m -> m H.Template
+singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+                    => N.Navigation (H.HeistT m) -> H.Splice m
 singleDayNavigation nav = do
   previous <- N.getPreviousDay nav
   next <- N.getNextDay nav
   previousLabel <- LL.localize "Previous Day"
   thisMonthLabel <- LL.localize "This Month"
   nextLabel <- LL.localize "Next Day"
-  pure [
-      Element "ul" [("class", "page-navigation")] [
-        Element "li" [] [mkDayLink previousLabel previous]
-      , Element "li" [] [thisMonthLink thisMonthLabel]
-      , Element "li" [] [mkDayLink nextLabel next]
-      ]
+  H.callTemplate "_navigation" [
+      ("previous-link", pure [mkDayLink previousLabel previous])
+    , ("middle-link", pure [thisMonthLink thisMonthLabel])
+    , ("next-link", pure [mkDayLink nextLabel next])
     ]
   where
     mkDayLink body = maybe (TextNode body) $ \d_ ->
@@ -151,20 +150,18 @@ singleDayNavigation nav = do
         ("href", formatTime "/%Y%m" $ N.getThisMonth nav)
       ] [TextNode body]
 
-multiDaysNavigation :: LL.HasLocalizer m
-                    => Integer -> N.Navigation m -> m H.Template
+multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+                    => Integer -> N.Navigation (H.HeistT m) -> H.Splice m
 multiDaysNavigation nDays nav = do
   previous <- N.getPreviousPageTop nav nDays
   next <- N.getNextPageTop nav nDays
   previousLabel <- LL.localize "Previous %d Days"
   nextLabel <- LL.localize "Next %d Days"
   newest <- newestElement
-  pure [
-      Element "ul" [("class", "page-navigation")] [
-        Element "li" [] [mkDayLink previousLabel previous]
-      , newest
-      , Element "li" [] [mkDayLink nextLabel next]
-      ]
+  H.callTemplate "_navigation" [
+      ("previous-link", pure [mkDayLink previousLabel previous])
+    , ("middle-link", pure [newest])
+    , ("next-link", pure [mkDayLink nextLabel next])
     ]
   where
     mkDayLink body = maybe (TextNode formattedBody) $ \d_ ->
