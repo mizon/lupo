@@ -1,6 +1,6 @@
 <apply template="default">
   <div id="header">
-    <a href="/"><h1><lupo:site-title/></h1></a>
+    <h1><a href="/"><lupo:site-title/></a></h1>
     <form id="search" action="/search" method="get">
       <input id="search-field" type="text" name="word"/>
       <input id="search-button" type="submit" value="Search"/>

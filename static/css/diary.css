@@ -22,9 +22,10 @@ body {
   color: #FFF;
   position: relative; }
   #header h1 {
-    color: #FFF;
-    text-decoration: none;
     padding: 0.5em; }
+  #header h1 a {
+    color: #FFF;
+    text-decoration: none; }
 
 #footer {
   background-color: #CCC; }

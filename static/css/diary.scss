@@ -26,9 +26,12 @@ body {
     position: relative;
 
     h1 {
+        padding: 0.5em;
+    }
+
+    h1 a {
         color: #FFF;
         text-decoration: none;
-        padding: 0.5em;
     }
 }
 
