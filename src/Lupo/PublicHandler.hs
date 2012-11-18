@@ -3,7 +3,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.IndexHandler (
+module Lupo.PublicHandler (
     handleTop
   , handleEntries
   , handleSearch

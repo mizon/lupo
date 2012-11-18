@@ -17,7 +17,7 @@ import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
 import Lupo.Config
 import qualified Lupo.Database as EDB
-import qualified Lupo.IndexHandler as Index
+import qualified Lupo.PublicHandler as Public
 import Lupo.Util
 
 main :: IO ()
@@ -42,15 +42,15 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   addRoutes [
-      ("", Index.handleTop)
+      ("", Public.handleTop)
     , ("admin", Admin.admin)
     , ("admin/new", Admin.newEntry)
     , ("admin/:id/edit", Admin.editEntry)
     , ("admin/:id/delete", Admin.deleteEntry)
     , ("js", serveDirectory "static/js")
     , ("css", serveDirectory "static/css")
-    , ("search", Index.handleSearch)
-    , (":query", Index.handleEntries =<< param "query")
-    , ("comment/:day", Index.handleComment)
+    , ("search", Public.handleSearch)
+    , (":query", Public.handleEntries =<< param "query")
+    , ("comment/:day", Public.handleComment)
     ]
   pure $ Lupo h (EDB.makeDatabase conn) lc l
