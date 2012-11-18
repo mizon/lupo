@@ -17,6 +17,7 @@ body {
 }
 
 #container {
+    @include side-border(#CCC);
 }
 
 #header {
@@ -31,17 +32,12 @@ body {
     }
 }
 
-#main {
-    background-color: $main-back;
-    padding: 1em 1.6em;
-    @include side-border(#CCC);
-}
-
 #footer {
     background-color: #CCC;
 }
 
 .navigation {
+    margin: 0 -1.6em;
     padding: 0 0.5em;
     background-color: #666;
     color: #CCC;
@@ -77,9 +73,16 @@ body {
 }
 
 #main {
+    background-color: $main-back;
+    padding: 0 1.6em;
+
+    input.submit-button {
+        width: 10em;
+    }
+
     .day {
         background-color: #FFF;
-        padding-bottom: 1em;
+        margin: 1em 0 2em;
 
         h2 {
             margin: 0 0 1em;
@@ -106,6 +109,49 @@ body {
 
     p.empty-month {
         text-align: center;
+    }
+}
+
+#comments {
+    margin-bottom: 2em;
+
+    h3 {
+        color: #000 !important;
+        margin: 0.5em 0;
+    }
+
+    dl {
+        dt {
+            margin: 0.5em 0;
+            font-size: 80%;
+        }
+
+        dd {
+            margin: 0 0 1.5em;
+        }
+    }
+}
+
+#new-comment {
+    margin-bottom: 2em;
+
+    width: 500px;
+
+    h3 {
+        color: #000 !important;
+        margin: 0.5em 0;
+    }
+
+    input {
+        margin-bottom: 0.5em;
+    }
+
+    input, textarea {
+        width: 100%;
+    }
+
+    .submit {
+        text-align: right;
     }
 }
 

@@ -60,12 +60,15 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
       ("lupo:day-title", pure $ V.dayTitle reqDay)
     , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
-    , ("lupo:comments-title", H.textSplice =<< L.localize "Comment")
-    , ("lupo:comments", pure $ V.comment =<< DB.dayComments day)
+    , ("lupo:comments-caption", H.textSplice =<< L.localize "Comments")
+    , ("lupo:comments", V.comments $ DB.dayComments day)
     , ("lupo:page-navigation", V.singleDayNavigation nav)
+    , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
     , ("lupo:new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
     , ("lupo:comment-name", H.textSplice $ DB.commentName c)
     , ("lupo:comment-body", H.textSplice $ DB.commentBody c)
+    , ("lupo:name-label", H.textSplice =<< L.localize "Name")
+    , ("lupo:content-label", H.textSplice =<< L.localize "Content")
     ]
   where
     reqDay = DB.day day

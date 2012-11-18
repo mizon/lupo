@@ -13,6 +13,10 @@ body {
   background-color: #EEE;
   line-height: 1.4; }
 
+#container {
+  border: solid 1px #cccccc;
+  border-width: 0px 1px; }
+
 #header {
   background-color: #003399;
   color: #FFF;
@@ -22,16 +26,11 @@ body {
     text-decoration: none;
     padding: 0.5em; }
 
-#main {
-  background-color: white;
-  padding: 1em 1.6em;
-  border: solid 1px #cccccc;
-  border-width: 0px 1px; }
-
 #footer {
   background-color: #CCC; }
 
 .navigation {
+  margin: 0 -1.6em;
   padding: 0 0.5em;
   background-color: #666;
   color: #CCC; }
@@ -54,23 +53,52 @@ body {
   #search #search-button {
     width: 6em; }
 
-#main .day {
-  background-color: #FFF;
-  padding-bottom: 1em; }
-  #main .day h2 {
-    margin: 0 0 1em;
-    padding: 0.5em 0;
-    border-bottom: solid 1px #999999; }
-    #main .day h2 a {
-      color: #000; }
-  #main .day h3 {
-    color: #039; }
-  #main .day p {
-    margin: 0.5em 0 1em; }
-  #main .day p.time {
-    margin-bottom: 2em; }
-#main p.empty-month {
-  text-align: center; }
+#main {
+  background-color: white;
+  padding: 0 1.6em; }
+  #main input.submit-button {
+    width: 10em; }
+  #main .day {
+    background-color: #FFF;
+    margin: 1em 0 2em; }
+    #main .day h2 {
+      margin: 0 0 1em;
+      padding: 0.5em 0;
+      border-bottom: solid 1px #999999; }
+      #main .day h2 a {
+        color: #000; }
+    #main .day h3 {
+      color: #039; }
+    #main .day p {
+      margin: 0.5em 0 1em; }
+    #main .day p.time {
+      margin-bottom: 2em; }
+  #main p.empty-month {
+    text-align: center; }
+
+#comments {
+  margin-bottom: 2em; }
+  #comments h3 {
+    color: #000 !important;
+    margin: 0.5em 0; }
+  #comments dl dt {
+    margin: 0.5em 0;
+    font-size: 80%; }
+  #comments dl dd {
+    margin: 0 0 1.5em; }
+
+#new-comment {
+  margin-bottom: 2em;
+  width: 500px; }
+  #new-comment h3 {
+    color: #000 !important;
+    margin: 0.5em 0; }
+  #new-comment input {
+    margin-bottom: 0.5em; }
+  #new-comment input, #new-comment textarea {
+    width: 100%; }
+  #new-comment .submit {
+    text-align: right; }
 
 #footer {
   text-align: center;
