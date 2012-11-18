@@ -51,12 +51,12 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} = pure $
     ]
   ]
 
-daySummary :: LDB.Day -> H.Template
-daySummary LDB.Day {..} = pure $
-  Element "div" [("class", "day")] $
-       dayTitle day
-    <> (anEntry =<< dayEntries)
-    <> commentsSummary
+daySummary :: (Functor m, Monad m) => LDB.Day -> H.Splice m
+daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
+    ("day-title", pure $ dayTitle day)
+  , ("day-entries", pure $ anEntry =<< dayEntries)
+  , ("comments-summary", pure commentsSummary)
+  ]
   where
     commentsSummary
       | numOfComments > 0 = [
