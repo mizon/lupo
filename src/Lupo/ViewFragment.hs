@@ -60,12 +60,11 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
   where
-    commentLabel = do
-      label <- LL.localize "Comment"
-      pure $ if numOfComments > 0 then
-               [st|#{label} (#{toText numOfComments})|]
-             else
-               label
+    commentLabel
+      | numOfComments > 0 = do
+          label <- LL.localize "Comment"
+          pure [st|#{label} (#{toText numOfComments})|]
+      | otherwise = LL.localize "New Comment"
 
     linkToComment = [st|#{formatTime "/%Y%m%d" day}##{postedOrNew}|]
       where
