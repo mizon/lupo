@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.ViewFragment (
@@ -51,20 +52,27 @@ entryInfo LDB.Saved {..} = pure $
     ]
   ]
 
-daySummary :: (Functor m, Monad m) => LDB.Day -> H.Splice m
+daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
     ("lupo:day-title", pure $ dayTitle day)
   , ("lupo:day-entries", pure $ anEntry =<< dayEntries)
-  , ("lupo:comments-summary", pure commentsSummary)
+  , ("lupo:link-to-comment", H.textSplice linkToComment)
+  , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
   where
-    commentsSummary
-      | numOfComments > 0 = [
-          Element "p" [] [TextNode [st|Comments (#{toText numOfComments})|]]
-        ]
-      | otherwise = [
-          Element "p" [] [TextNode "Comment"]
-        ]
+    commentLabel = do
+      label <- LL.localize "Comment"
+      pure $ if numOfComments > 0 then
+               [st|#{label} (#{toText numOfComments})|]
+             else
+               label
+
+    linkToComment = [st|#{formatTime "/%Y%m%d" day}##{postedOrNew}|]
+      where
+        postedOrNew :: T.Text
+        postedOrNew
+          | numOfComments > 0 = "comments"
+          | otherwise = "new-comment"
 
 dayTitle :: Time.Day -> H.Template
 dayTitle d = pure $ Element "a" [("href", dayLinkFormat d)] [TextNode $ dayFormat d]
