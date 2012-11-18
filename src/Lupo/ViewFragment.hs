@@ -183,4 +183,4 @@ timeToText = formatTime "%Y-%m-%d"
 newestElement :: LL.HasLocalizer m => m Node
 newestElement = do
   label <- LL.localize "Newest"
-  pure $ Element "li" [] [Element "a" [("href", "/")] [TextNode label]]
+  pure $ Element "a" [("href", "/")] [TextNode label]
