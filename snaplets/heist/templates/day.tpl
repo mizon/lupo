@@ -1,3 +1,4 @@
+<lupo:page-navigation/>
 <div class="day">
   <h2><lupo:day-title/></h2>
   <lupo:entries/>
@@ -9,3 +10,4 @@
     <input type="submit" value="Submit"/>
   </form>
 </div>
+<lupo:page-navigation/>

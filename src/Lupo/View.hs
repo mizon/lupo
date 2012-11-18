@@ -15,7 +15,6 @@ module Lupo.View (
   ) where
 
 import Control.Applicative
-import Data.Monoid
 import qualified Data.Text as T
 import Snap
 import qualified Snap.Snaplet.Heist as SH
@@ -58,10 +57,10 @@ multiDaysView :: (m ~ H.HeistT n, Functor n, MonadPlus n, L.HasLocalizer m, GetL
 multiDaysView nav days = View $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
-  H.modifyTS $ H.bindSplices [
+  H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
+    , ("lupo:day-summaries", H.mapSplices V.daySummary days)
     ]
-  H.mapSplices V.daySummary days
   where
     firstDay = DB.day $ head days
     numOfDays = length days
@@ -70,13 +69,13 @@ monthView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfi
           => N.Navigation m -> [DB.Day] -> View n
 monthView nav days = View $ do
   bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
-  H.modifyTS $ H.bindSplices [
+  H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.monthNavigation nav)
+    , ("lupo:day-summaries", if null days then
+                               V.emptyMonth
+                             else
+                               H.mapSplices V.daySummary days)
     ]
-  if null days then
-    V.emptyMonth
-  else
-    H.mapSplices V.daySummary days
 
 searchResultView :: (MonadIO m, GetLupoConfig (H.HeistT m))
                  => T.Text -> [DB.Saved DB.Entry] -> View m
@@ -103,4 +102,4 @@ bindBasicSplices title = do
     makePageTitle siteTitle =
       case title of
         "" -> siteTitle
-        t -> siteTitle <> " | " <> t
+        t -> [st|#{siteTitle} | #{t}|]
