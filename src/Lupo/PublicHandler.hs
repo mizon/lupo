@@ -64,8 +64,11 @@ handleSearch :: LupoHandler ()
 handleSearch = do
   db <- LDB.getDatabase
   word <- param "word"
+  liftIO $ putStrLn "start search..."
   enum <- LDB.search db word
+  liftIO $ putStrLn "search finished"
   es <- run_ $ enum $$ EL.consume
+  liftIO $ putStrLn "search result unpacked"
   V.render $ V.searchResultView word es
 
 handleComment :: LupoHandler ()

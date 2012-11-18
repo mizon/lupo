@@ -34,21 +34,21 @@ newtype View m = View {
   }
 
 render :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
-render (getSplice -> s) = SH.heistLocal (H.bindSplice "main-body" s) $ SH.render "public"
+render (getSplice -> s) = SH.heistLocal (H.bindSplice "lupo:main-body" s) $ SH.render "public"
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
               => DB.Day -> N.Navigation m -> DB.Comment -> View n
 singleDayView day nav c = View $ do
   bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
   H.callTemplate "day" [
-      ("day-title", pure $ V.dayTitle reqDay)
-    , ("entries", pure $ V.anEntry =<< DB.dayEntries day)
-    , ("comments-title", H.textSplice =<< L.localize "Comment")
-    , ("comments", pure $ V.comment =<< DB.dayComments day)
-    , ("page-navigation", V.singleDayNavigation nav)
-    , ("new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
-    , ("comment-name", H.textSplice $ DB.commentName c)
-    , ("comment-body", H.textSplice $ DB.commentBody c)
+      ("lupo:day-title", pure $ V.dayTitle reqDay)
+    , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
+    , ("lupo:comments-title", H.textSplice =<< L.localize "Comment")
+    , ("lupo:comments", pure $ V.comment =<< DB.dayComments day)
+    , ("lupo:page-navigation", V.singleDayNavigation nav)
+    , ("lupo:new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
+    , ("lupo:comment-name", H.textSplice $ DB.commentName c)
+    , ("lupo:comment-body", H.textSplice $ DB.commentBody c)
     ]
   where
     reqDay = DB.day day
@@ -59,7 +59,7 @@ multiDaysView nav days = View $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
   H.modifyTS $ H.bindSplices [
-      ("page-navigation", V.multiDaysNavigation daysPerPage nav)
+      ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
     ]
   H.mapSplices V.daySummary days
   where
@@ -71,18 +71,21 @@ monthView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfi
 monthView nav days = View $ do
   bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
   H.modifyTS $ H.bindSplices [
-      ("page-navigation", V.monthNavigation nav)
+      ("lupo:page-navigation", V.monthNavigation nav)
     ]
   if null days then
     V.emptyMonth
   else
     H.mapSplices V.daySummary days
 
-searchResultView :: (Monad m, GetLupoConfig (H.HeistT m))
+searchResultView :: (MonadIO m, GetLupoConfig (H.HeistT m))
                  => T.Text -> [DB.Saved DB.Entry] -> View m
 searchResultView word es = View $ do
+  liftIO $ putStrLn "bind basicSplices"
   bindBasicSplices word
+  liftIO $ putStrLn "template calles"
   void $ H.callTemplate "search-result" []
+  liftIO $ putStrLn "template called"
   pure $ V.searchResult es
 
 bindBasicSplices :: (Monad m, GetLupoConfig (H.HeistT m))
@@ -91,10 +94,10 @@ bindBasicSplices title = do
   siteTitle <- refLupoConfig lcSiteTitle
   footer <- refLupoConfig lcFooterBody
   H.modifyTS $ H.bindSplices [
-      ("page-title", H.textSplice $ makePageTitle siteTitle)
-    , ("header-title", H.textSplice siteTitle)
-    , ("style-sheet", H.textSplice "diary")
-    , ("footer-body", pure footer)
+      ("lupo:page-title", H.textSplice $ makePageTitle siteTitle)
+    , ("lupo:header-title", H.textSplice siteTitle)
+    , ("lupo:style-sheet", H.textSplice "diary")
+    , ("lupo:footer-body", pure footer)
     ]
   where
     makePageTitle siteTitle =

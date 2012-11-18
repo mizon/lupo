@@ -1,3 +1,3 @@
 <ul class="page-navigation">
-  <li><previous-link/></li><li><middle-link/></li><li><next-link/></li>
+  <li><lupo:previous-link/></li><li><lupo:middle-link/></li><li><lupo:next-link/></li>
 </ul>

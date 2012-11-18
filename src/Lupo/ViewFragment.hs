@@ -53,9 +53,9 @@ entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} = pure $
 
 daySummary :: (Functor m, Monad m) => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
-    ("day-title", pure $ dayTitle day)
-  , ("day-entries", pure $ anEntry =<< dayEntries)
-  , ("comments-summary", pure commentsSummary)
+    ("lupo:day-title", pure $ dayTitle day)
+  , ("lupo:day-entries", pure $ anEntry =<< dayEntries)
+  , ("lupo:comments-summary", pure commentsSummary)
   ]
   where
     commentsSummary
@@ -112,9 +112,9 @@ monthNavigation nav = do
   previousLabel <- LL.localize "Previous Month"
   nextLabel <- LL.localize "Next Month"
   H.callTemplate "_navigation" [
-      ("previous-link", pure [mkMonthLink previousLabel previous])
-    , ("middle-link", pure [newest])
-    , ("next-link", pure [mkMonthLink nextLabel next])
+      ("lupo:previous-link", pure [mkMonthLink previousLabel previous])
+    , ("lupo:middle-link", pure [newest])
+    , ("lupo:next-link", pure [mkMonthLink nextLabel next])
     ]
   where
     mkMonthLink body m = Element "a" [("href", formatMonthLink m)] [TextNode body]
@@ -130,9 +130,9 @@ singleDayNavigation nav = do
   thisMonthLabel <- LL.localize "This Month"
   nextLabel <- LL.localize "Next Day"
   H.callTemplate "_navigation" [
-      ("previous-link", pure [mkDayLink previousLabel previous])
-    , ("middle-link", pure [thisMonthLink thisMonthLabel])
-    , ("next-link", pure [mkDayLink nextLabel next])
+      ("lupo:previous-link", pure [mkDayLink previousLabel previous])
+    , ("lupo:middle-link", pure [thisMonthLink thisMonthLabel])
+    , ("lupo:next-link", pure [mkDayLink nextLabel next])
     ]
   where
     mkDayLink body = maybe (TextNode body) $ \d_ ->
@@ -154,9 +154,9 @@ multiDaysNavigation nDays nav = do
   nextLabel <- LL.localize "Next %d Days"
   newest <- newestElement
   H.callTemplate "_navigation" [
-      ("previous-link", pure [mkDayLink previousLabel previous])
-    , ("middle-link", pure [newest])
-    , ("next-link", pure [mkDayLink nextLabel next])
+      ("lupo:previous-link", pure [mkDayLink previousLabel previous])
+    , ("lupo:middle-link", pure [newest])
+    , ("lupo:next-link", pure [mkDayLink nextLabel next])
     ]
   where
     mkDayLink body = maybe (TextNode formattedBody) $ \d_ ->

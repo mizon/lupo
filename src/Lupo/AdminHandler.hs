@@ -26,8 +26,8 @@ admin = do
   db <- LDB.getDatabase
   entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
   H.renderWithSplices "admin" [
-      ("entries-list", pure $ V.entryInfo =<< entries)
-    , ("style-sheet", textSplice "admin")
+      ("lupo:entries-list", pure $ V.entryInfo =<< entries)
+    , ("lupo:style-sheet", textSplice "admin")
     ]
 
 newEntry :: LupoHandler ()
@@ -82,21 +82,21 @@ showPreview :: T.Text -> LDB.Entry -> LupoHandler ()
 showPreview prevTitle e@LDB.Entry {..} = do
   (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
   H.renderWithSplices "preview-entry" [
-      ("style-sheet", textSplice "admin")
-    , ("preview-title", textSplice prevTitle)
-    , ("submit-path", textSplice submitPath)
-    , ("entry-title", textSplice entryTitle)
-    , ("entry-body", textSplice entryBody)
-    , ("rendered-body", pure $ V.renderBody e)
+      ("lupo:style-sheet", textSplice "admin")
+    , ("lupo:preview-title", textSplice prevTitle)
+    , ("lupo:submit-path", textSplice submitPath)
+    , ("lupo:entry-title", textSplice entryTitle)
+    , ("lupo:entry-body", textSplice entryBody)
+    , ("lupo:rendered-body", pure $ V.renderBody e)
     ]
 
 showEditor :: T.Text -> Maybe LDB.Entry -> LupoHandler ()
 showEditor title entry = do
   (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
   H.renderWithSplices "edit-entry" [
-      ("style-sheet", textSplice "admin")
-    , ("edit-title", textSplice title)
-    , ("submit-path", textSplice submitPath)
-    , ("default-title", textSplice $ maybe "" LDB.entryTitle entry)
-    , ("default-body", textSplice $ maybe "" LDB.entryBody entry)
+      ("lupo:style-sheet", textSplice "admin")
+    , ("lupo:edit-title", textSplice title)
+    , ("lupo:submit-path", textSplice submitPath)
+    , ("lupo:default-title", textSplice $ maybe "" LDB.entryTitle entry)
+    , ("lupo:default-body", textSplice $ maybe "" LDB.entryBody entry)
     ]
