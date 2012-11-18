@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.View (
@@ -28,17 +29,34 @@ import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.ViewFragment as V
 
-newtype View m = View {
-    getSplice :: H.Splice m
+data View m = View {
+    viewTitle :: T.Text
+  , viewSplice :: H.Splice m
   }
 
-render :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
-render (getSplice -> s) = SH.heistLocal (H.bindSplice "lupo:main-body" s) $ SH.render "public"
+render :: (SH.HasHeist b, GetLupoConfig (H.HeistT (Handler b b)))
+       => View (Handler b b) -> Handler b v ()
+render View {..} = SH.heistLocal bindSplices $ SH.render "public"
+  where
+    bindSplices =
+        H.bindSplices [
+          ("lupo:page-title", H.textSplice =<< makePageTitle)
+        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
+        , ("lupo:style-sheet", H.textSplice "diary")
+        , ("lupo:footer-body", refLupoConfig lcFooterBody)
+        ]
+      . H.bindSplice "lupo:main-body" viewSplice
+      where
+        makePageTitle = do
+          siteTitle <- refLupoConfig lcSiteTitle
+          pure $
+            case viewTitle of
+              "" -> siteTitle
+              t -> [st|#{siteTitle} | #{t}|]
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
               => DB.Day -> N.Navigation m -> DB.Comment -> View n
-singleDayView day nav c = View $ do
-  bindBasicSplices $ formatTime "%Y-%m-%d" $ DB.day day
+singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
       ("lupo:day-title", pure $ V.dayTitle reqDay)
     , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
@@ -52,11 +70,10 @@ singleDayView day nav c = View $ do
   where
     reqDay = DB.day day
 
-multiDaysView :: (m ~ H.HeistT n, Functor n, MonadPlus n, L.HasLocalizer m, GetLupoConfig m)
+multiDaysView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
               => N.Navigation m -> [DB.Day] -> View n
-multiDaysView nav days = View $ do
+multiDaysView nav days = View [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|] $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
-  bindBasicSplices [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|]
   H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
     , ("lupo:day-summaries", H.mapSplices V.daySummary days)
@@ -67,8 +84,7 @@ multiDaysView nav days = View $ do
 
 monthView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
           => N.Navigation m -> [DB.Day] -> View n
-monthView nav days = View $ do
-  bindBasicSplices $ formatTime "%Y-%m" $ N.getThisMonth nav
+monthView nav days = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
   H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.monthNavigation nav)
     , ("lupo:day-summaries", if null days then
@@ -79,27 +95,6 @@ monthView nav days = View $ do
 
 searchResultView :: (MonadIO m, GetLupoConfig (H.HeistT m))
                  => T.Text -> [DB.Saved DB.Entry] -> View m
-searchResultView word es = View $ do
-  liftIO $ putStrLn "bind basicSplices"
-  bindBasicSplices word
-  liftIO $ putStrLn "template calles"
+searchResultView word es = View word $ do
   void $ H.callTemplate "search-result" []
-  liftIO $ putStrLn "template called"
   pure $ V.searchResult es
-
-bindBasicSplices :: (Monad m, GetLupoConfig (H.HeistT m))
-                 => T.Text -> H.HeistT m ()
-bindBasicSplices title = do
-  siteTitle <- refLupoConfig lcSiteTitle
-  footer <- refLupoConfig lcFooterBody
-  H.modifyTS $ H.bindSplices [
-      ("lupo:page-title", H.textSplice $ makePageTitle siteTitle)
-    , ("lupo:header-title", H.textSplice siteTitle)
-    , ("lupo:style-sheet", H.textSplice "diary")
-    , ("lupo:footer-body", pure footer)
-    ]
-  where
-    makePageTitle siteTitle =
-      case title of
-        "" -> siteTitle
-        t -> [st|#{siteTitle} | #{t}|]
