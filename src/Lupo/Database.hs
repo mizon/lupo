@@ -48,13 +48,13 @@ data Saved o = Saved {
     idx :: Integer
   , createdAt :: Time.ZonedTime
   , modifiedAt :: Time.ZonedTime
-  , refObject :: o
+  , savedContent :: o
   } deriving Show
 
 instance Eq o => Eq (Saved o) where
   self == other =
        idx self == idx other
-    && refObject self == refObject other
+    && savedContent self == savedContent other
 
 data Entry = Entry {
     entryTitle :: T.Text
@@ -196,7 +196,7 @@ makeDatabase conn = Database {
         idx = id_
       , createdAt = c_at
       , modifiedAt = m_at
-      , refObject = Entry t b
+      , savedContent = Entry t b
       }
     sqlToEntry _ = error "in sql->entry conversion"
 
@@ -211,7 +211,7 @@ makeDatabase conn = Database {
         idx = id_
       , createdAt = c_at
       , modifiedAt = m_at
-      , refObject = Comment n b
+      , savedContent = Comment n b
       }
     sqlToComment _ = error "in sql->comment conversion"
 

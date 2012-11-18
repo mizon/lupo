@@ -37,10 +37,10 @@ renderBody :: LDB.Entry -> H.Template
 renderBody LDB.Entry {..} = S.renderBody entryBody
 
 entryInfo :: LDB.Saved LDB.Entry -> H.Template
-entryInfo LDB.Saved {refObject = LDB.Entry {..}, ..} = pure $
+entryInfo LDB.Saved {..} = pure $
   Element "tr" [] [
     Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
-  , Element "td" [] [TextNode entryTitle]
+  , Element "td" [] [TextNode $ LDB.entryTitle savedContent]
   , Element "td" [("class", "operation")] [
       Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
     , TextNode " "
@@ -74,17 +74,17 @@ dayTitle d = pure $ Element "a" [("href", dayLinkFormat d)] [TextNode $ dayForma
 
 anEntry :: LDB.Saved LDB.Entry -> H.Template
 anEntry LDB.Saved {..} =
-     Element "h3" [] [TextNode $ LDB.entryTitle refObject]
-   : S.renderBody (LDB.entryBody refObject)
+     Element "h3" [] [TextNode $ LDB.entryTitle savedContent]
+   : S.renderBody (LDB.entryBody savedContent)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
 comment :: LDB.Saved LDB.Comment -> H.Template
 comment LDB.Saved {..} = [
     Element "dt" [] [
-      TextNode $ LDB.commentName refObject
+      TextNode $ LDB.commentName savedContent
     ]
   , Element "dd" [] [
-      TextNode $ LDB.commentBody refObject
+      TextNode $ LDB.commentBody savedContent
     ]
   ]
 
@@ -99,8 +99,8 @@ searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
     row LDB.Saved {..} =
       Element "tr" [] [
         Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
-      , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle refObject]
-      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody refObject]
+      , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle savedContent]
+      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
       ]
 
 monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))

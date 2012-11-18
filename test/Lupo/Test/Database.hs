@@ -97,7 +97,7 @@ dbTest = testGroup "database control" [
         LDB.insertComment db (Time.fromGregorian 2012 8 16) new
         d <- LDB.selectDay db $ Time.fromGregorian 2012 8 16
         LDB.numOfComments d @?= 1
-        let saved = LDB.refObject $ Prelude.head $ LDB.dayComments d
+        let saved = LDB.savedContent $ Prelude.head $ LDB.dayComments d
         LDB.commentName saved @?= "taro"
         LDB.commentBody saved @?= "hello, there."
   ]
@@ -124,7 +124,7 @@ savedTest = testGroup "saved object" [
 
 assertEntry :: LDB.Entry -> LDB.Saved LDB.Entry -> Assertion
 assertEntry expected actual
-  | expected == LDB.refObject actual = pure ()
+  | expected == LDB.savedContent actual = pure ()
   | otherwise = assertFailure "invlaid entry"
 
 withDB :: (LDB.Database IO -> Assertion) -> Assertion

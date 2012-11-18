@@ -54,7 +54,7 @@ editEntry = method GET editor <|> method POST updateEntry
     editor = do
       id_ <- paramId
       db <- LDB.getDatabase
-      (LDB.refObject -> entry) <- LDB.select db id_
+      (LDB.savedContent -> entry) <- LDB.select db id_
       editEntryEditor entry
 
     updateEntry = do
