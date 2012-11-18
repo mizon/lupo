@@ -43,6 +43,7 @@ singleDayView day nav c = View $ do
   H.callTemplate "day" [
       ("day-title", pure $ V.dayTitle reqDay)
     , ("entries", pure $ V.anEntry =<< DB.dayEntries day)
+    , ("comments-title", H.textSplice =<< L.localize "Comment")
     , ("comments", pure $ V.comment =<< DB.dayComments day)
     , ("page-navigation", V.singleDayNavigation nav)
     , ("new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])

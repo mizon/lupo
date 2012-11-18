@@ -1,5 +1,5 @@
 <div class="day">
-  <day-title/>
+  <h2><day-title/></h2>
   <day-entries/>
   <comments-summary/>
 </div>

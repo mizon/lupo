@@ -67,12 +67,7 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
         ]
 
 dayTitle :: Time.Day -> H.Template
-dayTitle d = pure $
-  Element "h2" [] [
-    Element "a" [("href", dayLinkFormat d)] [
-      TextNode $ dayFormat d
-    ]
-  ]
+dayTitle d = pure $ Element "a" [("href", dayLinkFormat d)] [TextNode $ dayFormat d]
   where
     dayFormat = formatTime "%Y-%m-%d"
     dayLinkFormat = formatTime "/%Y%m%d"
