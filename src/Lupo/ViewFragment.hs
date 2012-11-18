@@ -136,14 +136,14 @@ singleDayNavigation nav = do
     ]
   where
     mkDayLink body = maybe (TextNode body) $ \d_ ->
-      Element "a" [
-        ("href", formatTime "/%Y%m%d" d_)
-      ] [TextNode body]
+      Element "a"
+              [("href", formatTime "/%Y%m%d" d_)]
+              [TextNode body]
 
     thisMonthLink body =
-      Element "a" [
-        ("href", formatTime "/%Y%m" $ N.getThisMonth nav)
-      ] [TextNode body]
+      Element "a"
+              [("href", formatTime "/%Y%m" $ N.getThisMonth nav)]
+              [TextNode body]
 
 multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
                     => Integer -> N.Navigation (H.HeistT m) -> H.Splice m
@@ -160,9 +160,9 @@ multiDaysNavigation nDays nav = do
     ]
   where
     mkDayLink body = maybe (TextNode formattedBody) $ \d_ ->
-      Element "a" [
-        ("href", formatTime "/%Y%m%d-" d_ <> textNDays)
-      ] [TextNode formattedBody]
+      Element "a"
+              [("href", [st|#{formatTime "/%Y%m%d-" d_}#{textNDays}|])]
+              [TextNode formattedBody]
       where
         formattedBody = T.replace "%d" textNDays body
         textNDays = toText nDays
