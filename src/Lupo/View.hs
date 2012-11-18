@@ -60,8 +60,7 @@ multiDaysView nav days = View $ do
   H.modifyTS $ H.bindSplices [
       ("page-navigation", V.multiDaysNavigation daysPerPage nav)
     ]
-  ds <- sequence $ V.daySummary <$> days
-  pure $ concat ds
+  H.mapSplices V.daySummary days
   where
     firstDay = DB.day $ head days
     numOfDays = length days
@@ -75,9 +74,8 @@ monthView nav days = View $ do
     ]
   if null days then
     V.emptyMonth
-  else do
-    ds <- sequence $ V.daySummary <$> days
-    pure $ concat ds
+  else
+    H.mapSplices V.daySummary days
 
 searchResultView :: (Monad m, GetLupoConfig (H.HeistT m))
                  => T.Text -> [DB.Saved DB.Entry] -> View m
