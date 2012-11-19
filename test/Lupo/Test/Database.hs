@@ -100,6 +100,14 @@ dbTest = testGroup "database control" [
         let saved = LDB.savedContent $ Prelude.head $ LDB.dayComments d
         LDB.commentName saved @?= "taro"
         LDB.commentBody saved @?= "hello, there."
+
+  , testCase "insert empty comment" $
+      withDB $ \db -> do
+        let emptyComment = LDB.Comment " " " "
+        cond <- try $ LDB.insertComment db (Time.fromGregorian 2012 8 16) emptyComment
+        case cond of
+          Left (InvalidField msgs) -> Prelude.length msgs @?= 2
+          Right _ -> assertFailure "must raise InvalidField exception"
   ]
 
 savedTest :: Test
