@@ -66,7 +66,7 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
     , ("lupo:comments", H.mapSplices V.comment $ DB.dayComments day)
     , ("lupo:page-navigation", V.singleDayNavigation nav)
     , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
-    , ("lupo:new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
+    , ("lupo:new-comment-url", textSplice [st|/#{formatTime "%Y%m%d" reqDay}/comment|])
     , ("lupo:comment-name", H.textSplice $ DB.commentName c)
     , ("lupo:comment-body", H.textSplice $ DB.commentBody c)
     , ("lupo:name-label", H.textSplice =<< L.localize "Name")
@@ -76,8 +76,8 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
     reqDay = DB.day day
 
     ifCommented
-      | null $ DB.dayComments day = pure []
-      | otherwise = childNodes <$> H.getParamNode
+      | DB.numOfComments day > 0 = childNodes <$> H.getParamNode
+      | otherwise = pure []
 
 multiDaysView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
               => N.Navigation m -> [DB.Day] -> View n

@@ -11,6 +11,7 @@ module Lupo.PublicHandler (
   ) where
 
 import Control.Monad as M
+import Control.Monad.CatchIO
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
@@ -20,13 +21,14 @@ import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
-import Prelude hiding (filter)
+import Prelude hiding (catch, filter)
 import Snap
 import System.Locale
 
 import Lupo.Application
 import Lupo.Config
 import qualified Lupo.Database as LDB
+import Lupo.Exception
 import qualified Lupo.Navigation as N
 import Lupo.Util
 import qualified Lupo.View as V
@@ -74,11 +76,16 @@ handleSearch = do
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
   dayStr <- param "day"
-  day <- either (error . show) pure $ A.parseOnly dayParser dayStr
+  reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
   comment <- LDB.Comment <$> param "name" <*> param "body"
   db <- LDB.getDatabase
-  LDB.insertComment db day comment
-  redirect $ "/" <> TE.encodeUtf8 dayStr
+  cond <- try $ LDB.insertComment db reqDay comment
+  case cond of
+    Left (InvalidField msgs) -> do
+      dayContent <- LDB.selectDay db reqDay
+      nav <- makeNavigation reqDay
+      V.render $ V.singleDayView dayContent nav $ comment
+    Right _ -> redirect $ "/" <> TE.encodeUtf8 dayStr
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
