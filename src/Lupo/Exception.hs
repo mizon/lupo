@@ -4,9 +4,11 @@ module Lupo.Exception (
     LupoException
   , RecordNotFound(..)
   , InvalidLocaleFile(..)
+  , InvalidField(..)
   ) where
 
 import Control.Exception
+import qualified Data.Text as T
 import Data.Typeable
 
 data LupoException = forall e. Exception e => LupoException e
@@ -28,6 +30,13 @@ data InvalidLocaleFile = InvalidLocaleFile
   deriving (Typeable, Show)
 
 instance Exception InvalidLocaleFile where
+  toException = toLupoException
+  fromException = fromLupoException
+
+data InvalidField = InvalidField [T.Text]
+  deriving (Typeable, Show)
+
+instance Exception InvalidField where
   toException = toLupoException
   fromException = fromLupoException
 

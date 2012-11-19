@@ -1,5 +1,6 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -18,17 +19,18 @@ module Lupo.Database (
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans
 import Control.Monad.CatchIO
+import Control.Monad.Trans
+import Control.Monad.Writer
 import Data.Enumerator
 import qualified Data.Enumerator.List as EL
-import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
 import Prelude hiding (all)
 
 import Lupo.Exception
+import qualified Lupo.FieldValidator as FV
 import Lupo.Util
 
 class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
@@ -171,7 +173,8 @@ makeDatabase conn = Database {
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
-  , insertComment = \d Comment {..} -> do
+  , insertComment = \d c@Comment {..} -> do
+      FV.validate commentValidator c
       liftIO $ do
         now <- Time.getZonedTime
         void $ DB.run conn
@@ -214,6 +217,13 @@ makeDatabase conn = Database {
       , savedContent = Comment n b
       }
     sqlToComment _ = error "in sql->comment conversion"
+
+commentValidator :: FV.FieldValidator Comment
+commentValidator = FV.makeFieldValidator $ \Comment {..} -> do
+  FV.checkIsEmtpy commentName "Name"
+  FV.checkIsTooLong commentName "Name"
+  FV.checkIsEmtpy commentBody "Body"
+  FV.checkIsTooLong commentBody "Body"
 
 makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
 makeDay d es cs = Day {
