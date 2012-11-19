@@ -3,7 +3,14 @@
   <h2><lupo:day-title/></h2>
   <lupo:entries/>
 </div>
-<lupo:comments/>
+<lupo:if-commented>
+  <div id="comments">
+    <h3><lupo:comments-caption/></h3>
+    <dl>
+      <lupo:comments/>
+    </dl>
+  </div>
+</lupo:if-commented>
 <div id="new-comment">
   <h3><lupo:new-comment-caption/></h3>
   <form method="post" action="${lupo:new-comment-url}">

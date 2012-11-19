@@ -12,7 +12,7 @@ module Lupo.ViewFragment (
   , daySummary
   , dayTitle
   , anEntry
-  , comments
+  , comment
   , emptyMonth
   , searchResult
   , monthNavigation
@@ -85,18 +85,12 @@ anEntry LDB.Saved {..} =
    : S.renderBody (LDB.entryBody savedContent)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
-comments :: (Monad m, LL.HasLocalizer (H.HeistT m)) => [LDB.Saved LDB.Comment] -> H.Splice m
-comments [] = pure []
-comments cs = H.callTemplate "_comments" [
-    ("lupo:comments-caption", H.textSplice =<< LL.localize "Comments")
-  , ("lupo:comments", H.mapSplices commentSplice cs)
+comment :: (Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Saved LDB.Comment -> H.Splice m
+comment LDB.Saved {..} = H.callTemplateWithText "_comment" [
+    ("lupo:comment-name", LDB.commentName savedContent)
+  , ("lupo:comment-time", formatTime "%Y-%m-%d %H:%M" $ createdAt)
+  , ("lupo:comment-content", LDB.commentBody savedContent)
   ]
-  where
-    commentSplice LDB.Saved {..} = H.callTemplateWithText "_comment" [
-        ("lupo:comment-name", LDB.commentName savedContent)
-      , ("lupo:comment-time", formatTime "%Y-%m-%d %H:%M" $ createdAt)
-      , ("lupo:comment-content", LDB.commentBody savedContent)
-      ]
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do

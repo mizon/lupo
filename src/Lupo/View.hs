@@ -21,6 +21,7 @@ import Snap
 import qualified Snap.Snaplet.Heist as SH
 import Text.Shakespeare.Text hiding (toText)
 import qualified Text.Templating.Heist as H
+import Text.XmlHtml hiding (render)
 
 import Lupo.Config
 import qualified Lupo.Database as DB
@@ -60,8 +61,9 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
       ("lupo:day-title", pure $ V.dayTitle reqDay)
     , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
+    , ("lupo:if-commented", ifCommented)
     , ("lupo:comments-caption", H.textSplice =<< L.localize "Comments")
-    , ("lupo:comments", V.comments $ DB.dayComments day)
+    , ("lupo:comments", H.mapSplices V.comment $ DB.dayComments day)
     , ("lupo:page-navigation", V.singleDayNavigation nav)
     , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
     , ("lupo:new-comment-url", textSplice [st|/comment/#{formatTime "%Y%m%d" reqDay}|])
@@ -72,6 +74,10 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
     ]
   where
     reqDay = DB.day day
+
+    ifCommented
+      | null $ DB.dayComments day = pure []
+      | otherwise = childNodes <$> H.getParamNode
 
 multiDaysView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
               => N.Navigation m -> [DB.Day] -> View n
