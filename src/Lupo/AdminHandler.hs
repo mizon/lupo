@@ -35,12 +35,16 @@ login = method GET $ do
 
 admin :: LupoHandler ()
 admin = do
-  db <- LDB.getDatabase
-  entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
-  H.renderWithSplices "admin" [
-      ("lupo:entries-list", pure $ V.entryInfo =<< entries)
-    , ("lupo:style-sheet", textSplice "admin")
-    ]
+  cond <- with auth $ A.isLoggedIn
+  if cond then do
+    db <- LDB.getDatabase
+    entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
+    H.renderWithSplices "admin" [
+        ("lupo:entries-list", pure $ V.entryInfo =<< entries)
+      , ("lupo:style-sheet", textSplice "admin")
+      ]
+  else
+    redirect "/login"
 
 newEntry :: LupoHandler ()
 newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
