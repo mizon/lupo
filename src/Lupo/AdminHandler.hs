@@ -60,8 +60,8 @@ newEntry :: LupoHandler ()
 newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
   where
     submitEntry = do
-      entry <- LDB.Entry <$> param "title" <*> param "body"
-      action <- param "action"
+      entry <- LDB.Entry <$> textParam"title" <*> textParam"body"
+      action <- textParam"action"
       case action of
         "Submit" -> do
           db <- LDB.getDatabase
@@ -85,8 +85,8 @@ editEntry = method GET editor <|> method POST updateEntry
 
     updateEntry = do
       id' <- paramId
-      entry <- LDB.Entry <$> param "title" <*> param "body"
-      action <- param "action"
+      entry <- LDB.Entry <$> textParam"title" <*> textParam"body"
+      action <- textParam"action"
       case action of
         "Submit" -> do
           db <- LDB.getDatabase

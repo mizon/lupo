@@ -2,7 +2,7 @@
 module Lupo.Util (
     paramId
   , paramNum
-  , param
+  , textParam
   , bsParam
   , textSplice
   , zonedDay
@@ -28,12 +28,12 @@ paramId :: (MonadSnap m, Integral a) => m a
 paramId = paramNum "id"
 
 paramNum :: (MonadSnap m, Integral a) => BS.ByteString -> m a
-paramNum name = either (error "invalid param type") id . toIntegral <$> param name
+paramNum name = either (error "invalid param type") id . toIntegral <$> textParam name
   where
     toIntegral = A.parseOnly A.decimal
 
-param :: MonadSnap m => BS.ByteString -> m T.Text
-param name = maybe (error "missing param") TE.decodeUtf8 <$> getParam name
+textParam :: MonadSnap m => BS.ByteString -> m T.Text
+textParam name = maybe (error "missing param") TE.decodeUtf8 <$> getParam name
 
 bsParam :: MonadSnap m => BS.ByteString -> m BS.ByteString
 bsParam name = fromMaybe (error "missing param") <$> getParam name

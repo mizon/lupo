@@ -65,7 +65,7 @@ handleEntries = parseQuery $
 handleSearch :: LupoHandler ()
 handleSearch = do
   db <- LDB.getDatabase
-  word <- param "word"
+  word <- textParam"word"
   liftIO $ putStrLn "start search..."
   enum <- LDB.search db word
   liftIO $ putStrLn "search finished"
@@ -75,9 +75,9 @@ handleSearch = do
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
-  dayStr <- param "day"
+  dayStr <- textParam"day"
   reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
-  comment <- LDB.Comment <$> param "name" <*> param "body"
+  comment <- LDB.Comment <$> textParam"name" <*> textParam"body"
   db <- LDB.getDatabase
   cond <- try $ LDB.insertComment db reqDay comment
   case cond of
