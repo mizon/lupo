@@ -189,14 +189,14 @@ makeDatabase conn = Database {
   }
   where
     sqlToEntry [
-        DB.fromSql -> id_
+        DB.fromSql -> id'
       , DB.fromSql -> c_at
       , DB.fromSql -> m_at
       , _
       , DB.fromSql -> t
       , DB.fromSql -> b
       ] = Saved {
-        idx = id_
+        idx = id'
       , createdAt = c_at
       , modifiedAt = m_at
       , savedContent = Entry t b
@@ -204,14 +204,14 @@ makeDatabase conn = Database {
     sqlToEntry _ = error "in sql->entry conversion"
 
     sqlToComment [
-        DB.fromSql -> id_
+        DB.fromSql -> id'
       , DB.fromSql -> c_at
       , DB.fromSql -> m_at
       , _
       , DB.fromSql -> n
       , DB.fromSql -> b
       ] = Saved {
-        idx = id_
+        idx = id'
       , createdAt = c_at
       , modifiedAt = m_at
       , savedContent = Comment n b

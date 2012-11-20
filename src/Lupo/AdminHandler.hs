@@ -78,19 +78,19 @@ editEntry :: LupoHandler ()
 editEntry = method GET editor <|> method POST updateEntry
   where
     editor = do
-      id_ <- paramId
+      id' <- paramId
       db <- LDB.getDatabase
-      (LDB.savedContent -> entry) <- LDB.select db id_
+      (LDB.savedContent -> entry) <- LDB.select db id'
       editEntryEditor entry
 
     updateEntry = do
-      id_ <- paramId
+      id' <- paramId
       entry <- LDB.Entry <$> param "title" <*> param "body"
       action <- param "action"
       case action of
         "Submit" -> do
           db <- LDB.getDatabase
-          LDB.update db id_ entry
+          LDB.update db id' entry
           redirect "/admin"
         "Preview" -> showPreview "Edit Entry: Preview" entry
         "Edit" -> editEntryEditor entry
