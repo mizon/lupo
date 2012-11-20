@@ -26,12 +26,22 @@ import qualified Lupo.View as View
 import qualified Lupo.ViewFragment as V
 
 login :: LupoHandler ()
-login = method GET $ do
-  cond <- with auth $ A.isLoggedIn
-  if cond then
-    redirect "/admin"
-  else
-    View.renderPlain $ View.loginView
+login =
+      method GET getLoginForm
+  <|> method POST authenticate
+  where
+    getLoginForm = do
+      cond <- with auth $ A.isLoggedIn
+      if cond then
+        redirect "/admin"
+      else
+        View.renderPlain $ View.loginView
+
+    authenticate = do
+      name <- bsParam "name"
+      pass' <- A.ClearText <$> bsParam "pass"
+      authResult <- with auth $ A.loginByUsername name pass' True
+      redirect $ either (const "/login") (const "/admin") authResult
 
 admin :: LupoHandler ()
 admin = do

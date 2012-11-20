@@ -3,6 +3,7 @@ module Lupo.Util (
     paramId
   , paramNum
   , param
+  , bsParam
   , textSplice
   , zonedDay
   , toText
@@ -13,6 +14,7 @@ module Lupo.Util (
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Ix as Ix
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
@@ -32,6 +34,9 @@ paramNum name = either (error "invalid param type") id . toIntegral <$> param na
 
 param :: MonadSnap m => BS.ByteString -> m T.Text
 param name = maybe (error "missing param") TE.decodeUtf8 <$> getParam name
+
+bsParam :: MonadSnap m => BS.ByteString -> m BS.ByteString
+bsParam name = fromMaybe (error "missing param") <$> getParam name
 
 textSplice :: (Applicative m, Monad m) => T.Text -> m H.Template
 textSplice = pure . pure . TextNode
