@@ -9,10 +9,12 @@
 module Lupo.View (
     View(..)
   , render
+  , renderPlain
   , singleDayView
   , multiDaysView
   , monthView
   , searchResultView
+  , loginView
   ) where
 
 import Control.Applicative
@@ -54,6 +56,15 @@ render View {..} = SH.heistLocal bindSplices $ SH.render "public"
             case viewTitle of
               "" -> siteTitle
               t -> [st|#{siteTitle} | #{t}|]
+
+renderPlain :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
+renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
+  where
+    bindSplices = H.bindSplices [
+        ("lupo:page-title", H.textSplice viewTitle)
+      , ("lupo:style-sheet", H.textSplice "plain")
+      , ("content", viewSplice)
+      ]
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
               => DB.Day -> N.Navigation m -> DB.Comment -> View n
@@ -107,3 +118,6 @@ searchResultView :: (MonadIO m, GetLupoConfig (H.HeistT m))
 searchResultView word es = View word $ do
   void $ H.callTemplate "search-result" []
   pure $ V.searchResult es
+
+loginView :: Monad m => View m
+loginView = View "Login" $ H.callTemplate "login" []

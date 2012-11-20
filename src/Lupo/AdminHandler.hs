@@ -1,8 +1,10 @@
+{-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.AdminHandler (
-    admin
+    login
+  , admin
   , newEntry
   , editEntry
   , deleteEntry
@@ -14,12 +16,22 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Prelude hiding (filter)
 import Snap
+import qualified Snap.Snaplet.Auth as A
 import qualified Snap.Snaplet.Heist as H
 
 import Lupo.Application
 import qualified Lupo.Database as LDB
 import Lupo.Util
+import qualified Lupo.View as View
 import qualified Lupo.ViewFragment as V
+
+login :: LupoHandler ()
+login = method GET $ do
+  cond <- with auth $ A.isLoggedIn
+  if cond then
+    redirect "/admin"
+  else
+    View.renderPlain $ View.loginView
 
 admin :: LupoHandler ()
 admin = do
