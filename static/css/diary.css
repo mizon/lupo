@@ -89,10 +89,9 @@ body {
     margin: 0 0 1.5em; }
 
 #new-comment {
-  margin-bottom: 2em;
-  width: 500px; }
+  margin-bottom: 2em; }
   #new-comment h3 {
-    color: #000 !important;
+    color: #000;
     margin: 0.5em 0; }
   #new-comment input {
     margin-bottom: 0.5em; }
