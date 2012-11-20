@@ -8,7 +8,10 @@ import qualified Database.HDBC.Sqlite3 as Sqlite3
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Http.Server.Config as C
+import qualified Snap.Snaplet.Auth as A
+import qualified Snap.Snaplet.Auth.Backends.JsonFile as JsonFile
 import qualified Snap.Snaplet.Heist as H
+import qualified Snap.Snaplet.Session.Backends.CookieSession as Cookie
 import Snap.Util.FileServe
 import Text.XmlHtml
 
@@ -39,8 +42,13 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig {
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
   h <- nestSnaplet "heist" heist $ H.heistInit "templates"
+  s <- nestSnaplet "session" session $
+    Cookie.initCookieSessionManager "site_key.txt" "sess" (Just 3600)
+  a <- nestSnaplet "auth" auth $
+    JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
+  A.addAuthSplices auth
   addRoutes [
       ("", Public.handleTop)
     , ("admin", Admin.admin)
@@ -53,4 +61,4 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":query", Public.handleEntries =<< param "query")
     , (":day/comment", Public.handleComment)
     ]
-  pure $ Lupo h (EDB.makeDatabase conn) lc l
+  pure $ Lupo h s a (EDB.makeDatabase conn) lc l

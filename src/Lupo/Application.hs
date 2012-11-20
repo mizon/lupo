@@ -9,11 +9,15 @@ module Lupo.Application (
     Lupo(Lupo, entryDB)
   , LupoHandler
   , heist
+  , session
+  , auth
   ) where
 
 import Prelude hiding (filter)
 import Snap
+import qualified Snap.Snaplet.Auth as A
 import qualified Snap.Snaplet.Heist as SH
+import qualified Snap.Snaplet.Session as S
 
 import Lupo.Config
 import qualified Lupo.Database as LDB
@@ -21,6 +25,8 @@ import qualified Lupo.Locale as L
 
 data Lupo = Lupo {
     _heist :: Snaplet (SH.Heist Lupo)
+  , _session :: Snaplet S.SessionManager
+  , _auth :: Snaplet (A.AuthManager Lupo)
   , entryDB :: LDB.DatabaseContext m => LDB.Database m
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer
