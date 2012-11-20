@@ -9,20 +9,27 @@
 h1, h2, h3, h4, h5, h6 {
   font-size: 16px; }
 
-#login-form {
+#login-form,
+#init-account-form {
   width: 320px;
   margin: 1em auto; }
-  #login-form h2 {
+  #login-form h2,
+  #init-account-form h2 {
     margin: 0.5em 0; }
-  #login-form form dt {
+  #login-form form dt,
+  #init-account-form form dt {
     position: absolute;
     width: 5em; }
-  #login-form form dd {
+  #login-form form dd,
+  #init-account-form form dd {
     position: relative;
     margin: 0.25em 0 0.25em 5em; }
-    #login-form form dd input {
+    #login-form form dd input,
+    #init-account-form form dd input {
       width: 100%; }
-  #login-form form dd.submit {
+  #login-form form dd.submit,
+  #init-account-form form dd.submit {
     text-align: right; }
-    #login-form form dd.submit button {
+    #login-form form dd.submit button,
+    #init-account-form form dd.submit button {
       width: 10em; }

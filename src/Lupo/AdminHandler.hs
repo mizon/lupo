@@ -5,6 +5,7 @@
 module Lupo.AdminHandler (
     login
   , admin
+  , initAccount
   , newEntry
   , editEntry
   , deleteEntry
@@ -27,10 +28,10 @@ import qualified Lupo.ViewFragment as V
 
 login :: LupoHandler ()
 login =
-      method GET getLoginForm
+      method GET showLoginForm
   <|> method POST authenticate
   where
-    getLoginForm = do
+    showLoginForm = do
       cond <- with auth $ A.isLoggedIn
       if cond then
         redirect "/admin"
@@ -44,20 +45,32 @@ login =
       redirect $ either (const "/login") (const "/admin") authResult
 
 admin :: LupoHandler ()
-admin = do
-  cond <- with auth $ A.isLoggedIn
-  if cond then do
-    db <- LDB.getDatabase
-    entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
-    H.renderWithSplices "admin" [
-        ("lupo:entries-list", pure $ V.entryInfo =<< entries)
-      , ("lupo:style-sheet", textSplice "admin")
-      ]
-  else
-    redirect "/login"
+admin = requireAuth $ do
+  db <- LDB.getDatabase
+  entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
+  H.renderWithSplices "admin" [
+      ("lupo:entries-list", pure $ V.entryInfo =<< entries)
+    , ("lupo:style-sheet", textSplice "admin")
+    ]
+
+initAccount :: LupoHandler ()
+initAccount = do
+  exists <- with auth $ A.usernameExists "admin"
+  when exists pass
+  method GET getInitAccountForm <|> method POST registerNewAccount
+  where
+    getInitAccountForm =
+      View.renderPlain View.initAccount
+
+    registerNewAccount = do
+      pass' <- bsParam "pass"
+      void $ with auth $ A.createUser "admin" pass'
+      redirect "/admin"
 
 newEntry :: LupoHandler ()
-newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
+newEntry = requireAuth $
+      method GET (newEntryEditor Nothing)
+  <|> method POST submitEntry
   where
     submitEntry = do
       entry <- LDB.Entry <$> textParam"title" <*> textParam"body"
@@ -75,7 +88,7 @@ newEntry = method GET (newEntryEditor Nothing) <|> method POST submitEntry
     newEntryEditor entry = showEditor "New Entry" entry
 
 editEntry :: LupoHandler ()
-editEntry = method GET editor <|> method POST updateEntry
+editEntry = requireAuth $ method GET editor <|> method POST updateEntry
   where
     editor = do
       id' <- paramId
@@ -99,7 +112,7 @@ editEntry = method GET editor <|> method POST updateEntry
     editEntryEditor entry = showEditor "Edit Entry" $ Just entry
 
 deleteEntry :: LupoHandler ()
-deleteEntry = do
+deleteEntry = requireAuth $ do
   db <- LDB.getDatabase
   LDB.delete db =<< paramId
   redirect "/admin"
@@ -117,7 +130,7 @@ showPreview prevTitle e@LDB.Entry {..} = do
     ]
 
 showEditor :: T.Text -> Maybe LDB.Entry -> LupoHandler ()
-showEditor title entry = do
+showEditor title entry = requireAuth $ do
   (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
   H.renderWithSplices "edit-entry" [
       ("lupo:style-sheet", textSplice "admin")
@@ -126,3 +139,11 @@ showEditor title entry = do
     , ("lupo:default-title", textSplice $ maybe "" LDB.entryTitle entry)
     , ("lupo:default-body", textSplice $ maybe "" LDB.entryBody entry)
     ]
+
+requireAuth :: LupoHandler a -> LupoHandler a
+requireAuth h = do
+  stat <- with auth A.isLoggedIn
+  if stat then
+    h
+  else
+    redirect "/login"

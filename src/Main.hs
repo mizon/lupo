@@ -56,6 +56,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("admin/:id/edit", Admin.editEntry)
     , ("admin/:id/delete", Admin.deleteEntry)
     , ("login", Admin.login)
+    , ("init-account", Admin.initAccount)
     , ("js", serveDirectory "static/js")
     , ("css", serveDirectory "static/css")
     , ("search", Public.handleSearch)
