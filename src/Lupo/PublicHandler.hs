@@ -17,13 +17,13 @@ import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
 import Data.Maybe
-import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (catch, filter)
 import Snap
 import System.Locale
+import Text.Shakespeare.Text
 
 import Lupo.Application
 import Lupo.Config
@@ -64,20 +64,16 @@ handleEntries = parseQuery $
 
 handleSearch :: LupoHandler ()
 handleSearch = do
-  db <- LDB.getDatabase
-  word <- textParam"word"
-  liftIO $ putStrLn "start search..."
-  enum <- LDB.search db word
-  liftIO $ putStrLn "search finished"
+  word <- textParam "word"
+  enum <- join $ LDB.search <$> LDB.getDatabase <*> pure word
   es <- run_ $ enum $$ EL.consume
-  liftIO $ putStrLn "search result unpacked"
   V.render $ V.searchResultView word es
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
-  dayStr <- textParam"day"
-  reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
+  dayStr <- textParam "day"
   comment <- LDB.Comment <$> textParam"name" <*> textParam"body"
+  reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
   db <- LDB.getDatabase
   cond <- try $ LDB.insertComment db reqDay comment
   case cond of
@@ -85,7 +81,7 @@ handleComment = method POST $ do
       dayContent <- LDB.selectDay db reqDay
       nav <- makeNavigation reqDay
       V.render $ V.singleDayView dayContent nav $ comment
-    Right _ -> redirect $ "/" <> TE.encodeUtf8 dayStr
+    Right _ -> redirect $ TE.encodeUtf8 [st|/#{dayStr}|]
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
