@@ -3,3 +3,5 @@ cabal-dev/
 *.sqlite3
 .*
 log/
+site_key.txt
+users.json
