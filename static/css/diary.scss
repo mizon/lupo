@@ -171,28 +171,32 @@ body {
 }
 
 #search-result {
-    width: 100%;
-    table-collapse: collapse;
-    font-size: 80%;
+    padding: 1em 0;
 
-    tr {
-        th {
-            font-weight: normal;
-        }
+    table {
+        width: 100%;
+        table-collapse: collapse;
+        font-size: 80%;
 
-        th.result-day {
-            width: 8em;
-            background-color: #EEF;
-        }
+        tr {
+            th {
+                font-weight: normal;
+            }
 
-        th.result-title {
-            background-color: #EEF;
-        }
+            th.result-day {
+                width: 8em;
+                background-color: #EEF;
+            }
 
-        td {
-            margin: 1px;
-            padding: 0 0.5em;
-            background-color: #EEE;
+            th.result-title {
+                background-color: #EEF;
+            }
+
+            td {
+                margin: 1px;
+                padding: 0 0.5em;
+                background-color: #EEE;
+            }
         }
     }
 }

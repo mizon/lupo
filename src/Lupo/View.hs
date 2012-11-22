@@ -116,9 +116,11 @@ monthView nav days = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
 
 searchResultView :: (MonadIO m, GetLupoConfig (H.HeistT m))
                  => T.Text -> [DB.Saved DB.Entry] -> View m
-searchResultView word es = View word $ do
-  void $ H.callTemplate "search-result" []
-  pure $ V.searchResult es
+searchResultView word es = View word $
+  H.callTemplate "search-result" [
+    ("lupo:search-word", H.textSplice word)
+  , ("lupo:search-results", pure $ V.searchResult <$> es)
+  ]
 
 loginView :: Monad m => View m
 loginView = View "Login" $ H.callTemplate "login" []

@@ -110,17 +110,19 @@ body {
     padding: 0.5em; }
 
 #search-result {
-  width: 100%;
-  table-collapse: collapse;
-  font-size: 80%; }
-  #search-result tr th {
-    font-weight: normal; }
-  #search-result tr th.result-day {
-    width: 8em;
-    background-color: #EEF; }
-  #search-result tr th.result-title {
-    background-color: #EEF; }
-  #search-result tr td {
-    margin: 1px;
-    padding: 0 0.5em;
-    background-color: #EEE; }
+  padding: 1em 0; }
+  #search-result table {
+    width: 100%;
+    table-collapse: collapse;
+    font-size: 80%; }
+    #search-result table tr th {
+      font-weight: normal; }
+    #search-result table tr th.result-day {
+      width: 8em;
+      background-color: #EEF; }
+    #search-result table tr th.result-title {
+      background-color: #EEF; }
+    #search-result table tr td {
+      margin: 1px;
+      padding: 0 0.5em;
+      background-color: #EEE; }

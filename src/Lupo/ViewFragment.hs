@@ -97,15 +97,13 @@ emptyMonth = do
   message <- LL.localize "no this month entries"
   pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
-searchResult :: [LDB.Saved LDB.Entry] -> H.Template
-searchResult es = [Element "table" [("id", "search-result")] (row <$> es)]
-  where
-    row LDB.Saved {..} =
-      Element "tr" [] [
-        Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
-      , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle savedContent]
-      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
-      ]
+searchResult :: LDB.Saved LDB.Entry -> Node
+searchResult LDB.Saved {..} =
+  Element "tr" [] [
+    Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
+  , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle savedContent]
+  , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
+  ]
 
 monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
                 => N.Navigation (H.HeistT m) -> H.Splice m
