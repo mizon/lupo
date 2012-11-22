@@ -20,6 +20,7 @@ import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
 import Lupo.Config
 import qualified Lupo.Database as EDB
+import qualified Lupo.Notice as N
 import qualified Lupo.PublicHandler as Public
 import Lupo.Util
 
@@ -63,4 +64,6 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":query", Public.handleEntries =<< textParam "query")
     , (":day/comment", Public.handleComment)
     ]
-  pure $ Lupo h s a (EDB.makeDatabase conn) lc l
+  pure $ Lupo h s a (EDB.makeDatabase conn) lc l $ initNoticeDB conn
+  where
+    initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session
