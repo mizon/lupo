@@ -11,6 +11,7 @@ module Lupo.Application (
   , heist
   , session
   , auth
+  , getNoticeDB
   ) where
 
 import Prelude hiding (filter)
@@ -22,6 +23,7 @@ import qualified Snap.Snaplet.Session as S
 import Lupo.Config
 import qualified Lupo.Database as LDB
 import qualified Lupo.Locale as L
+import qualified Lupo.Notice as N
 
 data Lupo = Lupo {
     _heist :: Snaplet (SH.Heist Lupo)
@@ -30,6 +32,7 @@ data Lupo = Lupo {
   , entryDB :: LDB.DatabaseContext m => LDB.Database m
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer
+  , noticeDB :: N.NoticeDB (Handler Lupo Lupo)
   }
 makeLens ''Lupo
 
@@ -46,3 +49,6 @@ instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
 
 instance (MonadState Lupo m, Applicative m, Functor m) => L.HasLocalizer m where
   refLocalizer = gets localizer
+
+getNoticeDB :: MonadState Lupo m => m (N.NoticeDB LupoHandler)
+getNoticeDB = gets noticeDB
