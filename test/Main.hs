@@ -9,6 +9,7 @@ import Test.Framework
 
 import qualified Lupo.Test.Database as D
 import Lupo.Test.Navigation
+import Lupo.Test.Notice
 import Lupo.Test.Syntax
 import Lupo.Test.Util
 
@@ -23,4 +24,4 @@ fastTests = [
   , syntaxTest
   , utilTest
   ]
-slowTests = [D.dbTest]
+slowTests = [D.dbTest, noticeTest]
