@@ -16,5 +16,12 @@ CREATE TABLE comments (
   , body TEXT NOT NULL
   );
 
+CREATE TABLE notice (
+    id INTEGER PRIMARY KEY
+  , token TEXT NOT NULL
+  , message TEXT NOT NULL
+  );
+
 CREATE INDEX entries_day_index ON entries (day);
 CREATE INDEX comments_day_index ON comments (day);
+CREATE INDEX notice_token_index ON notice (token);
