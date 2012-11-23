@@ -60,7 +60,7 @@ initAccount = do
   method GET getInitAccountForm <|> method POST registerNewAccount
   where
     getInitAccountForm =
-      View.renderPlain View.initAccount
+      View.renderPlain View.initAccountView
 
     registerNewAccount = do
       pass' <- bsParam "pass"

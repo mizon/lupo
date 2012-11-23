@@ -15,7 +15,7 @@ module Lupo.View (
   , monthView
   , searchResultView
   , loginView
-  , initAccount
+  , initAccountView
   ) where
 
 import Control.Applicative
@@ -146,5 +146,5 @@ searchResultView word es = View word $
 loginView :: Monad m => View m
 loginView = View "Login" $ H.callTemplate "login" []
 
-initAccount :: Monad m => View m
-initAccount = View "Init Account" $ H.callTemplate "init-account" []
+initAccountView :: Monad m => View m
+initAccountView = View "Init Account" $ H.callTemplate "init-account" []
