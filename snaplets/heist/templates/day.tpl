@@ -25,4 +25,5 @@
 </div>
 </form>
 </div>
+<lupo:new-comment-notice/>
 <lupo:page-navigation/>

@@ -30,6 +30,7 @@ import Lupo.Config
 import qualified Lupo.Database as LDB
 import Lupo.Exception
 import qualified Lupo.Navigation as N
+import qualified Lupo.Notice as Notice
 import Lupo.Util
 import qualified Lupo.View as V
 
@@ -59,8 +60,10 @@ handleEntries = parseQuery $
       pure $ do
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
+        notice <- Notice.popAllNotice =<< getNoticeDB
         nav <- makeNavigation reqDay
-        V.render $ V.singleDayView day nav (LDB.Comment "" "") []
+
+        V.render $ V.singleDayView day nav (LDB.Comment "" "") notice []
 
 handleSearch :: LupoHandler ()
 handleSearch = do
@@ -80,8 +83,11 @@ handleComment = method POST $ do
     Left (InvalidField msgs) -> do
       dayContent <- LDB.selectDay db reqDay
       nav <- makeNavigation reqDay
-      V.render $ V.singleDayView dayContent nav comment msgs
-    Right _ -> redirect $ TE.encodeUtf8 [st|/#{dayStr}|]
+      V.render $ V.singleDayView dayContent nav comment [] msgs
+    Right _ -> do
+      ndb <- getNoticeDB
+      Notice.addNotice ndb "Your comment was posted successfully."
+      redirect $ TE.encodeUtf8 [st|/#{dayStr}#new-comment|]
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do

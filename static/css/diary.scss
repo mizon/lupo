@@ -121,19 +121,25 @@ body {
     ul.notice {
         margin: 1em 0;
         padding: 0.5em;
-        border: solid 1px #090;
+        border: solid 1px;
+    }
+
+    ul.notice.success {
+        border-color: #090;
         color: #090;
         background-color: #EFE;
-
-        li {
-            margin-left: 1.5em;
-        }
+        list-style-type: none;
+        text-align: center;
     }
 
     ul.notice.error {
         border-color: #900;
         color: #900;
         background-color: #FEE;
+
+        li {
+            margin-left: 1.5em;
+        }
     }
 }
 
