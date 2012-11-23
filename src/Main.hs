@@ -64,6 +64,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":query", Public.handleEntries =<< textParam "query")
     , (":day/comment", Public.handleComment)
     ]
+  onUnload $ DB.disconnect conn
   pure $ Lupo h s a (EDB.makeDatabase conn) lc l $ initNoticeDB conn
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session
