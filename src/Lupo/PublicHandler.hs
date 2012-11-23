@@ -60,9 +60,8 @@ handleEntries = parseQuery $
       pure $ do
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
-        notice <- Notice.popAllNotice =<< getNoticeDB
         nav <- makeNavigation reqDay
-
+        notice <- Notice.popAllNotice =<< getNoticeDB
         V.render $ V.singleDayView day nav (LDB.Comment "" "") notice []
 
 handleSearch :: LupoHandler ()
@@ -75,9 +74,9 @@ handleSearch = do
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
   dayStr <- textParam "day"
-  comment <- LDB.Comment <$> textParam"name" <*> textParam"body"
-  reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
   db <- LDB.getDatabase
+  reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
+  comment <- LDB.Comment <$> textParam "name" <*> textParam "body"
   cond <- try $ LDB.insertComment db reqDay comment
   case cond of
     Left (InvalidField msgs) -> do
@@ -93,8 +92,8 @@ monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
   pure $ do
-    nav <- makeNavigation reqMonth
     db <- LDB.getDatabase
+    nav <- makeNavigation reqMonth
     enum <- LDB.afterSavedDays db reqMonth
     days <- run_ $ enum $$ toDayContents db =$ takeSameMonthDays reqMonth
     V.render $ V.monthView nav days
@@ -115,8 +114,8 @@ renderMultiDays from nDays = do
   db <- LDB.getDatabase
   enum <- LDB.beforeSavedDays db from
   targetDays <- run_ $ enum $$ EL.take nDays
-  days <- Prelude.mapM (LDB.selectDay db) targetDays
   nav <- makeNavigation from
+  days <- Prelude.mapM (LDB.selectDay db) targetDays
   V.render $ V.multiDaysView nav days
 
 makeNavigation :: (Functor m, Applicative m, LDB.HasDatabase m, LDB.DatabaseContext n)
