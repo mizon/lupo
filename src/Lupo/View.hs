@@ -68,8 +68,8 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
       ]
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
-              => DB.Day -> N.Navigation m -> DB.Comment -> View n
-singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
+              => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> View n
+singleDayView day nav c errs = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
       ("lupo:day-title", pure $ V.dayTitle reqDay)
     , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
@@ -78,7 +78,9 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
     , ("lupo:comments", H.mapSplices V.comment $ DB.dayComments day)
     , ("lupo:page-navigation", V.singleDayNavigation nav)
     , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
-    , ("lupo:new-comment-url", textSplice [st|/#{formatTime "%Y%m%d" reqDay}/comment|])
+    , ("lupo:new-comment-errors", newCommentErrors)
+    , ("lupo:new-comment-url",
+       textSplice [st|/#{formatTime "%Y%m%d" reqDay}/comment#new-comment|])
     , ("lupo:comment-name", H.textSplice $ DB.commentName c)
     , ("lupo:comment-body", H.textSplice $ DB.commentBody c)
     , ("lupo:name-label", H.textSplice =<< L.localize "Name")
@@ -90,6 +92,17 @@ singleDayView day nav c = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
     ifCommented
       | DB.numOfComments day > 0 = childNodes <$> H.getParamNode
       | otherwise = pure []
+
+    newCommentErrors
+      | null errs = pure []
+      | otherwise = H.callTemplate "_notice" [
+          ("lupo:notice-class", H.textSplice "notice error")
+        , ("lupo:notice-messages", H.mapSplices mkList errs)
+        ]
+      where
+        mkList txt = do
+          txt' <- L.localize txt
+          pure $ [Element "li" [] [TextNode txt']]
 
 multiDaysView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
               => N.Navigation m -> [DB.Day] -> View n

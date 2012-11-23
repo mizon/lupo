@@ -60,7 +60,7 @@ handleEntries = parseQuery $
         db <- LDB.getDatabase
         day <- LDB.selectDay db reqDay
         nav <- makeNavigation reqDay
-        V.render $ V.singleDayView day nav $ LDB.Comment "" ""
+        V.render $ V.singleDayView day nav (LDB.Comment "" "") []
 
 handleSearch :: LupoHandler ()
 handleSearch = do
@@ -80,7 +80,7 @@ handleComment = method POST $ do
     Left (InvalidField msgs) -> do
       dayContent <- LDB.selectDay db reqDay
       nav <- makeNavigation reqDay
-      V.render $ V.singleDayView dayContent nav $ comment
+      V.render $ V.singleDayView dayContent nav comment msgs
     Right _ -> redirect $ TE.encodeUtf8 [st|/#{dayStr}|]
 
 monthResponse :: A.Parser (LupoHandler ())

@@ -222,8 +222,8 @@ commentValidator :: FV.FieldValidator Comment
 commentValidator = FV.makeFieldValidator $ \Comment {..} -> do
   FV.checkIsEmtpy commentName "Name"
   FV.checkIsTooLong commentName "Name"
-  FV.checkIsEmtpy commentBody "Body"
-  FV.checkIsTooLong commentBody "Body"
+  FV.checkIsEmtpy commentBody "Content"
+  FV.checkIsTooLong commentBody "Content"
 
 makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
 makeDay d es cs = Day {

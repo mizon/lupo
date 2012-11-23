@@ -11,7 +11,7 @@
 </div>
 </lupo:if-commented><div id="new-comment">
 <h3><lupo:new-comment-caption/></h3>
-<form method="post" action="${lupo:new-comment-url}">
+<lupo:new-comment-errors/><form method="post" action="${lupo:new-comment-url}">
 <label>
 <lupo:name-label/><br/>
 <input type="text" name="name" value="${lupo:comment-name}" size="50"/><br/>

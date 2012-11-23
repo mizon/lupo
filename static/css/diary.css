@@ -78,6 +78,18 @@ body {
       margin-bottom: 2em; }
   #main p.empty-month {
     text-align: center; }
+  #main ul.notice {
+    margin: 1em 0;
+    padding: 0.5em;
+    border: solid 1px #090;
+    color: #090;
+    background-color: #EFE; }
+    #main ul.notice li {
+      margin-left: 1.5em; }
+  #main ul.notice.error {
+    border-color: #900;
+    color: #900;
+    background-color: #FEE; }
 
 #comments {
   margin-bottom: 2em; }
