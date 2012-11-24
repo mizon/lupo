@@ -1,0 +1,42 @@
+@import "init";
+
+#footer {
+    text-align: center;
+    background-color: $footer-back;
+
+    p {
+        font-size: 80%;
+        padding: 0.5em;
+    }
+}
+
+
+#main
+    background-color: $main-back;
+    padding: 0 1.6em;
+
+
+
+    ul.notice {
+        margin: 1em 0;
+        padding: 0.5em;
+        border: solid 1px;
+    }
+
+    ul.notice.success {
+        border-color: #090;
+        color: #090;
+        background-color: #EFE;
+        list-style-type: none;
+        text-align: center;
+    }
+
+    ul.notice.error {
+        border-color: #900;
+        color: #900;
+        background-color: #FEE;
+
+        li {
+            margin-left: 1.5em;
+        }
+    }
