@@ -1,21 +1,27 @@
 @import "init";
 
-#footer {
-    text-align: center;
-    background-color: $footer-back;
+#container {
+    border: solid 1px #CCC;
+    border-width: 0px 1px;
+}
 
-    p {
-        font-size: 80%;
+#header {
+    color: #FFF;
+    position: relative;
+
+    h1 {
         padding: 0.5em;
+    }
+
+    h1 a {
+        color: #FFF;
+        text-decoration: none;
     }
 }
 
-
-#main
-    background-color: $main-back;
+#main {
+    background-color: #FFF;
     padding: 0 1.6em;
-
-
 
     ul.notice {
         margin: 1em 0;
@@ -40,3 +46,23 @@
             margin-left: 1.5em;
         }
     }
+}
+
+#footer {
+    text-align: center;
+    background-color: #CCC;
+
+    p {
+        font-size: 80%;
+        padding: 0.5em;
+    }
+}
+
+body {
+    background-color: #EEE;
+    line-height: 1.4;
+
+    input.submit-button {
+        width: 10em !important;
+    }
+}

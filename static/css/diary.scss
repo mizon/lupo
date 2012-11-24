@@ -1,42 +1,7 @@
 @import "frame";
 
-$base-color: #039;
-$header-back: $base-color;
-$main-back: #FFF;
-$footer-back: #CCC;
-$subsection-border: solid 1px #999;
-
-@mixin side-border($color) {
-    border: solid 1px $color;
-    border-width: 0px 1px;
-}
-
-body {
-    background-color: #EEE;
-    line-height: 1.4;
-}
-
-#container {
-    @include side-border(#CCC);
-}
-
 #header {
-    background-color: $header-back;
-    color: #FFF;
-    position: relative;
-
-    h1 {
-        padding: 0.5em;
-    }
-
-    h1 a {
-        color: #FFF;
-        text-decoration: none;
-    }
-}
-
-#footer {
-    background-color: #CCC;
+    background-color: #039;
 }
 
 .navigation {
@@ -80,10 +45,6 @@ body {
 }
 
 #main {
-    input.submit-button {
-        width: 10em;
-    }
-
     .day {
         background-color: #FFF;
         margin: 1em 0 3em;
@@ -91,7 +52,7 @@ body {
         h2 {
             margin: 0 0 1em;
             padding: 0.5em 0;
-            border-bottom: $subsection-border;
+            border-bottom: solid 1px #999;
 
             a {
                 color: #000;
@@ -180,7 +141,7 @@ body {
             }
 
             td {
-                margin: 1px;
+
                 padding: 0 0.5em;
                 background-color: #EEE;
             }
