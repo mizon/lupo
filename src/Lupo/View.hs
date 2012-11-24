@@ -10,6 +10,7 @@ module Lupo.View (
     View(..)
   , render
   , renderPlain
+  , renderAdmin
   , singleDayView
   , multiDaysView
   , monthView
@@ -41,23 +42,16 @@ data View m = View {
 
 render :: (SH.HasHeist b, GetLupoConfig (H.HeistT (Handler b b)))
        => View (Handler b b) -> Handler b v ()
-render View {..} = SH.heistLocal bindSplices $ SH.render "public"
+render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
   where
     bindSplices =
         H.bindSplices [
-          ("lupo:page-title", H.textSplice =<< makePageTitle)
+          ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
         , ("lupo:style-sheet", H.textSplice "diary")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
-      where
-        makePageTitle = do
-          siteTitle <- refLupoConfig lcSiteTitle
-          pure $
-            case viewTitle of
-              "" -> siteTitle
-              t -> [st|#{siteTitle} | #{t}|]
 
 renderPlain :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
 renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
@@ -68,17 +62,18 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
       , ("content", viewSplice)
       ]
 
-renderAdmin :: Handler b v ()
-renderAdmin View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
+renderAdmin :: (SH.HasHeist b, GetLupoConfig (H.HeistT (Handler b b)))
+            => View (Handler b b) -> Handler b v ()
+renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
   where
     bindSplices =
         H.bindSplices [
-          ("lupo:page-title", H.textSplice =<< makePageTitle)
+          ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
         , ("lupo:style-sheet", H.textSplice "admin")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
-      . H.bindSplices "lupo:main-body" viewSplice
+      . H.bindSplice "lupo:main-body" viewSplice
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
               => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> [T.Text] -> View n
@@ -164,14 +159,34 @@ initAccountView = View "Init Account" $ H.callTemplate "init-account" []
 
 adminView :: (Functor m, Monad m) => [DB.Day] -> View m
 adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
-    ("lupo:days", pure $ makeDay =<< days)
+    ("lupo:days", pure $ makeDayRow =<< days)
   ]
   where
-    makeDay DB.Day {..} = (<$> dayEntries) $ \DB.Saved {..} ->
-      Element "tr" [] [
-        Element "th" [] [TextNode $ formatTime "%Y-%m-%d" day]
-      , Element "td" [] [TextNode $ DB.entryTitle savedContent]
-      , Element "td" [] [
-          Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
-        ]
-      ]
+    makeDayRow DB.Day {
+        DB.dayEntries = []
+      } = []
+    makeDayRow DB.Day {
+        DB.dayEntries = e : es
+      , ..
+      } = tr =<< (dateTh : makeEntryRow e) : (makeEntryRow <$> es)
+     where
+       tr t = [Element "tr" [] t]
+
+       dateTh = Element "th" [("class", "date"), ("rowspan", toText $ length $ e : es)] [
+           TextNode $ formatTime "%Y-%m-%d" day
+         ]
+
+       makeEntryRow DB.Saved {..} = [
+           Element "td" [] [TextNode $ DB.entryTitle savedContent]
+         , Element "td" [("class", "action")] [
+             Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
+           ]
+         ]
+
+makePageTitle :: GetLupoConfig n => View m -> n T.Text
+makePageTitle View {..} = do
+  siteTitle <- refLupoConfig lcSiteTitle
+  pure $
+    case viewTitle of
+      "" -> siteTitle
+      t -> [st|#{siteTitle} | #{t}|]

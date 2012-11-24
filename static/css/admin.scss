@@ -1,4 +1,14 @@
-@import "init";
+@import "frame";
+
+#header {
+    background-color: #666;
+
+    h1 {
+        a {
+            color: #FC0;
+        }
+    }
+}
 
 #entry-editor {
     margin: 0;
@@ -28,5 +38,33 @@
     .operation {
         text-align: center;
         width: 20%;
+    }
+}
+
+#main {
+    font-size: 80%;
+    padding-top: 1em;
+    padding-bottom: 2em;
+}
+
+#entries-table {
+    border-collapse: collapse;
+    border: solid 1px #999;
+    margin: 0.5em 0 2em;
+
+    th {
+        background-color: #DDD;
+        border: solid 1px #999;
+
+    }
+
+    td {
+        background-color: #EEE;
+        border: solid 1px #999;
+        padding: 0 0.5em;
+    }
+
+    td.action {
+        text-align: center;
     }
 }

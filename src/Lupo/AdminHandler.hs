@@ -49,7 +49,7 @@ admin :: LupoHandler ()
 admin = requireAuth $ do
   db <- LDB.getDatabase
   dayContents <- mapM (LDB.selectDay db) =<< getAllDays db
-  View.render $ View.adminView dayContents
+  View.renderAdmin $ View.adminView dayContents
   where
     getAllDays db = do
       (zonedDay -> today) <- liftIO $ Time.getZonedTime
