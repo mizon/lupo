@@ -11,10 +11,11 @@ module Lupo.AdminHandler (
   , deleteEntry
   ) where
 
-import Data.Enumerator hiding (replicate, sequence)
+import Data.Enumerator hiding (replicate, sequence, mapM)
 import qualified Data.Enumerator.List as EL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Auth as A
@@ -47,11 +48,12 @@ login =
 admin :: LupoHandler ()
 admin = requireAuth $ do
   db <- LDB.getDatabase
-  entries <- run_ =<< ($$) <$> LDB.all db <*> pure EL.consume
-  H.renderWithSplices "admin" [
-      ("lupo:entries-list", pure $ V.entryInfo =<< entries)
-    , ("lupo:style-sheet", textSplice "admin")
-    ]
+  dayContents <- mapM (LDB.selectDay db) =<< getAllDays db
+  View.render $ View.adminView dayContents
+  where
+    getAllDays db = do
+      (zonedDay -> today) <- liftIO $ Time.getZonedTime
+      run_ =<< (EL.consume >>==) <$> LDB.beforeSavedDays db today
 
 initAccount :: LupoHandler ()
 initAccount = do

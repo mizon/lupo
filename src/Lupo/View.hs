@@ -16,6 +16,7 @@ module Lupo.View (
   , searchResultView
   , loginView
   , initAccountView
+  , adminView
   ) where
 
 import Control.Applicative
@@ -66,6 +67,18 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
       , ("lupo:style-sheet", H.textSplice "plain")
       , ("content", viewSplice)
       ]
+
+renderAdmin :: Handler b v ()
+renderAdmin View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
+  where
+    bindSplices =
+        H.bindSplices [
+          ("lupo:page-title", H.textSplice =<< makePageTitle)
+        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
+        , ("lupo:style-sheet", H.textSplice "admin")
+        , ("lupo:footer-body", refLupoConfig lcFooterBody)
+        ]
+      . H.bindSplices "lupo:main-body" viewSplice
 
 singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
               => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> [T.Text] -> View n
@@ -148,3 +161,17 @@ loginView = View "Login" $ H.callTemplate "login" []
 
 initAccountView :: Monad m => View m
 initAccountView = View "Init Account" $ H.callTemplate "init-account" []
+
+adminView :: (Functor m, Monad m) => [DB.Day] -> View m
+adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
+    ("lupo:days", pure $ makeDay =<< days)
+  ]
+  where
+    makeDay DB.Day {..} = (<$> dayEntries) $ \DB.Saved {..} ->
+      Element "tr" [] [
+        Element "th" [] [TextNode $ formatTime "%Y-%m-%d" day]
+      , Element "td" [] [TextNode $ DB.entryTitle savedContent]
+      , Element "td" [] [
+          Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
+        ]
+      ]

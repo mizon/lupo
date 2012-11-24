@@ -1,144 +1,53 @@
-* {
-  margin: 0;
-  padding: 0; }
+/*
+Syntax error: File to import not found or unreadable: frame.
+              Load paths:
+                /home/mizon/w/lupo
+                /home/mizon/w/lupo/static/css
+        on line 1 of static/css/diary.scss
 
-#container {
-  width: 720px;
-  margin: 0 auto; }
+1: @import "frame";
+2: 
+3: $base-color: #039;
+4: $header-back: $base-color;
+5: $main-back: #FFF;
+6: $footer-back: #CCC;
 
-h1, h2, h3, h4, h5, h6 {
-  font-size: 16px; }
-
-body {
-  background-color: #EEE;
-  line-height: 1.4; }
-
-#container {
-  border: solid 1px #cccccc;
-  border-width: 0px 1px; }
-
-#header {
-  background-color: #003399;
-  color: #FFF;
-  position: relative; }
-  #header h1 {
-    padding: 0.5em; }
-  #header h1 a {
-    color: #FFF;
-    text-decoration: none; }
-
-#footer {
-  background-color: #CCC; }
-
-.navigation {
-  margin: 0 -1.6em;
-  padding: 0 0.5em;
-  background-color: #666;
-  color: #CCC; }
-  .navigation ul.page-navigation {
-    text-align: left; }
-    .navigation ul.page-navigation li {
-      display: inline;
-      list-style-type: none;
-      margin-right: 0.5em; }
-    .navigation ul.page-navigation a {
-      color: #FC0; }
-
-#search {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 0.5em; }
-  #search label {
-    font-size: 80%; }
-  #search #search-field {
-    width: 20em; }
-  #search #search-button {
-    width: 6em; }
-
-#main {
-  background-color: white;
-  padding: 0 1.6em; }
-  #main input.submit-button {
-    width: 10em; }
-  #main .day {
-    background-color: #FFF;
-    margin: 1em 0 3em; }
-    #main .day h2 {
-      margin: 0 0 1em;
-      padding: 0.5em 0;
-      border-bottom: solid 1px #999999; }
-      #main .day h2 a {
-        color: #000; }
-    #main .day h3 {
-      color: #039; }
-    #main .day p {
-      margin: 0.5em 0 1em; }
-    #main .day p.time {
-      margin-bottom: 2em; }
-  #main p.empty-month {
-    text-align: center; }
-  #main ul.notice {
-    margin: 1em 0;
-    padding: 0.5em;
-    border: solid 1px; }
-  #main ul.notice.success {
-    border-color: #090;
-    color: #090;
-    background-color: #EFE;
-    list-style-type: none;
-    text-align: center; }
-  #main ul.notice.error {
-    border-color: #900;
-    color: #900;
-    background-color: #FEE; }
-    #main ul.notice.error li {
-      margin-left: 1.5em; }
-
-#comments {
-  margin-bottom: 2em; }
-  #comments h3 {
-    color: #000 !important;
-    margin: 0.5em 0; }
-  #comments dl dt {
-    margin: 0.5em 0;
-    font-size: 80%; }
-  #comments dl dd {
-    margin: 0 0 1.5em; }
-
-#new-comment {
-  margin-bottom: 2em; }
-  #new-comment h3 {
-    color: #000;
-    margin: 0.5em 0; }
-  #new-comment input {
-    margin-bottom: 0.5em; }
-  #new-comment input, #new-comment textarea {
-    width: 100%; }
-  #new-comment .submit {
-    text-align: right; }
-
-#footer {
-  text-align: center;
-  background-color: #cccccc; }
-  #footer p {
-    font-size: 80%;
-    padding: 0.5em; }
-
-#search-result {
-  padding: 1em 0; }
-  #search-result table {
-    width: 100%;
-    table-collapse: collapse;
-    font-size: 80%; }
-    #search-result table tr th {
-      font-weight: normal; }
-    #search-result table tr th.result-day {
-      width: 8em;
-      background-color: #EEF; }
-    #search-result table tr th.result-title {
-      background-color: #EEF; }
-    #search-result table tr td {
-      margin: 1px;
-      padding: 0 0.5em;
-      background-color: #EEE; }
+Backtrace:
+static/css/diary.scss:1
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/import_node.rb:64:in `rescue in import'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/import_node.rb:42:in `import'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/import_node.rb:25:in `imported_file'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:149:in `rescue in visit_import'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:154:in `visit_import'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:37:in `visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:18:in `visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:53:in `block in visit_children'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:53:in `map'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:53:in `visit_children'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:27:in `block in visit_children'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:39:in `with_environment'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:26:in `visit_children'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:37:in `block in visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:47:in `visit_root'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/base.rb:37:in `visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:18:in `visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/visitors/perform.rb:7:in `visit'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/tree/root_node.rb:20:in `render'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/engine.rb:300:in `_render'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/engine.rb:247:in `render'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/plugin/compiler.rb:340:in `update_stylesheet'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/plugin/compiler.rb:202:in `block in update_stylesheets'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/plugin/compiler.rb:200:in `each'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/plugin/compiler.rb:200:in `update_stylesheets'
+/usr/local/lib/ruby/gems/1.9.1/gems/sass-3.1.19/lib/sass/plugin/compiler.rb:298:in `block in watch'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/multi_listener.rb:86:in `call'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/multi_listener.rb:86:in `on_change'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/multi_listener.rb:95:in `block in initialize_adapter'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/adapter.rb:162:in `call'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/adapter.rb:162:in `poll_changed_dirs'
+/usr/local/lib/ruby/gems/1.9.1/gems/listen-0.4.7/lib/listen/adapters/linux.rb:44:in `block in start'
+*/
+body:before {
+  white-space: pre;
+  font-family: monospace;
+  content: "Syntax error: File to import not found or unreadable: frame.\A               Load paths:\A                 /home/mizon/w/lupo\A                 /home/mizon/w/lupo/static/css\A         on line 1 of static/css/diary.scss\A \A 1: @import \"frame\";\A 2: \A 3: $base-color: #039;\A 4: $header-back: $base-color;\A 5: $main-back: #FFF;\A 6: $footer-back: #CCC;"; }
