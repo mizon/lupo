@@ -3,12 +3,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.AdminHandler (
-    login
-  , admin
-  , initAccount
-  , newEntry
-  , editEntry
-  , deleteEntry
+    handleLogin
+  , handleAdmin
+  , handleInitAccount
+  , handleNewEntry
+  , handleEditEntry
+  , handleDeleteEntry
   ) where
 
 import Data.Enumerator hiding (replicate, sequence, mapM)
@@ -27,8 +27,8 @@ import Lupo.Util
 import qualified Lupo.View as View
 import qualified Lupo.ViewFragment as V
 
-login :: LupoHandler ()
-login =
+handleLogin :: LupoHandler ()
+handleLogin =
       method GET showLoginForm
   <|> method POST authenticate
   where
@@ -45,8 +45,8 @@ login =
       authResult <- with auth $ A.loginByUsername name pass' True
       redirect $ either (const "/login") (const "/admin") authResult
 
-admin :: LupoHandler ()
-admin = requireAuth $ do
+handleAdmin :: LupoHandler ()
+handleAdmin = requireAuth $ do
   db <- LDB.getDatabase
   dayContents <- mapM (LDB.selectDay db) =<< getAllDays db
   View.renderAdmin $ View.adminView dayContents
@@ -55,8 +55,8 @@ admin = requireAuth $ do
       (zonedDay -> today) <- liftIO $ Time.getZonedTime
       run_ =<< (EL.consume >>==) <$> LDB.beforeSavedDays db today
 
-initAccount :: LupoHandler ()
-initAccount = do
+handleInitAccount :: LupoHandler ()
+handleInitAccount = do
   exists <- with auth $ A.usernameExists "admin"
   when exists pass
   method GET getInitAccountForm <|> method POST registerNewAccount
@@ -69,8 +69,8 @@ initAccount = do
       void $ with auth $ A.createUser "admin" pass'
       redirect "/admin"
 
-newEntry :: LupoHandler ()
-newEntry = requireAuth $
+handleNewEntry :: LupoHandler ()
+handleNewEntry = requireAuth $
       method GET (newEntryEditor Nothing)
   <|> method POST submitEntry
   where
@@ -89,8 +89,8 @@ newEntry = requireAuth $
 
     newEntryEditor entry = showEditor "New Entry" entry
 
-editEntry :: LupoHandler ()
-editEntry = requireAuth $ method GET editor <|> method POST updateEntry
+handleEditEntry :: LupoHandler ()
+handleEditEntry = requireAuth $ method GET editor <|> method POST updateEntry
   where
     editor = do
       id' <- paramId
@@ -113,8 +113,8 @@ editEntry = requireAuth $ method GET editor <|> method POST updateEntry
 
     editEntryEditor entry = showEditor "Edit Entry" $ Just entry
 
-deleteEntry :: LupoHandler ()
-deleteEntry = requireAuth $ do
+handleDeleteEntry :: LupoHandler ()
+handleDeleteEntry = requireAuth $ do
   db <- LDB.getDatabase
   LDB.delete db =<< paramId
   redirect "/admin"

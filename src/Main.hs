@@ -52,12 +52,12 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   A.addAuthSplices auth
   addRoutes [
       ("", Public.handleTop)
-    , ("admin", Admin.admin)
-    , ("admin/new", Admin.newEntry)
-    , ("admin/:id/edit", Admin.editEntry)
-    , ("admin/:id/delete", Admin.deleteEntry)
-    , ("login", Admin.login)
-    , ("init-account", Admin.initAccount)
+    , ("admin", Admin.handleAdmin)
+    , ("admin/new", Admin.handleNewEntry)
+    , ("admin/:id/edit", Admin.handleEditEntry)
+    , ("admin/:id/delete", Admin.handleDeleteEntry)
+    , ("login", Admin.handleLogin)
+    , ("init-account", Admin.handleInitAccount)
     , ("js", serveDirectory "static/js")
     , ("css", serveDirectory "static/css")
     , ("search", Public.handleSearch)
