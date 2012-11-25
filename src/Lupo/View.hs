@@ -185,14 +185,16 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
          ]
 
 entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m))
-                => T.Text -> T.Text -> DB.Entry -> View m
-entryEditorView editorTitle editPath DB.Entry {..} =
+                => DB.Saved DB.Entry -> T.Text -> T.Text -> View m
+entryEditorView DB.Saved {..} editType editPath =
   View editorTitle $ H.callTemplateWithText "entry-editor" [
-    ("lupo:editor-title", editorTitle)
+    ("lupo:editor-title", [st|#{editType}: #{editorTitle}: #{DB.entryTitle savedContent}|])
   , ("lupo:edit-path", editPath)
-  , ("lupo:entry-title", entryTitle)
-  , ("lupo:entry-body", entryBody)
+  , ("lupo:entry-title", DB.entryTitle savedContent)
+  , ("lupo:entry-body", DB.entryBody savedContent)
   ]
+  where
+    editorTitle = formatTime "%Y-%m-%d" createdAt
 
 makePageTitle :: GetLupoConfig n => View m -> n T.Text
 makePageTitle View {..} = do
