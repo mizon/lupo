@@ -18,6 +18,7 @@ module Lupo.View (
   , loginView
   , initAccountView
   , adminView
+  , entryEditorView
   ) where
 
 import Control.Applicative
@@ -182,6 +183,16 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
              Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
            ]
          ]
+
+entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m))
+                => T.Text -> T.Text -> DB.Entry -> View m
+entryEditorView editorTitle editPath DB.Entry {..} =
+  View editorTitle $ H.callTemplateWithText "entry-editor" [
+    ("lupo:editor-title", editorTitle)
+  , ("lupo:edit-path", editPath)
+  , ("lupo:entry-title", entryTitle)
+  , ("lupo:entry-body", entryBody)
+  ]
 
 makePageTitle :: GetLupoConfig n => View m -> n T.Text
 makePageTitle View {..} = do

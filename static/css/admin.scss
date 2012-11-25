@@ -14,6 +14,14 @@
     margin: 0;
     padding: 0;
 
+    dt {
+        position: absolute;
+    }
+
+    dd {
+        margin-left: 5em;
+    }
+
     textarea {
         width: 100%;
         height: 30em;
@@ -55,7 +63,6 @@
     th {
         background-color: #DDD;
         border: solid 1px #999;
-
     }
 
     td {

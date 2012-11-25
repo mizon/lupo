@@ -90,28 +90,32 @@ handleNewEntry = requireAuth $
     newEntryEditor entry = showEditor "New Entry" entry
 
 handleEditEntry :: LupoHandler ()
-handleEditEntry = requireAuth $ method GET editor <|> method POST updateEntry
+handleEditEntry = requireAuth $
+      method GET showEntryEditor
+  <|> method POST updateEntry
   where
-    editor = do
-      id' <- paramId
+    showEntryEditor = do
       db <- LDB.getDatabase
+      id' <- paramId
       (LDB.savedContent -> entry) <- LDB.select db id'
-      editEntryEditor entry
+      View.renderAdmin =<< getEditor entry
 
     updateEntry = do
+      action <- textParam "action"
       id' <- paramId
       entry <- LDB.Entry <$> textParam"title" <*> textParam"body"
-      action <- textParam"action"
       case action of
         "Submit" -> do
           db <- LDB.getDatabase
           LDB.update db id' entry
           redirect "/admin"
         "Preview" -> showPreview "Edit Entry: Preview" entry
-        "Edit" -> editEntryEditor entry
+        "Edit" -> View.renderAdmin =<< getEditor entry
         _ -> undefined
 
-    editEntryEditor entry = showEditor "Edit Entry" $ Just entry
+    getEditor entry = do
+      (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
+      pure $ View.entryEditorView "Edit" submitPath entry
 
 handleDeleteEntry :: LupoHandler ()
 handleDeleteEntry = requireAuth $ do

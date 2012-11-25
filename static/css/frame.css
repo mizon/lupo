@@ -9,6 +9,11 @@
 h1, h2, h3, h4, h5, h6 {
   font-size: 16px; }
 
+form dd {
+  margin: 0.25em 0; }
+form input.submit-button {
+  width: 10em !important; }
+
 #container {
   border: solid 1px #CCC;
   border-width: 0px 1px; }
@@ -52,5 +57,3 @@ h1, h2, h3, h4, h5, h6 {
 body {
   background-color: #EEE;
   line-height: 1.4; }
-  body input.submit-button {
-    width: 10em !important; }
