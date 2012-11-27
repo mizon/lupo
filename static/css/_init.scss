@@ -17,9 +17,23 @@ h1, h2, h3, h4, h5, h6 {
 form {
     dd {
         margin: 0.25em 0;
+
+        input, textarea {
+            width: 100%;
+        }
     }
 
-    input.submit-button {
-        width: 10em !important;
+    dd.submit {
+        text-align: right;
+
+        input {
+            width: 10em !important;
+        }
+    }
+
+    dd.submit {
+        input {
+            width: 10em !important;
+        }
     }
 }

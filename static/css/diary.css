@@ -11,7 +11,13 @@ h1, h2, h3, h4, h5, h6 {
 
 form dd {
   margin: 0.25em 0; }
-form input.submit-button {
+  form dd input, form dd textarea {
+    width: 100%; }
+form dd.submit {
+  text-align: right; }
+  form dd.submit input {
+    width: 10em !important; }
+form dd.submit input {
   width: 10em !important; }
 
 #container {
@@ -121,12 +127,6 @@ body {
   #new-comment h3 {
     color: #000;
     margin: 0.5em 0; }
-  #new-comment input {
-    margin-bottom: 0.5em; }
-  #new-comment input, #new-comment textarea {
-    width: 100%; }
-  #new-comment .submit {
-    text-align: right; }
 
 #search-result {
   padding: 1em 0; }

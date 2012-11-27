@@ -1,4 +1,5 @@
 {-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -71,12 +72,12 @@ handleInitAccount = do
 
 handleNewEntry :: LupoHandler ()
 handleNewEntry = requireAuth $
-      method GET (newEntryEditor Nothing)
+      method GET (View.renderAdmin =<< getEditor (LDB.Entry "" ""))
   <|> method POST submitEntry
   where
     submitEntry = do
-      entry <- LDB.Entry <$> textParam "title" <*> textParam "body"
       action <- textParam "action"
+      entry <- LDB.Entry <$> textParam "title" <*> textParam "body"
       case action of
         "Submit" -> do
           db <- LDB.getDatabase
@@ -84,10 +85,22 @@ handleNewEntry = requireAuth $
           redirect "/admin"
         "Preview" ->
           showPreview "New Entry: Preview" entry
-        "Edit" -> newEntryEditor $ Just entry
+        "Edit" -> View.renderAdmin =<< getEditor entry
         _ -> error "invalid request"
 
-    newEntryEditor entry = showEditor "New Entry" entry
+    getEditor entry = do
+      saved <- dummySaved
+      (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
+      pure $ View.entryEditorView saved "New" submitPath
+      where
+        dummySaved = do
+          today <- liftIO $ Time.getZonedTime
+          pure LDB.Saved {
+              LDB.idx = undefined
+            , LDB.createdAt = today
+            , LDB.modifiedAt = undefined
+            , LDB.savedContent = entry
+            }
 
 handleEditEntry :: LupoHandler ()
 handleEditEntry = requireAuth $

@@ -12,17 +12,21 @@
 </lupo:if-commented><div id="new-comment">
 <h3><lupo:new-comment-caption/></h3>
 <lupo:new-comment-errors/><form method="post" action="${lupo:new-comment-url}">
+<dl>
 <label>
-<lupo:name-label/><br/>
-<input type="text" name="name" value="${lupo:comment-name}" size="50"/><br/>
+<dt><lupo:name-label/></dt>
+<dd><input type="text" name="name" value="${lupo:comment-name}" size="50"/></dd>
 </label>
 <label>
-<lupo:content-label/><br/>
-<textarea class="comment-content" name="body" rows="8"><lupo:comment-body/></textarea><br/>
+<dt><lupo:content-label/></dt>
+<dd>
+<textarea class="comment-content" name="body" rows="8"><lupo:comment-body/></textarea>
+</dd>
 </label>
-<div class="submit">
-<input class="submit-button" type="submit" value="Submit"/>
-</div>
+<dd class="submit">
+<input type="submit" value="Submit"/>
+</dd>
+</dl>
 </form>
 </div>
 <lupo:new-comment-notice/>
