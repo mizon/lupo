@@ -17,6 +17,7 @@ import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
 import Data.Maybe
+import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
@@ -36,10 +37,15 @@ import qualified Lupo.View as V
 
 handleTop :: LupoHandler ()
 handleTop = do
+  mustNoPathInfo
   db <- LDB.getDatabase
   (zonedDay -> today) <- liftIO $ Time.getZonedTime
   latest <- run_ =<< (EL.head >>==) <$> LDB.beforeSavedDays db today
   renderMultiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
+  where
+    mustNoPathInfo = do
+      (rqPathInfo -> path') <- getRequest
+      unless (BS.null path') pass
 
 handleEntries :: T.Text -> LupoHandler ()
 handleEntries = parseQuery $
