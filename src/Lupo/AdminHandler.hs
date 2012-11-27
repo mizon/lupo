@@ -149,17 +149,6 @@ showPreview prevTitle e@LDB.Entry {..} = do
     , ("lupo:rendered-body", pure $ V.renderBody e)
     ]
 
-showEditor :: T.Text -> Maybe LDB.Entry -> LupoHandler ()
-showEditor title entry = requireAuth $ do
-  (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-  H.renderWithSplices "edit-entry" [
-      ("lupo:style-sheet", textSplice "admin")
-    , ("lupo:edit-title", textSplice title)
-    , ("lupo:submit-path", textSplice submitPath)
-    , ("lupo:default-title", textSplice $ maybe "" LDB.entryTitle entry)
-    , ("lupo:default-body", textSplice $ maybe "" LDB.entryBody entry)
-    ]
-
 requireAuth :: LupoHandler a -> LupoHandler a
 requireAuth h = do
   stat <- with auth A.isLoggedIn
