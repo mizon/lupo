@@ -15,10 +15,10 @@ form dd {
     width: 100%; }
 form dd.submit {
   text-align: right; }
+  form dd.submit button {
+    width: 10em; }
   form dd.submit input {
     width: 10em !important; }
-form dd.submit input {
-  width: 10em !important; }
 
 #login-form,
 #init-account-form {
@@ -35,12 +35,3 @@ form dd.submit input {
   #init-account-form form dd {
     position: relative;
     margin-left: 5em; }
-    #login-form form dd input,
-    #init-account-form form dd input {
-      width: 100%; }
-  #login-form form dd.submit,
-  #init-account-form form dd.submit {
-    text-align: right; }
-    #login-form form dd.submit button,
-    #init-account-form form dd.submit button {
-      width: 10em; }

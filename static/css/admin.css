@@ -15,10 +15,10 @@ form dd {
     width: 100%; }
 form dd.submit {
   text-align: right; }
+  form dd.submit button {
+    width: 10em; }
   form dd.submit input {
     width: 10em !important; }
-form dd.submit input {
-  width: 10em !important; }
 
 #container {
   border: solid 1px #CCC;
