@@ -107,17 +107,17 @@ singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) 
       | null notice = pure []
       | otherwise = H.callTemplate "_notice" [
           ("lupo:notice-class", H.textSplice "notice success")
-        , ("lupo:notice-messages", H.mapSplices mkList notice)
+        , ("lupo:notice-messages", H.mapSplices mkRow notice)
         ]
 
     newCommentErrors
       | null errs = pure []
       | otherwise = H.callTemplate "_notice" [
           ("lupo:notice-class", H.textSplice "notice error")
-        , ("lupo:notice-messages", H.mapSplices mkList errs)
+        , ("lupo:notice-messages", H.mapSplices mkRow errs)
         ]
 
-    mkList txt = do
+    mkRow txt = do
       txt' <- L.localize txt
       pure $ [Element "li" [] [TextNode txt']]
 
@@ -170,19 +170,19 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
         DB.dayEntries = e : es
       , ..
       } = tr =<< (dateTh : makeEntryRow e) : (makeEntryRow <$> es)
-     where
-       tr t = [Element "tr" [] t]
+      where
+        tr t = [Element "tr" [] t]
 
-       dateTh = Element "th" [("class", "date"), ("rowspan", toText $ length $ e : es)] [
-           TextNode $ formatTime "%Y-%m-%d" day
-         ]
+        dateTh = Element "th" [("class", "date"), ("rowspan", toText $ length $ e : es)] [
+            TextNode $ formatTime "%Y-%m-%d" day
+          ]
 
-       makeEntryRow DB.Saved {..} = [
-           Element "td" [] [TextNode $ DB.entryTitle savedContent]
-         , Element "td" [("class", "action")] [
-             Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
-           ]
-         ]
+        makeEntryRow DB.Saved {..} = [
+            Element "td" [] [TextNode $ DB.entryTitle savedContent]
+          , Element "td" [("class", "action")] [
+              Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
+            ]
+          ]
 
 entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m))
                 => DB.Saved DB.Entry -> T.Text -> T.Text -> View m

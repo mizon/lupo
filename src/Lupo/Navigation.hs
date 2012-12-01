@@ -22,8 +22,8 @@ data Navigation m = Navigation {
   , getPreviousMonth :: m Time.Day
   }
 
-makeNavigation :: (Functor m, Applicative m, Monad m) =>
-  LDB.Database m -> Time.Day -> Navigation m
+makeNavigation :: (Functor m, Applicative m, Monad m)
+               => LDB.Database m -> Time.Day -> Navigation m
 makeNavigation db base = Navigation {
     getNextDay = do
       enum <- daysAfterTommorow
