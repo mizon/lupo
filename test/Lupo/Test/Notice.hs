@@ -54,8 +54,8 @@ data SessionAction = GetCsrfToken | CommitSession
 
 makeSessionMock :: T.Text -> N.SessionBackend (TestM [SessionAction])
 makeSessionMock token = N.SessionBackend {
-    N.getCsrfToken = tell [GetCsrfToken] >> pure token
-  , N.commitSession = tell [CommitSession]
+    N.getCsrfToken=tell [GetCsrfToken] >> pure token
+  , N.commitSession=tell [CommitSession]
   }
 
 withNoticeDB :: Monoid w

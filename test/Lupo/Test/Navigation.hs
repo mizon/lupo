@@ -21,23 +21,23 @@ import qualified Lupo.Navigation as N
 instance (Functor m, Applicative m, Monad m) =>
     Default (DB.Database m) where
   def = DB.Database {
-      DB.select = undefined
-    , DB.selectDay = undefined
-    , DB.all = undefined
-    , DB.search = undefined
-    , DB.insert = undefined
-    , DB.update = undefined
-    , DB.delete = undefined
-    , DB.beforeSavedDays = undefined
-    , DB.afterSavedDays = undefined
-    , DB.insertComment = undefined
+      DB.select=undefined
+    , DB.selectDay=undefined
+    , DB.all=undefined
+    , DB.search=undefined
+    , DB.insert=undefined
+    , DB.update=undefined
+    , DB.delete=undefined
+    , DB.beforeSavedDays=undefined
+    , DB.afterSavedDays=undefined
+    , DB.insertComment=undefined
     }
 
 navigationTest :: Test
 navigationTest = testGroup "page navigation" [
     testCase "getNextDay" $ do
       let db = def {
-              DB.afterSavedDays = \day -> do
+              DB.afterSavedDays= \day -> do
                 tell [day]
                 pure $ E.enumList 1 [Time.fromGregorian 2000 1 2]
             }
@@ -49,7 +49,7 @@ navigationTest = testGroup "page navigation" [
 
   , testCase "getPreviousDay" $ do
       let db = def {
-              DB.beforeSavedDays = \day -> do
+              DB.beforeSavedDays= \day -> do
                 tell [day]
                 pure $ E.enumList 1 [Time.fromGregorian 1999 12 31]
             }
@@ -65,7 +65,7 @@ navigationTest = testGroup "page navigation" [
 
   , testCase "getNextPageTop" $ do
       let db = def {
-              DB.afterSavedDays = \day -> do
+              DB.afterSavedDays= \day -> do
                 tell [day]
                 pure $ E.enumList 1 [
                     Time.fromGregorian 2000 1 1
@@ -81,7 +81,7 @@ navigationTest = testGroup "page navigation" [
 
   , testCase "getPreviousPageTop" $ do
       let db = def {
-              DB.beforeSavedDays = \day -> do
+              DB.beforeSavedDays= \day -> do
                 tell [day]
                 pure $ E.enumList 1 [
                     Time.fromGregorian 1999 12 31

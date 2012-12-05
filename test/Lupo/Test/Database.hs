@@ -121,8 +121,8 @@ savedTest = testGroup "saved object" [
   ]
   where
     toNextDay d = d {
-        Time.zonedTimeToLocalTime = (Time.zonedTimeToLocalTime d) {
-          Time.localDay = getNextDay
+        Time.zonedTimeToLocalTime=(Time.zonedTimeToLocalTime d) {
+          Time.localDay=getNextDay
         }
       }
       where

@@ -164,10 +164,10 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
   ]
   where
     makeDayRow DB.Day {
-        DB.dayEntries = []
+        DB.dayEntries=[]
       } = []
     makeDayRow DB.Day {
-        DB.dayEntries = e : es
+        DB.dayEntries=e : es
       , ..
       } = tr =<< (dateTh : makeEntryRow e) : (makeEntryRow <$> es)
       where

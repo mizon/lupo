@@ -96,10 +96,10 @@ handleNewEntry = requireAuth $
         dummySaved = do
           today <- liftIO $ Time.getZonedTime
           pure LDB.Saved {
-              LDB.idx = undefined
-            , LDB.createdAt = today
-            , LDB.modifiedAt = undefined
-            , LDB.savedContent = entry
+              LDB.idx=undefined
+            , LDB.createdAt=today
+            , LDB.modifiedAt=undefined
+            , LDB.savedContent=entry
             }
 
 handleEditEntry :: LupoHandler ()
@@ -124,7 +124,7 @@ handleEditEntry = requireAuth $
           LDB.update db id' entry
           redirect "/admin"
         "Preview" -> showPreview "Edit Entry: Preview" entry
-        "Edit" -> View.renderAdmin =<< getEditor baseEntry {LDB.savedContent = entry}
+        "Edit" -> View.renderAdmin =<< getEditor baseEntry { LDB.savedContent=entry }
         _ -> undefined
 
     getEditor entry = do

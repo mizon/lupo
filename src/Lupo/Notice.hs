@@ -28,7 +28,7 @@ makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m)
              -> SessionBackend m
              -> NoticeDB m
 makeNoticeDB conn SessionBackend {..} = NoticeDB {
-    addNotice = \(DB.toSql -> msg) -> do
+    addNotice= \(DB.toSql -> msg) -> do
       (DB.toSql -> token) <- getCsrfToken
       commitSession
       liftIO $ do
@@ -38,7 +38,7 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB {
           ]
         DB.commit conn
 
-  , popAllNotice = do
+  , popAllNotice= do
       (DB.toSql -> token) <- getCsrfToken
       messages <- liftIO $ DB.withTransaction conn $ const $ do
         stmt <- DB.prepare conn "SELECT message FROM notice WHERE token = ?"
@@ -52,6 +52,6 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB {
 
 makeSessionBackend :: Lens b (Snaplet SS.SessionManager) -> SessionBackend (Handler b b)
 makeSessionBackend session = SessionBackend {
-    getCsrfToken = with session SS.csrfToken
-  , commitSession = with session SS.commitSession
+    getCsrfToken=with session SS.csrfToken
+  , commitSession=with session SS.commitSession
   }
