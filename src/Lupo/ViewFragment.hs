@@ -20,9 +20,10 @@ module Lupo.ViewFragment (
   , multiDaysNavigation
   ) where
 
+import qualified Data.List as L
 import Data.Monoid
-import qualified Data.Time as Time
 import qualified Data.Text as T
+import qualified Data.Time as Time
 import Snap
 import Text.Shakespeare.Text hiding (toText)
 import qualified Text.Templating.Heist as H
@@ -86,11 +87,14 @@ anEntry LDB.Saved {..} =
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
 
 comment :: (Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Saved LDB.Comment -> H.Splice m
-comment LDB.Saved {..} = H.callTemplateWithText "_comment" [
-    ("lupo:comment-name", LDB.commentName savedContent)
-  , ("lupo:comment-time", formatTime "%Y-%m-%d %H:%M" $ createdAt)
-  , ("lupo:comment-content", LDB.commentBody savedContent)
+comment LDB.Saved {..} = H.callTemplate "_comment" [
+    ("lupo:comment-name", H.textSplice $ LDB.commentName savedContent)
+  , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ createdAt)
+  , ("lupo:comment-content", commentBodySplice)
   ]
+  where
+    commentBodySplice = pure $ L.intersperse (Element "br" [] [])
+                      $ TextNode <$> (T.lines $ LDB.commentBody savedContent)
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do
