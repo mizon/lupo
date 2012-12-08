@@ -1,15 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module UtilTest (
-    utilTest
+module UtilSpec (
+    utilSpec
   ) where
 
 import Control.Applicative
 import qualified Data.Text as T
 import qualified Data.Time as Time
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Test.Hspec
 import Test.QuickCheck
 
 import qualified Lupo.Util as U
@@ -35,16 +34,18 @@ instance Arbitrary Time.Day where
     d <- elements [1..31]
     pure $ Time.fromGregorian y m d
 
-utilTest :: Test
-utilTest = testGroup "utilities" [
-    testProperty "zonedDay" $ \zoned ->
+utilSpec :: Spec
+utilSpec = describe "utility functions" $ do
+  it "gets zonedDay" $
+    property $ \zoned ->
       U.zonedDay zoned == Time.localDay (Time.zonedTimeToLocalTime zoned)
 
-  , testProperty "toText" $ \(v :: Integer) ->
+  it "converts showable datas to texts" $
+    property $ \(v :: Integer) ->
       U.toText v == T.pack (show v)
 
-  , testProperty "safeIndex" $ \(xs :: [Int]) (i :: Int) ->
+  it "gets an index by safe" $
+    property $ \(xs :: [Int]) (i :: Int) ->
       case U.safeIndex xs i of
         Just x -> x == xs !! i
         Nothing -> i < 0 || length xs <= i
-  ]

@@ -124,7 +124,7 @@ handleEditEntry = requireAuth $
           LDB.update db id' entry
           redirect "/admin"
         "Preview" -> showPreview "Edit Entry: Preview" entry
-        "Edit" -> View.renderAdmin =<< getEditor baseEntry { LDB.savedContent=entry }
+        "Edit" -> View.renderAdmin =<< getEditor baseEntry {LDB.savedContent = entry}
         _ -> undefined
 
     getEditor entry = do

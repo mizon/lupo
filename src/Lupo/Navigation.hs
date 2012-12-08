@@ -25,34 +25,34 @@ data Navigation m = Navigation {
 makeNavigation :: (Functor m, Applicative m, Monad m)
                => LDB.Database m -> Time.Day -> Navigation m
 makeNavigation db base = Navigation {
-    getNextDay= do
+    getNextDay = do
       enum <- daysAfterTommorow
       run_ $ enum $$ EL.head
 
-  , getPreviousDay= do
+  , getPreviousDay = do
       enum <- daysBeforeYesterday
       run_ $ enum $$ EL.head
 
-  , getThisMonth=
+  , getThisMonth =
       case Time.toGregorian base of
         (y, m, _) -> Time.fromGregorian y m 1
 
-  , getNextPageTop= \nDays -> do
+  , getNextPageTop = \nDays -> do
       enum <- daysAfterTommorow
       nextDays <- run_ $ enum $$ EL.take nDays
       pure $ nextDays `safeIndex` (fromIntegral $ pred nDays)
 
-  , getPreviousPageTop= \nDays -> do
+  , getPreviousPageTop = \nDays -> do
       enum <- daysBeforeYesterday
       previousDays <- run_ $ enum $$ EL.take nDays
       pure $ previousDays `safeIndex` (fromIntegral $ pred nDays)
 
-  , getNextMonth=pure $
+  , getNextMonth = pure $
       case Time.toGregorian base of
         (y, 12, _) -> Time.fromGregorian (succ y) 1 1
         (y, m, _) -> Time.fromGregorian y (succ m) 1
 
-  , getPreviousMonth=pure $
+  , getPreviousMonth = pure $
       case Time.toGregorian base of
         (y, 1, _) -> Time.fromGregorian (pred y) 12 1
         (y, m, _) -> Time.fromGregorian y (pred m) 1

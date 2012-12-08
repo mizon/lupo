@@ -86,14 +86,14 @@ getCreatedDay = zonedDay . createdAt
 
 makeDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> Database m
 makeDatabase conn = Database {
-    select= \i -> do
+    select = \i -> do
       row <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
         void $ DB.execute stmt [DB.toSql i]
         DB.fetchRow stmt
       maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
-  , selectDay= \d@(DB.toSql -> sqlDay) -> do
+  , selectDay = \d@(DB.toSql -> sqlDay) -> do
       entries <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
         void $ DB.execute stmt [sqlDay]
@@ -104,14 +104,14 @@ makeDatabase conn = Database {
         (sqlToComment <$>) <$> DB.fetchAllRows stmt
       pure $ makeDay d entries comments
 
-  , all= do
+  , all = do
       rows <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries ORDER BY created_at DESC"
         void $ DB.execute stmt []
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map sqlToEntry
 
-  , search= \(DB.toSql -> word) -> do
+  , search = \(DB.toSql -> word) -> do
       rows <- liftIO $ do
         stmt <- DB.prepare conn $
              "SELECT * FROM entries "
@@ -121,7 +121,7 @@ makeDatabase conn = Database {
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map sqlToEntry
 
-  , insert= \Entry {..} -> do
+  , insert = \Entry {..} -> do
       liftIO $ do
         let sql = "INSERT INTO entries (created_at, modified_at, day, title, body) "
                <> "VALUES (?, ?, ?, ?, ?)"
@@ -135,7 +135,7 @@ makeDatabase conn = Database {
           ]
         DB.commit conn
 
-  , update= \i Entry {..} -> do
+  , update = \i Entry {..} -> do
       liftIO $ do
         let sql = "UPDATE entries "
                <> "SET modified_at = ?, title = ?, body = ? "
@@ -149,7 +149,7 @@ makeDatabase conn = Database {
           ]
         DB.commit conn
 
-  , delete= \i -> do
+  , delete = \i -> do
       liftIO $ do
         status <- DB.run conn "DELETE FROM entries WHERE id = ?" [DB.toSql i]
         if status /= 1 then
@@ -157,7 +157,7 @@ makeDatabase conn = Database {
         else do
           DB.commit conn
 
-  , beforeSavedDays= \(DB.toSql -> d) -> do
+  , beforeSavedDays = \(DB.toSql -> d) -> do
       rows <- liftIO $ do
         stmt <- DB.prepare conn
           "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC"
@@ -165,7 +165,7 @@ makeDatabase conn = Database {
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
-  , afterSavedDays= \(DB.toSql -> d) -> do
+  , afterSavedDays = \(DB.toSql -> d) -> do
       rows <- liftIO $ do
         stmt <- DB.prepare conn
           "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC"
@@ -173,7 +173,7 @@ makeDatabase conn = Database {
         DB.fetchAllRows stmt
       pure $ enumList 1 rows $= EL.map (DB.fromSql . Prelude.head)
 
-  , insertComment= \d c@Comment {..} -> do
+  , insertComment = \d c@Comment {..} -> do
       FV.validate commentValidator c
       liftIO $ do
         now <- Time.getZonedTime
@@ -196,10 +196,10 @@ makeDatabase conn = Database {
       , DB.fromSql -> t
       , DB.fromSql -> b
       ] = Saved {
-        idx=id'
-      , createdAt=c_at
-      , modifiedAt=m_at
-      , savedContent=Entry t b
+        idx = id'
+      , createdAt = c_at
+      , modifiedAt = m_at
+      , savedContent = Entry t b
       }
     sqlToEntry _ = error "in sql->entry conversion"
 
@@ -211,10 +211,10 @@ makeDatabase conn = Database {
       , DB.fromSql -> n
       , DB.fromSql -> b
       ] = Saved {
-        idx=id'
-      , createdAt=c_at
-      , modifiedAt=m_at
-      , savedContent=Comment n b
+        idx = id'
+      , createdAt = c_at
+      , modifiedAt = m_at
+      , savedContent = Comment n b
       }
     sqlToComment _ = error "in sql->comment conversion"
 
@@ -227,8 +227,8 @@ commentValidator = FV.makeFieldValidator $ \Comment {..} -> do
 
 makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
 makeDay d es cs = Day {
-    day=d
-  , dayEntries=es
-  , dayComments=cs
-  , numOfComments=Prelude.length cs
+    day = d
+  , dayEntries = es
+  , dayComments = cs
+  , numOfComments = Prelude.length cs
   }
