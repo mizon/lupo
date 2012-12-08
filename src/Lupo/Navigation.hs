@@ -40,22 +40,22 @@ makeNavigation db base = Navigation {
   , getNextPageTop= \nDays -> do
       enum <- daysAfterTommorow
       nextDays <- run_ $ enum $$ EL.take nDays
-      pure $ nextDays `safeIndex` (fromIntegral $ nDays - 1)
+      pure $ nextDays `safeIndex` (fromIntegral $ pred nDays)
 
   , getPreviousPageTop= \nDays -> do
       enum <- daysBeforeYesterday
       previousDays <- run_ $ enum $$ EL.take nDays
-      pure $ previousDays `safeIndex` (fromIntegral $ nDays - 1)
+      pure $ previousDays `safeIndex` (fromIntegral $ pred nDays)
 
   , getNextMonth=pure $
       case Time.toGregorian base of
-        (y, 12, _) -> Time.fromGregorian (y + 1) 1 1
-        (y, m, _) -> Time.fromGregorian y (m + 1) 1
+        (y, 12, _) -> Time.fromGregorian (succ y) 1 1
+        (y, m, _) -> Time.fromGregorian y (succ m) 1
 
   , getPreviousMonth=pure $
       case Time.toGregorian base of
-        (y, 1, _) -> Time.fromGregorian (y - 1) 12 1
-        (y, m, _) -> Time.fromGregorian y (m - 1) 1
+        (y, 1, _) -> Time.fromGregorian (pred y) 12 1
+        (y, m, _) -> Time.fromGregorian y (pred m) 1
   }
   where
     daysBeforeYesterday = LDB.beforeSavedDays db yesterday
