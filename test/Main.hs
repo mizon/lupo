@@ -7,11 +7,11 @@ import Data.Monoid
 import Prelude hiding (all)
 import Test.Framework
 
-import qualified Lupo.Test.Database as D
-import Lupo.Test.Navigation
-import Lupo.Test.Notice
-import Lupo.Test.Syntax
-import Lupo.Test.Util
+import qualified DatabaseTest as D
+import NavigationTest
+import NoticeTest
+import SyntaxTest
+import UtilTest
 
 main, fast :: IO ()
 main = defaultMain $ slowTests <> fastTests

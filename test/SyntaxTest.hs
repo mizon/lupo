@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lupo.Test.Syntax (
+module SyntaxTest (
     syntaxTest
   ) where
 

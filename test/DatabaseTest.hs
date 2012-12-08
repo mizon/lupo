@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Test.Database (
+module DatabaseTest (
     dbTest
   , savedTest
   ) where

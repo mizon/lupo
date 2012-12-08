@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lupo.Test.Notice (
+module NoticeTest (
     noticeTest
   ) where
 
