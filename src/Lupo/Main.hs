@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Main (main) where
+module Lupo.Main (
+    main
+  ) where
 
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
