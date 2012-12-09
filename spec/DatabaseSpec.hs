@@ -11,6 +11,7 @@ import Control.Monad.CatchIO
 import Control.Monad.Reader
 import Data.Enumerator
 import qualified Data.Enumerator.List as EL
+import Data.Lens.Common
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
@@ -19,6 +20,7 @@ import Test.Hspec
 
 import qualified Lupo.Database as LDB
 import Lupo.Exception
+import Lupo.Util
 
 databaseSpec :: Spec
 databaseSpec = describe "database wrapper" $ do
@@ -104,19 +106,11 @@ savedObjectSpec :: Spec
 savedObjectSpec = describe "container for persisted object" $
   it "has created day" $ do
     now <- Time.getZonedTime
-    LDB.getCreatedDay (LDB.Saved 1 now now ()) `shouldBe` getDay now
-    LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) `shouldBe` getDay now
-    LDB.getCreatedDay (LDB.Saved 1 (toNextDay now) now ()) `shouldSatisfy`(/= getDay now)
+    LDB.getCreatedDay (LDB.Saved 1 now now ()) `shouldBe` zonedDay now
+    LDB.getCreatedDay (LDB.Saved 1 now (toNextDay now) ()) `shouldBe` zonedDay now
+    LDB.getCreatedDay (LDB.Saved 1 (toNextDay now) now ()) `shouldSatisfy`(/= zonedDay now)
   where
-    toNextDay d = d {
-        Time.zonedTimeToLocalTime = (Time.zonedTimeToLocalTime d) {
-          Time.localDay = getNextDay
-        }
-      }
-      where
-        getNextDay = Time.addDays 1 $ getDay d
-
-    getDay = Time.localDay . Time.zonedTimeToLocalTime
+    toNextDay = zonedTimeToLocalTime ^%= localDay ^%= Time.addDays 1
 
 shouldSameContent :: LDB.Saved LDB.Entry -> LDB.Entry -> Expectation
 shouldSameContent (LDB.savedContent -> actual) expected = actual `shouldBe` expected
