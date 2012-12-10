@@ -32,7 +32,7 @@ block = heading <|> blockQuote <|> unorderedList <|> paragraph
       lis <- some $ snd <$> beginWith (A.satisfy $ A.inClass "*+-")
       pure $ Element "ul" [] $ makeElem <$> lis
       where
-        makeElem body = Element "li" []  $ escapedText body
+        makeElem body = Element "li" [] [TextNode body]
 
     paragraph = do
       ls <- some plainLine
@@ -81,21 +81,9 @@ inlineElemnents = either undefined id . parse
         anchor = do
           name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
           href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
-          pure $ Element "a" [("href", escapeHtml href)] $ escapedText name
+          pure $ Element "a" [("href", href)] [TextNode name]
 
-        text = TextNode . escapeHtml . T.pack <$> some (A.satisfy (/= '['))
+        text = TextNode . T.pack <$> some (A.satisfy (/= '['))
 
 blanks :: A.Parser ()
 blanks = A.skipWhile $ A.inClass " \t"
-
-escapedText :: T.Text -> [Node]
-escapedText = pure . TextNode . escapeHtml
-
-escapeHtml :: T.Text -> T.Text
-escapeHtml = T.concatMap escape
-  where
-    escape '<' = "&lt;"
-    escape '>' = "&gt;"
-    escape '&' = "&amp;"
-    escape '"' = "&quot;"
-    escape c = T.singleton c
