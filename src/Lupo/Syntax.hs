@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Lupo.Syntax (
     renderBody
+  , diaryParser
   ) where
 
 import Control.Applicative

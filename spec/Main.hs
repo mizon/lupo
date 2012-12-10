@@ -4,6 +4,7 @@ import Test.Hspec
 import DatabaseSpec
 import NavigationSpec
 import NoticeSpec
+import SyntaxSpec
 import UtilSpec
 
 main :: IO ()
@@ -13,4 +14,5 @@ main = hspec $ sequence_ [
   , navigationSpec
   , noticeSpec
   , utilSpec
+  , syntaxSpec
   ]
