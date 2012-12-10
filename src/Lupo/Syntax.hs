@@ -42,7 +42,7 @@ block = heading <|> blockQuote <|> unorderedList <|> paragraph
       (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
       pure $ T.append (T.singleton h) t
 
-    specialSymbols = ['#', '*', '>', ' ', '\n']
+    specialSymbols = ['#', '*', '>', ' ', '\n', '\r']
 
 heading :: A.Parser Node
 heading = prefixStyle <|> underlineStyle
