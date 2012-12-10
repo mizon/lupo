@@ -55,7 +55,11 @@ makeSessionMock token = N.SessionBackend {
   }
 
 withNoticeDB :: Monoid w
-             => N.SessionBackend (TestM w) -> Bool -> (N.NoticeDB (TestM w) -> TestM w a) -> IO (a, w)
+             => N.SessionBackend (TestM w)
+             -> Bool
+             -> (N.NoticeDB (TestM w)
+             -> TestM w a)
+             -> IO (a, w)
 withNoticeDB ss ifCleanup handle = runWriterT $
   bracket initialize finalize $ \conn ->
     handle $ N.makeNoticeDB conn ss

@@ -13,6 +13,22 @@ import Test.QuickCheck
 
 import qualified Lupo.Util as U
 
+utilSpec :: Spec
+utilSpec = describe "utility functions" $ do
+  it "gets zonedDay" $
+    property $ \zoned ->
+      U.zonedDay zoned == Time.localDay (Time.zonedTimeToLocalTime zoned)
+
+  it "converts showable datas to texts" $
+    property $ \(v :: Integer) ->
+      U.toText v == T.pack (show v)
+
+  it "gets an index safely" $
+    property $ \(xs :: [Int]) (i :: Int) ->
+      case U.safeIndex xs i of
+        Just x -> x == xs !! i
+        Nothing -> i < 0 || length xs <= i
+
 instance Arbitrary Time.ZonedTime where
   arbitrary = do
     utc <- arbitrary
@@ -33,19 +49,3 @@ instance Arbitrary Time.Day where
     m <- elements [1..12]
     d <- elements [1..31]
     pure $ Time.fromGregorian y m d
-
-utilSpec :: Spec
-utilSpec = describe "utility functions" $ do
-  it "gets zonedDay" $
-    property $ \zoned ->
-      U.zonedDay zoned == Time.localDay (Time.zonedTimeToLocalTime zoned)
-
-  it "converts showable datas to texts" $
-    property $ \(v :: Integer) ->
-      U.toText v == T.pack (show v)
-
-  it "gets an index by safe" $
-    property $ \(xs :: [Int]) (i :: Int) ->
-      case U.safeIndex xs i of
-        Just x -> x == xs !! i
-        Nothing -> i < 0 || length xs <= i

@@ -57,7 +57,7 @@ databaseSpec = describe "database wrapper" $ do
       e <- LDB.select db 1
       e `shouldSameContent` LDB.Entry "foo" "foooo"
 
-  it "select all entries" $ do
+  it "selects all entries" $ do
     withDB $ \db -> do
       enum <- LDB.all db
       es <- run_ $ enum $$ EL.consume
@@ -65,7 +65,7 @@ databaseSpec = describe "database wrapper" $ do
       (es !! 0) `shouldSameContent` LDB.Entry "title 8-20-2" "body 8-20-2"
       (es !! 2) `shouldSameContent` LDB.Entry "title 8-16" "body 8-16"
 
-  it "search entries" $ do
+  it "searches entries" $ do
     withDB $ \db -> do
       es <- run_ =<< ($$ EL.consume) <$> LDB.search db "body 8-20"
       Prelude.length es `shouldBe` 2

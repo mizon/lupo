@@ -15,21 +15,6 @@ import Test.Hspec
 import qualified Lupo.Database as DB
 import qualified Lupo.Navigation as N
 
-instance (Functor m, Applicative m, Monad m) =>
-    Default (DB.Database m) where
-  def = DB.Database {
-      DB.select = undefined
-    , DB.selectDay = undefined
-    , DB.all = undefined
-    , DB.search = undefined
-    , DB.insert = undefined
-    , DB.update = undefined
-    , DB.delete = undefined
-    , DB.beforeSavedDays = undefined
-    , DB.afterSavedDays = undefined
-    , DB.insertComment = undefined
-    }
-
 navigationSpec :: Spec
 navigationSpec = describe "page navigation" $ do
   it "gets the next day" $ do
@@ -99,3 +84,18 @@ navigationSpec = describe "page navigation" $ do
   it "gets the previous month" $ do
     let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15
     N.getPreviousMonth nav `shouldReturn` Time.fromGregorian 1999 12 1
+
+instance (Functor m, Applicative m, Monad m) =>
+    Default (DB.Database m) where
+  def = DB.Database {
+      DB.select = undefined
+    , DB.selectDay = undefined
+    , DB.all = undefined
+    , DB.search = undefined
+    , DB.insert = undefined
+    , DB.update = undefined
+    , DB.delete = undefined
+    , DB.beforeSavedDays = undefined
+    , DB.afterSavedDays = undefined
+    , DB.insertComment = undefined
+    }

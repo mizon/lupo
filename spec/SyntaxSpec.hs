@@ -48,7 +48,7 @@ Paragraph B, line 2.
     , Element "p" [] [TextNode "Paragraph B, line 1.Paragraph B, line 2."]
     ]
 
-  it "parse inline elements" $
+  it "parses inline elements" $
     parseDiary [st|
 Click here [HaskellWiki](http://www.haskell.org/haskellwiki/Haskell) .
 |] `shouldBe` Right [
