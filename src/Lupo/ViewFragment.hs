@@ -104,8 +104,12 @@ emptyMonth = do
 searchResult :: LDB.Saved LDB.Entry -> Node
 searchResult LDB.Saved {..} =
   Element "tr" [] [
-    Element "th" [("class", "result-day")] [TextNode $ timeToText createdAt]
-  , Element "th" [("class", "result-title")] [TextNode $ LDB.entryTitle savedContent]
+    Element "th" [("class", "result-day")] [
+      Element "a" [("href", formatTime "/%Y%m%d" createdAt)] [TextNode $ timeToText createdAt]
+    ]
+  , Element "th" [("class", "result-title")] [
+      Element "a" [("href", [st|/entries/#{show idx}|])] [TextNode $ LDB.entryTitle savedContent]
+    ]
   , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
   ]
 
