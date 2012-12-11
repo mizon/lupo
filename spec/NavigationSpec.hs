@@ -78,12 +78,23 @@ navigationSpec = describe "page navigation" $ do
     arg `shouldBe` [Time.fromGregorian 1999 12 31]
 
   it "gets the next month" $ do
-    let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15
-    N.getNextMonth nav `shouldReturn` Time.fromGregorian 2000 2 1
+    let db = def {DB.afterSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 2 1]}
+        nav = N.makeNavigation db $ Time.fromGregorian 2000 1 15
+    N.getNextMonth nav `shouldReturn` Just (Time.fromGregorian 2000 2 1)
 
   it "gets the previous month" $ do
-    let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15
-    N.getPreviousMonth nav `shouldReturn` Time.fromGregorian 1999 12 1
+    let db = def {DB.beforeSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 12 31]}
+        nav = N.makeNavigation db $ Time.fromGregorian 2000 1 15
+    N.getPreviousMonth nav `shouldReturn` Just (Time.fromGregorian 1999 12 1)
+
+  it "gets the no monthes when there are no entries" $ do
+    let db = def {
+            DB.afterSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 1 5]
+          , DB.beforeSavedDays = const $ pure $ E.enumList 1 [Time.fromGregorian 2000 1 3]
+          }
+        nav = N.makeNavigation db $ Time.fromGregorian 2000 1 4
+    N.getNextMonth nav `shouldReturn` Nothing
+    N.getPreviousMonth nav `shouldReturn` Nothing
 
 instance (Functor m, Applicative m, Monad m) =>
     Default (DB.Database m) where

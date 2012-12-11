@@ -129,7 +129,8 @@ monthNavigation nav = do
     , ("lupo:next-link", pure [mkMonthLink nextLabel next])
     ]
   where
-    mkMonthLink body m = Element "a" [("href", formatMonthLink m)] [TextNode body]
+    mkMonthLink body = maybe (TextNode body) $ \m ->
+      Element "a" [("href", formatMonthLink m)] [TextNode body]
       where
         formatMonthLink = formatTime "/%Y%m"
 

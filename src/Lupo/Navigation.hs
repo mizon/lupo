@@ -18,8 +18,8 @@ data Navigation m = Navigation {
   , getThisMonth :: Time.Day
   , getNextPageTop :: Integer -> m (Maybe Time.Day)
   , getPreviousPageTop :: Integer -> m (Maybe Time.Day)
-  , getNextMonth :: m Time.Day
-  , getPreviousMonth :: m Time.Day
+  , getNextMonth :: m (Maybe Time.Day)
+  , getPreviousMonth :: m (Maybe Time.Day)
   }
 
 makeNavigation :: (Functor m, Applicative m, Monad m)
@@ -47,15 +47,15 @@ makeNavigation db base = Navigation {
       previousDays <- run_ $ enum $$ EL.take nDays
       pure $ previousDays `safeIndex` (fromIntegral $ pred nDays)
 
-  , getNextMonth = pure $
-      case Time.toGregorian base of
-        (y, 12, _) -> Time.fromGregorian (succ y) 1 1
-        (y, m, _) -> Time.fromGregorian y (succ m) 1
+  , getNextMonth = do
+      days <- daysAfterTommorow
+      e <- run_ $ days $$ findOtherMonthEntries
+      pure $ pure getNextMonth' <* e
 
-  , getPreviousMonth = pure $
-      case Time.toGregorian base of
-        (y, 1, _) -> Time.fromGregorian (pred y) 12 1
-        (y, m, _) -> Time.fromGregorian y (pred m) 1
+  , getPreviousMonth = do
+      days <- daysBeforeYesterday
+      e <- run_ $ days $$ findOtherMonthEntries
+      pure $ pure getPreviousMonth' <* e
   }
   where
     daysBeforeYesterday = LDB.beforeSavedDays db yesterday
@@ -65,3 +65,19 @@ makeNavigation db base = Navigation {
     daysAfterTommorow = LDB.afterSavedDays db tommorow
       where
         tommorow = Time.addDays 1 base
+
+    findOtherMonthEntries = EL.filter notBaseMonth =$ EL.head
+      where
+        notBaseMonth (Time.toGregorian -> (y, m, _)) =
+          case Time.toGregorian base of
+            (y', m', _) -> y /= y' || m /= m'
+
+    getNextMonth' =
+      case Time.toGregorian base of
+        (y, 12, _) -> Time.fromGregorian (succ y) 1 1
+        (y, m, _) -> Time.fromGregorian y (succ m) 1
+
+    getPreviousMonth' =
+      case Time.toGregorian base of
+        (y, 1, _) -> Time.fromGregorian (pred y) 12 1
+        (y, m, _) -> Time.fromGregorian y (pred m) 1
