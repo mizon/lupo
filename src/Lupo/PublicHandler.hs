@@ -5,7 +5,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.PublicHandler (
     handleTop
-  , handleEntries
+  , handleDay
   , handleSearch
   , handleComment
   ) where
@@ -47,8 +47,8 @@ handleTop = do
       (rqPathInfo -> path') <- getRequest
       unless (BS.null path') pass
 
-handleEntries :: T.Text -> LupoHandler ()
-handleEntries = parseQuery $
+handleDay :: T.Text -> LupoHandler ()
+handleDay = parseQuery $
       A.try multiDaysResponse
   <|> A.try singleDayResponse
   <|> monthResponse

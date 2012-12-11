@@ -63,7 +63,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("js", serveDirectory "static/js")
     , ("css", serveDirectory "static/css")
     , ("search", Public.handleSearch)
-    , (":query", Public.handleEntries =<< textParam "query")
+    , (":query", Public.handleDay =<< textParam "query")
     , (":day/comment", Public.handleComment)
     ]
   onUnload $ DB.disconnect conn
