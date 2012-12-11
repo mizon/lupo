@@ -6,6 +6,7 @@ module UtilSpec (
   ) where
 
 import Control.Applicative
+import Data.Lens.Common
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Test.Hspec
@@ -17,7 +18,7 @@ utilSpec :: Spec
 utilSpec = describe "utility functions" $ do
   it "gets zonedDay" $
     property $ \zoned ->
-      U.zonedDay zoned == Time.localDay (Time.zonedTimeToLocalTime zoned)
+      U.zonedDay zoned == zoned ^. U.zonedTimeToLocalTime ^. U.localDay
 
   it "converts showable datas to texts" $
     property $ \(v :: Integer) ->
