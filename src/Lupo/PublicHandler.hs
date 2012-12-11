@@ -6,6 +6,7 @@
 module Lupo.PublicHandler (
     handleTop
   , handleDay
+  , handleEntries
   , handleSearch
   , handleComment
   ) where
@@ -16,6 +17,8 @@ import qualified Data.Attoparsec.Text as A
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
+import Data.Lens.Common
+import qualified Data.List as L
 import Data.Maybe
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
@@ -24,7 +27,7 @@ import qualified Data.Time as Time
 import Prelude hiding (catch, filter)
 import Snap
 import System.Locale
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text hiding (toText)
 
 import Lupo.Application
 import Lupo.Config
@@ -69,6 +72,16 @@ handleDay = parseQuery $
         nav <- makeNavigation reqDay
         notice <- Notice.popAllNotice =<< getNoticeDB
         V.render $ V.singleDayView day nav (LDB.Comment "" "") notice []
+
+handleEntries :: LupoHandler ()
+handleEntries = method GET $ do
+  db <- LDB.getDatabase
+  entry <- join $ LDB.select <$> pure db <*> paramId
+  day <- LDB.selectDay db $ LDB.createdAt entry ^. zonedTimeToLocalTime ^. localDay
+  let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1) $ L.findIndex (== entry) $ LDB.dayEntries day
+  redirect $ TE.encodeUtf8 [st|/#{formatTime "%Y%m%d" $ LDB.day day}##{n}|]
+  where
+    makeEntryNumber = T.justifyRight 2 '0' . toText
 
 handleSearch :: LupoHandler ()
 handleSearch = do

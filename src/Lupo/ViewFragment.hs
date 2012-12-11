@@ -56,7 +56,7 @@ entryInfo LDB.Saved {..} = pure $
 daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
     ("lupo:day-title", pure $ dayTitle day)
-  , ("lupo:day-entries", pure $ anEntry =<< dayEntries)
+  , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
   , ("lupo:link-to-comment", H.textSplice linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
@@ -80,11 +80,13 @@ dayTitle d = pure $ Element "a" [("href", dayLinkFormat d)] [TextNode $ dayForma
     dayFormat = formatTime "%Y-%m-%d"
     dayLinkFormat = formatTime "/%Y%m%d"
 
-anEntry :: LDB.Saved LDB.Entry -> H.Template
-anEntry LDB.Saved {..} =
-     Element "h3" [] [TextNode $ LDB.entryTitle savedContent]
+anEntry :: Maybe Int -> LDB.Saved LDB.Entry -> H.Template
+anEntry index LDB.Saved {..} =
+     Element "h3" entryHeadlineAttr [TextNode $ LDB.entryTitle savedContent]
    : S.renderBody (LDB.entryBody savedContent)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
+  where
+    entryHeadlineAttr = maybe [] (\i -> [("id", T.justifyRight 2 '0' $ toText i)]) index
 
 comment :: (Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Saved LDB.Comment -> H.Splice m
 comment LDB.Saved {..} = H.callTemplate "_comment" [

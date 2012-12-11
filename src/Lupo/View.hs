@@ -22,6 +22,7 @@ module Lupo.View (
   ) where
 
 import Control.Applicative
+import qualified Data.List as L
 import qualified Data.Text as T
 import Snap
 import qualified Snap.Snaplet.Heist as SH
@@ -81,7 +82,7 @@ singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
 singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
       ("lupo:day-title", pure $ V.dayTitle reqDay)
-    , ("lupo:entries", pure $ V.anEntry =<< DB.dayEntries day)
+    , ("lupo:entries", pure entriesTemplate)
     , ("lupo:if-commented", ifCommented)
     , ("lupo:comments-caption", H.textSplice =<< L.localize "Comments")
     , ("lupo:comments", H.mapSplices V.comment $ DB.dayComments day)
@@ -98,6 +99,10 @@ singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) 
     ]
   where
     reqDay = DB.day day
+
+    entriesTemplate = concat $ snd $ L.mapAccumL accum 1 $ DB.dayEntries day
+      where
+        accum i e = (succ i, V.anEntry (Just i) e)
 
     ifCommented
       | DB.numOfComments day > 0 = childNodes <$> H.getParamNode
