@@ -32,7 +32,7 @@ data Lupo = Lupo {
   , entryDB :: LDB.DatabaseContext m => LDB.Database m
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer
-  , noticeDB :: N.NoticeDB (Handler Lupo Lupo)
+  , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
   }
 makeLens ''Lupo
 

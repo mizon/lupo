@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Lupo.Main (
     main
+  , lupoInit
   ) where
 
 import qualified Database.HDBC as DB
