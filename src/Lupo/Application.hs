@@ -8,6 +8,7 @@
 module Lupo.Application (
     Lupo(Lupo, entryDB)
   , LupoHandler
+  , LupoContext
   , heist
   , session
   , auth
@@ -38,6 +39,9 @@ makeLens ''Lupo
 
 type LupoHandler = Handler Lupo Lupo
 
+class (SH.HasHeist b, MonadState Lupo (Handler b b)) => LupoContext b
+instance (SH.HasHeist b, MonadState Lupo (Handler b b)) => LupoContext b
+
 instance SH.HasHeist Lupo where
   heistLens = subSnaplet heist
 
@@ -50,5 +54,5 @@ instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
 instance (MonadState Lupo m, Applicative m, Functor m) => L.HasLocalizer m where
   refLocalizer = gets localizer
 
-getNoticeDB :: MonadState Lupo m => m (N.NoticeDB LupoHandler)
+getNoticeDB :: MonadState Lupo m => m (N.NoticeDB (Handler b Lupo))
 getNoticeDB = gets noticeDB

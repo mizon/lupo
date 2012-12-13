@@ -12,7 +12,7 @@ module Lupo.PublicHandler (
   ) where
 
 import Control.Monad as M
-import Control.Monad.CatchIO
+import Control.Monad.CatchIO hiding (Handler)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
@@ -38,7 +38,7 @@ import qualified Lupo.Notice as Notice
 import Lupo.Util
 import qualified Lupo.View as V
 
-handleTop :: LupoHandler ()
+handleTop :: LupoContext b => Handler b Lupo ()
 handleTop = do
   mustNoPathInfo
   db <- LDB.getDatabase
@@ -50,7 +50,7 @@ handleTop = do
       (rqPathInfo -> path') <- getRequest
       unless (BS.null path') pass
 
-handleDay :: T.Text -> LupoHandler ()
+handleDay :: LupoContext b => T.Text -> Handler b Lupo ()
 handleDay = parseQuery $
       A.try multiDaysResponse
   <|> A.try singleDayResponse
@@ -58,12 +58,14 @@ handleDay = parseQuery $
   where
     parseQuery parser = either (const pass) id . A.parseOnly parser
 
+    multiDaysResponse :: LupoContext b => A.Parser (Handler b Lupo ())
     multiDaysResponse = do
       from <- dayParser
       void $ A.char '-'
       nentries <- read . pure <$> number
       pure $ renderMultiDays from nentries
 
+    singleDayResponse :: LupoContext b => A.Parser (Handler b Lupo ())
     singleDayResponse = do
       reqDay <- dayParser
       pure $ do
@@ -73,7 +75,7 @@ handleDay = parseQuery $
         notice <- Notice.popAllNotice =<< getNoticeDB
         V.render $ V.singleDayView day nav (LDB.Comment "" "") notice []
 
-handleEntries :: LupoHandler ()
+handleEntries :: LupoContext b => Handler b Lupo ()
 handleEntries = method GET $ do
   db <- LDB.getDatabase
   entry <- join $ LDB.select <$> pure db <*> paramId
@@ -83,14 +85,14 @@ handleEntries = method GET $ do
   where
     makeEntryNumber = T.justifyRight 2 '0' . toText
 
-handleSearch :: LupoHandler ()
+handleSearch :: LupoContext b => Handler b Lupo ()
 handleSearch = do
   word <- textParam "word"
   enum <- join $ LDB.search <$> LDB.getDatabase <*> pure word
   es <- run_ $ enum $$ EL.consume
   V.render $ V.searchResultView word es
 
-handleComment :: LupoHandler ()
+handleComment :: LupoContext b => Handler b Lupo ()
 handleComment = method POST $ do
   dayStr <- textParam "day"
   db <- LDB.getDatabase
@@ -107,7 +109,7 @@ handleComment = method POST $ do
       Notice.addNotice ndb "Your comment was posted successfully."
       redirect $ TE.encodeUtf8 [st|/#{dayStr}#new-comment|]
 
-monthResponse :: A.Parser (LupoHandler ())
+monthResponse :: LupoContext b => A.Parser (Handler b Lupo ())
 monthResponse = do
   reqMonth <- monthParser
   pure $ do
@@ -128,7 +130,7 @@ monthResponse = do
     monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
       M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
-renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
+renderMultiDays :: LupoContext b => Time.Day -> Integer -> Handler b Lupo ()
 renderMultiDays from nDays = do
   db <- LDB.getDatabase
   enum <- LDB.beforeSavedDays db from
