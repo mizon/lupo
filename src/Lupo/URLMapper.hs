@@ -63,9 +63,7 @@ makeURLMapper basePath = URLMapper {
   , fullPath = \(BS.unpack -> path) -> fullPath' path
   }
   where
-    fullPath' :: String -> Path
     fullPath' = BS.pack . (BS.unpack basePath </>)
 
-    (</>) :: String -> String -> String
     p </> c = p <> "/" <> c
     infixl 5 </>
