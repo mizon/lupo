@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 module Lupo.URLMapper (
     HasURLMapper(..)
   , URLMapper(..)
@@ -36,6 +37,7 @@ data URLMapper = URLMapper {
   , loginPath :: Path
   , initAccountPath :: Path
   , commentPath :: Time.Day -> Path
+  , fullPath :: Path -> Path
   }
 
 type Path = BS.ByteString
@@ -48,20 +50,21 @@ urlSplice f = H.textSplice =<< Encoding.decodeUtf8 <$> getURL f
 
 makeURLMapper :: Path -> URLMapper
 makeURLMapper basePath = URLMapper {
-    entryPath = \LDB.Saved {..} -> fullPath $ "entries" </> show idx
-  , entryEditPath = \LDB.Saved {..} -> fullPath $ "admin" </> show idx </> "edit"
-  , singleDayPath = fullPath . T.unpack . formatTime "%Y%m%d"
-  , multiDaysPath = \d n -> fullPath $ T.unpack [st|#{formatTime "%Y%m%d" d}-#{show n}|]
-  , monthPath = fullPath . T.unpack . formatTime "%Y%m"
-  , topPagePath = fullPath ""
-  , adminPath = fullPath "admin"
-  , loginPath = fullPath "login"
-  , initAccountPath = fullPath "init-account"
-  , commentPath = \d -> fullPath $ (T.unpack $ formatTime "%Y%m%d" d) </> "comment"
+    entryPath = \LDB.Saved {..} -> fullPath' $ "entries" </> show idx
+  , entryEditPath = \LDB.Saved {..} -> fullPath' $ "admin" </> show idx </> "edit"
+  , singleDayPath = fullPath' . T.unpack . formatTime "%Y%m%d"
+  , multiDaysPath = \d n -> fullPath' $ T.unpack [st|#{formatTime "%Y%m%d" d}-#{show n}|]
+  , monthPath = fullPath' . T.unpack . formatTime "%Y%m"
+  , topPagePath = fullPath' ""
+  , adminPath = fullPath' "admin"
+  , loginPath = fullPath' "login"
+  , initAccountPath = fullPath' "init-account"
+  , commentPath = \d -> fullPath' $ (T.unpack $ formatTime "%Y%m%d" d) </> "comment"
+  , fullPath = \(BS.unpack -> path) -> fullPath' path
   }
   where
-    fullPath :: String -> Path
-    fullPath = BS.pack . (BS.unpack basePath </>)
+    fullPath' :: String -> Path
+    fullPath' = BS.pack . (BS.unpack basePath </>)
 
     (</>) :: String -> String -> String
     p </> c = p <> "/" <> c

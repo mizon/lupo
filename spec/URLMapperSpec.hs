@@ -1,10 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module URLMapperSpec (
     urlMapperSpec
   ) where
 
+import Control.Applicative
+import qualified Data.ByteString as BS
+import Data.Monoid
 import qualified Data.Time as Time
 import Test.Hspec
+import Test.QuickCheck
 
 import qualified Lupo.Database as LDB
 import qualified Lupo.URLMapper as U
@@ -43,5 +48,12 @@ urlMapperSpec = describe "URL Mapper" $ do
   it "provides a path to posting comment" $
     U.commentPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
       "/lupo/20120101/comment"
+
+  it "provides full pathes whatever you like" $
+    property $ \path ->
+      U.fullPath urlMapper path == "/lupo/" <> path
   where
     urlMapper = U.makeURLMapper "/lupo"
+
+instance Arbitrary BS.ByteString where
+  arbitrary = BS.pack <$> arbitrary
