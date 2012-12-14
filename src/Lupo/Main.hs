@@ -25,6 +25,7 @@ import Lupo.Config
 import qualified Lupo.Database as EDB
 import qualified Lupo.Notice as N
 import qualified Lupo.PublicHandler as Public
+import qualified Lupo.URLMapper as U
 import Lupo.Util
 
 main :: IO ()
@@ -41,6 +42,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig {
       , Element "a" [("href", "http://snapframework.com/")] [TextNode "Snap Framework"]
       ]
     ]
+  , lcBasePath = ""
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
@@ -69,6 +71,6 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":day/comment", Public.handleComment)
     ]
   onUnload $ DB.disconnect conn
-  pure $ Lupo h s a (EDB.makeDatabase conn) lc l $ initNoticeDB conn
+  pure $ Lupo h s a (EDB.makeDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session
