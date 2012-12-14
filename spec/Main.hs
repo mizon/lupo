@@ -5,6 +5,7 @@ import DatabaseSpec
 import NavigationSpec
 import NoticeSpec
 import SyntaxSpec
+import URLMapperSpec
 import UtilSpec
 
 main :: IO ()
@@ -15,4 +16,5 @@ main = hspec $ sequence_ [
   , noticeSpec
   , utilSpec
   , syntaxSpec
+  , urlMapperSpec
   ]
