@@ -37,6 +37,7 @@ data URLMapper = URLMapper {
   , loginPath :: Path
   , initAccountPath :: Path
   , commentPath :: Time.Day -> Path
+  , cssPath :: BS.ByteString -> Path
   , fullPath :: Path -> Path
   }
 
@@ -60,6 +61,7 @@ makeURLMapper basePath = URLMapper {
   , loginPath = fullPath' "login"
   , initAccountPath = fullPath' "init-account"
   , commentPath = \d -> fullPath' $ (T.unpack $ formatTime "%Y%m%d" d) </> "comment"
+  , cssPath = \(BS.unpack -> css) -> fullPath' $ "css" </> css
   , fullPath = \(BS.unpack -> path) -> fullPath' path
   }
   where

@@ -96,26 +96,24 @@ searchResult LDB.Saved {..} =
   , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
   ]
 
-monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
                 => N.Navigation (H.HeistT m) -> H.Splice m
 monthNavigation nav = do
-  newest <- newestElement
   previous <- N.getPreviousMonth nav
   next <- N.getNextMonth nav
   previousLabel <- LL.localize "Previous Month"
   nextLabel <- LL.localize "Next Month"
   H.callTemplate "_navigation" [
-      ("lupo:previous-link", pure [mkMonthLink previousLabel previous])
-    , ("lupo:middle-link", pure [newest])
-    , ("lupo:next-link", pure [mkMonthLink nextLabel next])
+      ("lupo:previous-link", mkMonthLink previousLabel previous)
+    , ("lupo:middle-link", newestLink)
+    , ("lupo:next-link", mkMonthLink nextLabel next)
     ]
   where
-    mkMonthLink body = maybe (TextNode body) $ \m ->
-      Element "a" [("href", formatMonthLink m)] [TextNode body]
-      where
-        formatMonthLink = formatTime "/%Y%m"
+    mkMonthLink body = maybe (pure [TextNode body]) $ \m -> do
+      (Encoding.decodeUtf8 -> monthPath) <- U.getURL $ flip U.monthPath m
+      pure [Element "a" [("href", monthPath)] [TextNode body]]
 
-singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
                     => N.Navigation (H.HeistT m) -> H.Splice m
 singleDayNavigation nav = do
   previous <- N.getPreviousDay nav
@@ -124,47 +122,45 @@ singleDayNavigation nav = do
   thisMonthLabel <- LL.localize "This Month"
   nextLabel <- LL.localize "Next Day"
   H.callTemplate "_navigation" [
-      ("lupo:previous-link", pure [mkDayLink previousLabel previous])
-    , ("lupo:middle-link", pure [thisMonthLink thisMonthLabel])
-    , ("lupo:next-link", pure [mkDayLink nextLabel next])
+      ("lupo:previous-link", mkDayLink previousLabel previous)
+    , ("lupo:middle-link", thisMonthLink thisMonthLabel)
+    , ("lupo:next-link", mkDayLink nextLabel next)
     ]
   where
-    mkDayLink body = maybe (TextNode body) $ \d_ ->
-      Element "a"
-              [("href", formatTime "/%Y%m%d" d_)]
-              [TextNode body]
+    mkDayLink body = maybe (pure [TextNode body]) $ \d_ -> do
+      (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.singleDayPath d_
+      pure [Element "a" [("href", link)] [TextNode body]]
 
-    thisMonthLink body =
-      Element "a"
-              [("href", formatTime "/%Y%m" $ N.getThisMonth nav)]
-              [TextNode body]
+    thisMonthLink body = do
+      (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
+      pure [Element "a" [("href", link)] [TextNode body]]
 
-multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m))
+multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
                     => Integer -> N.Navigation (H.HeistT m) -> H.Splice m
 multiDaysNavigation nDays nav = do
   previous <- N.getPreviousPageTop nav nDays
   next <- N.getNextPageTop nav nDays
   previousLabel <- LL.localize "Previous %d Days"
   nextLabel <- LL.localize "Next %d Days"
-  newest <- newestElement
   H.callTemplate "_navigation" [
-      ("lupo:previous-link", pure [mkDayLink previousLabel previous])
-    , ("lupo:middle-link", pure [newest])
-    , ("lupo:next-link", pure [mkDayLink nextLabel next])
+      ("lupo:previous-link", mkDayLink previousLabel previous)
+    , ("lupo:middle-link", newestLink)
+    , ("lupo:next-link", mkDayLink nextLabel next)
     ]
   where
-    mkDayLink body = maybe (TextNode formattedBody) $ \d_ ->
-      Element "a"
-              [("href", [st|#{formatTime "/%Y%m%d-" d_}#{textNDays}|])]
-              [TextNode formattedBody]
+    mkDayLink body = maybe (pure [TextNode formattedBody]) $ \d_ -> do
+      (Encoding.decodeUtf8 -> link) <- U.getURL $ \urls ->
+        U.multiDaysPath urls d_ $ fromIntegral nDays
+      pure [Element "a" [("href", link)] [TextNode formattedBody]]
       where
-        formattedBody = T.replace "%d" textNDays body
-        textNDays = toText nDays
+        formattedBody = T.replace "%d" (toText nDays) body
 
 timeToText :: Time.ZonedTime -> T.Text
 timeToText = formatTime "%Y-%m-%d"
 
-newestElement :: LL.HasLocalizer m => m Node
-newestElement = do
+newestLink :: (LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
+           => H.Splice m
+newestLink = do
   label <- LL.localize "Newest"
-  pure $ Element "a" [("href", "/")] [TextNode label]
+  (Encoding.decodeUtf8 -> link) <- U.getURL U.topPagePath
+  pure [Element "a" [("href", link)] [TextNode label]]

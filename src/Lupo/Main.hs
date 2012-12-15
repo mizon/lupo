@@ -71,6 +71,10 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":day/comment", Public.handleComment)
     ]
   onUnload $ DB.disconnect conn
+  H.addSplices [
+      ("lupo:top-page-path", H.liftHeist $ U.urlSplice U.topPagePath)
+    , ("lupo:search-path", H.liftHeist $ U.urlSplice $ flip U.fullPath "search")
+    ]
   pure $ Lupo h s a (EDB.makeDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session

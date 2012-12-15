@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<link rel="stylesheet" type="text/css" href="/css/${lupo:style-sheet}.css"/>
+<link rel="stylesheet" type="text/css" href="${lupo:style-sheet}"/>
 <title><lupo:page-title/></title>
 </head>
 <body>

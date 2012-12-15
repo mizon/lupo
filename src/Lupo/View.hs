@@ -43,7 +43,7 @@ data View m = View {
   , viewSplice :: H.Splice m
   }
 
-render :: (SH.HasHeist b, GetLupoConfig (H.HeistT (Handler b b)))
+render :: (h ~ H.HeistT (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
        => View (Handler b b) -> Handler b v ()
 render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
   where
@@ -51,7 +51,7 @@ render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
         H.bindSplices [
           ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", H.textSplice "diary")
+        , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "diary.css")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
