@@ -8,7 +8,6 @@
 {-# LANGUAGE ViewPatterns #-}
 module Lupo.ViewFragment (
     renderBody
-  , entryInfo
   , daySummary
   , dayTitle
   , anEntry
@@ -40,27 +39,12 @@ import Lupo.Util
 renderBody :: LDB.Entry -> H.Template
 renderBody LDB.Entry {..} = S.renderBody entryBody
 
-entryInfo :: LDB.Saved LDB.Entry -> H.Template
-entryInfo LDB.Saved {..} = pure $
-  Element "tr" [] [
-    Element "td" [("class", "date")] [TextNode $ timeToText createdAt]
-  , Element "td" [] [TextNode $ LDB.entryTitle savedContent]
-  , Element "td" [("class", "operation")] [
-      Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
-    , TextNode " "
-    , Element "a" [
-        ("href", [st|/admin/#{toText idx}/delete|])
-      , ("onclick", "return confirm(\"Are you sure?\")")
-      ] [TextNode "Delete"]
-    ]
-  ]
-
 daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
            => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
     ("lupo:day-title", dayTitle day)
   , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
-  , ("lupo:link-to-comment", H.textSplice linkToComment)
+  , ("lupo:link-to-comment", U.urlSplice $ flip U.commentPath day)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
   where
@@ -69,13 +53,6 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
           label <- LL.localize "Comment"
           pure [st|#{label} (#{toText numOfComments})|]
       | otherwise = LL.localize "New Comment"
-
-    linkToComment = [st|#{formatTime "/%Y%m%d" day}##{postedOrNew}|]
-      where
-        postedOrNew :: T.Text
-        postedOrNew
-          | numOfComments > 0 = "comments"
-          | otherwise = "new-comment"
 
 dayTitle :: (U.HasURLMapper (H.HeistT m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
