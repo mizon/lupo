@@ -34,6 +34,7 @@ import Lupo.Config
 import qualified Lupo.Database as DB
 import qualified Lupo.Locale as L
 import qualified Lupo.Navigation as N
+import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.ViewFragment as V
 
@@ -77,11 +78,16 @@ renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
         ]
       . H.bindSplice "lupo:main-body" viewSplice
 
-singleDayView :: (m ~ H.HeistT n, Monad n, GetLupoConfig m, L.HasLocalizer m)
-              => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> [T.Text] -> View n
+singleDayView :: (
+    m ~ H.HeistT n
+  , Functor n, Monad n
+  , GetLupoConfig m
+  , L.HasLocalizer m
+  , U.HasURLMapper m
+  ) => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> [T.Text] -> View n
 singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
   H.callTemplate "day" [
-      ("lupo:day-title", pure $ V.dayTitle reqDay)
+      ("lupo:day-title", V.dayTitle reqDay)
     , ("lupo:entries", pure entriesTemplate)
     , ("lupo:if-commented", ifCommented)
     , ("lupo:comments-caption", H.textSplice =<< L.localize "Comments")
@@ -126,20 +132,34 @@ singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) 
       txt' <- L.localize txt
       pure $ [Element "li" [] [TextNode txt']]
 
-multiDaysView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
-              => N.Navigation m -> [DB.Day] -> View n
-multiDaysView nav days = View [st|#{formatTime "%Y-%m-%d" firstDay}-#{toText numOfDays}|] $ do
+multiDaysView :: (
+    m ~ H.HeistT n
+  , Functor n
+  , Monad n
+  , L.HasLocalizer m
+  , GetLupoConfig m
+  , U.HasURLMapper m
+  ) => N.Navigation m -> [DB.Day] -> View n
+multiDaysView nav days = View title $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
     , ("lupo:day-summaries", H.mapSplices V.daySummary days)
     ]
   where
-    firstDay = DB.day $ head days
-    numOfDays = length days
+    title =
+      case days of
+        ds@((DB.day -> d) : _) -> [st|#{formatTime "%Y-%m-%d" d}-#{toText $ length ds}|]
+        _ -> ""
 
-monthView :: (m ~ H.HeistT n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m)
-          => N.Navigation m -> [DB.Day] -> View n
+monthView :: (
+    m ~ H.HeistT n
+  , Functor n
+  , Monad n
+  , L.HasLocalizer m
+  , GetLupoConfig m
+  , U.HasURLMapper m
+  ) => N.Navigation m -> [DB.Day] -> View n
 monthView nav days = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
   H.callTemplate "multi-days" [
       ("lupo:page-navigation", V.monthNavigation nav)

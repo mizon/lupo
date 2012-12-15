@@ -23,6 +23,7 @@ module Lupo.ViewFragment (
 import qualified Data.List as L
 import Data.Monoid
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as Encoding
 import qualified Data.Time as Time
 import Snap
 import Text.Shakespeare.Text hiding (toText)
@@ -33,6 +34,7 @@ import qualified Lupo.Database as LDB
 import qualified Lupo.Locale as LL
 import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
+import qualified Lupo.URLMapper as U
 import Lupo.Util
 
 renderBody :: LDB.Entry -> H.Template
@@ -53,9 +55,10 @@ entryInfo LDB.Saved {..} = pure $
     ]
   ]
 
-daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Day -> H.Splice m
+daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
+           => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
-    ("lupo:day-title", pure $ dayTitle day)
+    ("lupo:day-title", dayTitle day)
   , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
   , ("lupo:link-to-comment", H.textSplice linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
@@ -74,11 +77,12 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
           | numOfComments > 0 = "comments"
           | otherwise = "new-comment"
 
-dayTitle :: Time.Day -> H.Template
-dayTitle d = pure $ Element "a" [("href", dayLinkFormat d)] [TextNode $ dayFormat d]
+dayTitle :: (U.HasURLMapper (H.HeistT m), Monad m, Functor m) => Time.Day -> H.Splice m
+dayTitle d = do
+  (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.singleDayPath d
+  pure $ [Element "a" [("href", link)] [TextNode $ dayFormat d]]
   where
     dayFormat = formatTime "%Y-%m-%d"
-    dayLinkFormat = formatTime "/%Y%m%d"
 
 anEntry :: Maybe Int -> LDB.Saved LDB.Entry -> H.Template
 anEntry index LDB.Saved {..} =
