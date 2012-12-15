@@ -47,7 +47,7 @@ urlMapperSpec = describe "URL Mapper" $ do
 
   it "provides a path to posting comment" $ do
     U.commentPostPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
-      "/lupo/20120101/comment"
+      "/lupo/20120101/comment#new-comment"
     U.newCommentPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
       "/lupo/20120101#new-comment"
     U.commentsPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
