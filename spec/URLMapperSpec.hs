@@ -49,6 +49,9 @@ urlMapperSpec = describe "URL Mapper" $ do
     U.commentPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
       "/lupo/20120101/comment"
 
+  it "provides a path to css files" $
+    U.cssPath urlMapper "celeste.css" `shouldBe` "/lupo/css/celeste.css"
+
   it "provides full pathes whatever you like" $
     property $ \path ->
       U.fullPath urlMapper path == "/lupo/" <> path
