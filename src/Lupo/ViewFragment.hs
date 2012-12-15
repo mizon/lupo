@@ -84,17 +84,22 @@ emptyMonth = do
   message <- LL.localize "no this month entries"
   pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
-searchResult :: LDB.Saved LDB.Entry -> Node
-searchResult LDB.Saved {..} =
-  Element "tr" [] [
-    Element "th" [("class", "result-day")] [
-      Element "a" [("href", formatTime "/%Y%m%d" createdAt)] [TextNode $ timeToText createdAt]
+searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m))
+             => LDB.Saved LDB.Entry -> H.Splice m
+searchResult e@LDB.Saved {..} = do
+  (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ flip U.singleDayPath $ zonedDay createdAt
+  (Encoding.decodeUtf8 -> entryLink) <- U.getURL $ flip U.entryPath e
+  pure [
+      Element "tr" [] [
+        Element "th" [("class", "result-day")] [
+          Element "a" [("href", dayLink)] [TextNode $ timeToText createdAt]
+        ]
+      , Element "th" [("class", "result-title")] [
+          Element "a" [("href", entryLink)] [TextNode $ LDB.entryTitle savedContent]
+        ]
+      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
+      ]
     ]
-  , Element "th" [("class", "result-title")] [
-      Element "a" [("href", [st|/entries/#{show idx}|])] [TextNode $ LDB.entryTitle savedContent]
-    ]
-  , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
-  ]
 
 monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
                 => N.Navigation (H.HeistT m) -> H.Splice m

@@ -14,13 +14,13 @@ module Lupo.PublicHandler (
 import Control.Monad as M
 import Control.Monad.CatchIO
 import qualified Data.Attoparsec.Text as A
+import qualified Data.ByteString as BS
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
 import Data.Lens.Common
 import qualified Data.List as L
 import Data.Maybe
-import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
@@ -35,6 +35,7 @@ import qualified Lupo.Database as LDB
 import Lupo.Exception
 import qualified Lupo.Navigation as N
 import qualified Lupo.Notice as Notice
+import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
 
@@ -79,7 +80,8 @@ handleEntries = method GET $ do
   entry <- join $ LDB.select <$> pure db <*> paramId
   day <- LDB.selectDay db $ LDB.createdAt entry ^. zonedTimeToLocalTime ^. localDay
   let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1) $ L.findIndex (== entry) $ LDB.dayEntries day
-  redirect $ TE.encodeUtf8 [st|/#{formatTime "%Y%m%d" $ LDB.day day}##{n}|]
+  (TE.decodeUtf8 -> base) <- U.getURL $ flip U.singleDayPath $ LDB.day day
+  redirect $ TE.encodeUtf8 [st|#{base}##{n}|]
   where
     makeEntryNumber = T.justifyRight 2 '0' . toText
 
