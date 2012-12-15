@@ -107,7 +107,7 @@ handleComment = method POST $ do
     Right _ -> do
       ndb <- getNoticeDB
       Notice.addNotice ndb "Your comment was posted successfully."
-      redirect $ TE.encodeUtf8 [st|/#{dayStr}#new-comment|]
+      redirect =<< U.getURL (flip U.newCommentPath reqDay)
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do

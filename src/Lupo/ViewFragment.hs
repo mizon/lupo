@@ -44,7 +44,7 @@ daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper 
 daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
     ("lupo:day-title", dayTitle day)
   , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
-  , ("lupo:link-to-comment", U.urlSplice $ flip U.commentPath day)
+  , ("lupo:link-to-comment", linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
   where
@@ -53,6 +53,10 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
           label <- LL.localize "Comment"
           pure [st|#{label} (#{toText numOfComments})|]
       | otherwise = LL.localize "New Comment"
+
+    linkToComment
+      | numOfComments > 0 = U.urlSplice $ flip U.commentsPath day
+      | otherwise = U.urlSplice $ flip U.newCommentPath day
 
 dayTitle :: (U.HasURLMapper (H.HeistT m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
