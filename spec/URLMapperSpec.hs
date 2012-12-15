@@ -45,9 +45,13 @@ urlMapperSpec = describe "URL Mapper" $ do
   it "provides a path to the initAccount page" $
     U.initAccountPath urlMapper `shouldBe` "/lupo/init-account"
 
-  it "provides a path to posting comment" $
-    U.commentPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
+  it "provides a path to posting comment" $ do
+    U.commentPostPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
       "/lupo/20120101/comment"
+    U.newCommentPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
+      "/lupo/20120101#new-comment"
+    U.commentsPath urlMapper (Time.fromGregorian 2012 1 1) `shouldBe`
+      "/lupo/20120101#comments"
 
   it "provides a path to css files" $
     U.cssPath urlMapper "celeste.css" `shouldBe` "/lupo/css/celeste.css"
