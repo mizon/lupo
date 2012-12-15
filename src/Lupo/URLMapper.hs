@@ -6,6 +6,7 @@
 module Lupo.URLMapper (
     HasURLMapper(..)
   , URLMapper(..)
+  , Path
   , getURL
   , urlSplice
   , makeURLMapper

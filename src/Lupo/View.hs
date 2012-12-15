@@ -6,6 +6,10 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+
+{-# LANGUAGE ScopedTypeVariables #-}
+
+
 module Lupo.View (
     View(..)
   , render
@@ -24,6 +28,7 @@ module Lupo.View (
 import Control.Applicative
 import qualified Data.List as L
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as Encoding
 import Snap
 import qualified Snap.Snaplet.Heist as SH
 import Text.Shakespeare.Text hiding (toText)
@@ -56,16 +61,17 @@ render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
         ]
       . H.bindSplice "lupo:main-body" viewSplice
 
-renderPlain :: SH.HasHeist b => View (Handler b b) -> Handler b v ()
+renderPlain :: (h ~ (Handler b b), SH.HasHeist b, U.HasURLMapper (H.HeistT h))
+            => View h -> Handler b v ()
 renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
   where
     bindSplices = H.bindSplices [
         ("lupo:page-title", H.textSplice viewTitle)
-      , ("lupo:style-sheet", H.textSplice "plain")
+      , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "plain.css")
       , ("content", viewSplice)
       ]
 
-renderAdmin :: (SH.HasHeist b, GetLupoConfig (H.HeistT (Handler b b)))
+renderAdmin :: (h ~ (H.HeistT (Handler b b)), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
             => View (Handler b b) -> Handler b v ()
 renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
   where
@@ -73,7 +79,8 @@ renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
         H.bindSplices [
           ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", H.textSplice "admin")
+        , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "admin.css")
+        , ("lupo:admin-url", U.urlSplice U.adminPath)
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
@@ -176,46 +183,58 @@ searchResultView word es = View word $
   , ("lupo:search-results", H.mapSplices V.searchResult es)
   ]
 
-loginView :: Monad m => View m
-loginView = View "Login" $ H.callTemplate "login" []
+loginView :: (Monad m, U.HasURLMapper (H.HeistT m)) => View m
+loginView = View "Login" $ H.callTemplate "login" [
+    ("lupo:login-url", U.urlSplice U.loginPath)
+  ]
 
-initAccountView :: Monad m => View m
-initAccountView = View "Init Account" $ H.callTemplate "init-account" []
+initAccountView :: (Monad m, U.HasURLMapper (H.HeistT m)) => View m
+initAccountView = View "Init Account" $ H.callTemplate "init-account" [
+    ("lupo:init-account-url", U.urlSplice U.initAccountPath)
+  ]
 
-adminView :: (Functor m, Monad m) => [DB.Day] -> View m
+adminView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m)) => [DB.Day] -> View m
 adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
-    ("lupo:days", pure $ makeDayRow =<< days)
+    ("lupo:days", H.mapSplices makeDayRow days)
+  , ("lupo:new-entry-url", U.urlSplice $ flip U.fullPath "admin/new")
   ]
   where
+    makeDayRow :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m)) => DB.Day -> H.Splice m
     makeDayRow DB.Day {
         DB.dayEntries = []
-      } = []
+      } = pure []
     makeDayRow DB.Day {
         DB.dayEntries = e : es
       , ..
-      } = tr =<< (dateTh : makeEntryRow e) : (makeEntryRow <$> es)
+      } = do
+        headRow
+           <- (dateTh :) <$> makeEntryRow e
+        tailRows <- sequence $ makeEntryRow <$> es
+        pure $ tr <$> headRow : tailRows
       where
-        tr t = [Element "tr" [] t]
+        tr t = Element "tr" [] t
 
         dateTh = Element "th" [("class", "date"), ("rowspan", toText $ length $ e : es)] [
             TextNode $ formatTime "%Y-%m-%d" day
           ]
 
-        makeEntryRow DB.Saved {..} = [
+        makeEntryRow e'@DB.Saved {..} = do
+          (Encoding.decodeUtf8 -> editPath) <- U.getURL $ flip U.entryEditPath e'
+          pure [
             Element "td" [] [TextNode $ DB.entryTitle savedContent]
-          , Element "td" [("class", "action")] [
-              Element "a" [("href", [st|/admin/#{toText idx}/edit|])] [TextNode "Edit"]
+            , Element "td" [("class", "action")] [
+                Element "a" [("href", editPath)] [TextNode "Edit"]
+              ]
             ]
-          ]
 
-entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m))
-                => DB.Saved DB.Entry -> T.Text -> T.Text -> View m
+entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
+                => DB.Saved DB.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
 entryEditorView DB.Saved {..} editType editPath =
-  View editorTitle $ H.callTemplateWithText "entry-editor" [
-    ("lupo:editor-title", [st|#{editType}: #{editorTitle}: #{DB.entryTitle savedContent}|])
-  , ("lupo:edit-path", editPath)
-  , ("lupo:entry-title", DB.entryTitle savedContent)
-  , ("lupo:entry-body", DB.entryBody savedContent)
+  View editorTitle $ H.callTemplate "entry-editor" [
+    ("lupo:editor-title", H.textSplice [st|#{editType}: #{editorTitle}: #{DB.entryTitle savedContent}|])
+  , ("lupo:edit-path", U.urlSplice editPath)
+  , ("lupo:entry-title", H.textSplice $ DB.entryTitle savedContent)
+  , ("lupo:entry-body", H.textSplice $ DB.entryBody savedContent)
   ]
   where
     editorTitle = formatTime "%Y-%m-%d" createdAt

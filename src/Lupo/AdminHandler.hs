@@ -24,6 +24,7 @@ import qualified Snap.Snaplet.Heist as H
 
 import Lupo.Application
 import qualified Lupo.Database as LDB
+import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as View
 import qualified Lupo.ViewFragment as V
@@ -36,15 +37,17 @@ handleLogin =
     showLoginForm = do
       cond <- with auth $ A.isLoggedIn
       if cond then
-        redirect "/admin"
+        redirect =<< U.getURL U.adminPath
       else
-        View.renderPlain $ View.loginView
+        View.renderPlain View.loginView
 
     authenticate = do
       name <- bsParam "name"
       pass' <- A.ClearText <$> bsParam "pass"
       authResult <- with auth $ A.loginByUsername name pass' True
-      redirect $ either (const "/login") (const "/admin") authResult
+      loginPath <- U.getURL U.loginPath
+      adminPath <- U.getURL U.adminPath
+      redirect $ either (const loginPath) (const adminPath) authResult
 
 handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ do
@@ -68,7 +71,7 @@ handleInitAccount = do
     registerNewAccount = do
       pass' <- bsParam "pass"
       void $ with auth $ A.createUser "admin" pass'
-      redirect "/admin"
+      redirect =<< U.getURL U.adminPath
 
 handleNewEntry :: LupoHandler ()
 handleNewEntry = requireAuth $
@@ -82,7 +85,7 @@ handleNewEntry = requireAuth $
         "Submit" -> do
           db <- LDB.getDatabase
           LDB.insert db entry
-          redirect "/admin"
+          redirect =<< U.getURL U.adminPath
         "Preview" ->
           showPreview "New Entry: Preview" entry
         "Edit" -> View.renderAdmin =<< getEditor entry
@@ -90,8 +93,7 @@ handleNewEntry = requireAuth $
 
     getEditor entry = do
       saved <- dummySaved
-      (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-      pure $ View.entryEditorView saved "New" submitPath
+      pure $ View.entryEditorView saved "New" $ flip U.fullPath "admin/new"
       where
         dummySaved = do
           today <- liftIO $ Time.getZonedTime
@@ -122,20 +124,20 @@ handleEditEntry = requireAuth $
       case action of
         "Submit" -> do
           LDB.update db id' entry
-          redirect "/admin"
+          redirect =<< U.getURL U.adminPath
         "Preview" -> showPreview "Edit Entry: Preview" entry
         "Edit" -> View.renderAdmin =<< getEditor baseEntry {LDB.savedContent = entry}
         _ -> undefined
 
-    getEditor entry = do
-      (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-      pure $ View.entryEditorView entry "Edit" submitPath
+    getEditor entry = pure
+                    $ View.entryEditorView entry "Edit"
+                    $ flip U.entryEditPath entry
 
 handleDeleteEntry :: LupoHandler ()
 handleDeleteEntry = requireAuth $ do
   db <- LDB.getDatabase
   LDB.delete db =<< paramId
-  redirect "/admin"
+  redirect =<< U.getURL U.adminPath
 
 showPreview :: T.Text -> LDB.Entry -> LupoHandler ()
 showPreview prevTitle e@LDB.Entry {..} = do
@@ -155,4 +157,4 @@ requireAuth h = do
   if stat then
     h
   else
-    redirect "/login"
+    redirect =<< U.getURL U.loginPath
