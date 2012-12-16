@@ -6,10 +6,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
-
-{-# LANGUAGE ScopedTypeVariables #-}
-
-
 module Lupo.View (
     View(..)
   , render
