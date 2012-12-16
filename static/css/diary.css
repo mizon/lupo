@@ -108,12 +108,15 @@ body {
     color: #039; }
   #main .day h5 {
     font-size: 80%; }
-  #main .day p, #main .day ul {
+  #main .day p, #main .day ul, #main .day pre {
     margin: 0.5em 0 1em; }
   #main .day p.time {
     margin-bottom: 2em; }
   #main .day ul li {
     margin-left: 1em; }
+  #main .day pre {
+    background-color: #EEF;
+    padding: 0.5em; }
 #main p.empty-month {
   text-align: center; }
 

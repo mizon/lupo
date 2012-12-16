@@ -71,7 +71,7 @@
             font-size: 80%;
         }
 
-        p, ul {
+        p, ul, pre {
             margin: 0.5em 0 1em;
         }
 
@@ -83,6 +83,11 @@
             li {
                 margin-left: 1em;
             }
+        }
+
+        pre {
+            background-color: #EEF;
+            padding: 0.5em;
         }
     }
 
