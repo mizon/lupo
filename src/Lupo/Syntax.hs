@@ -19,7 +19,7 @@ diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
     trimEmptyLines = many $ A.try $ blanks *> A.endOfLine
 
 block :: A.Parser Node
-block = heading <|> blockQuote <|> unorderedList <|> paragraph
+block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
   where
     blockQuote = do
       begin <- bqLine
@@ -62,6 +62,15 @@ heading = prefixStyle <|> underlineStyle
 
     makeElem (level :: Int) body =
       Element (T.concat ["h", T.pack $ show level]) [] $ inlineElemnents body
+
+code :: A.Parser Node
+code = do
+  codeLines <- some $ A.char ' ' *> toEOL
+  pure $ Element "pre" [] [Element "code" [] [TextNode . T.unlines $ unIndent codeLines]]
+  where
+    unIndent ls = T.drop offsideLevel <$> ls
+      where
+        offsideLevel = minimum $ T.length . T.takeWhile (== ' ') <$> ls
 
 beginWith :: A.Parser t -> A.Parser (t, T.Text)
 beginWith p = do

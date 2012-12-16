@@ -48,6 +48,16 @@ Paragraph B, line 2.
     , Element "p" [] [TextNode "Paragraph B, line 1.Paragraph B, line 2."]
     ]
 
+  it "parses code blocks" $
+    parseDiary [st|
+  foo
+  bar
+|] `shouldBe` Right [
+      Element "pre" [] [
+        Element "code" [] [TextNode "foo\nbar\n"]
+      ]
+    ]
+
   it "parses inline elements" $
     parseDiary [st|
 Click here [HaskellWiki](http://www.haskell.org/haskellwiki/Haskell) .
