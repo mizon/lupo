@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
 module Lupo.Syntax (
     renderBody
   , diaryParser
@@ -7,11 +8,12 @@ module Lupo.Syntax (
 
 import Control.Applicative
 import qualified Data.Attoparsec.Text as A
+import Data.Monoid
 import qualified Data.Text as T
 import Text.XmlHtml
 
 renderBody :: T.Text -> [Node]
-renderBody = either (error "[BUG] in body parsing") id . A.parseOnly diaryParser
+renderBody = either (\(show -> msg) -> error $ "[BUG] in body parsing: " <> msg) id . A.parseOnly diaryParser
 
 diaryParser :: A.Parser [Node]
 diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
@@ -32,7 +34,7 @@ block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
       lis <- some $ snd <$> beginWith (A.satisfy $ A.inClass "*+-")
       pure $ Element "ul" [] $ makeElem <$> lis
       where
-        makeElem body = Element "li" [] [TextNode body]
+        makeElem body = Element "li" [] $ inlineElemnents body
 
     paragraph = do
       ls <- some plainLine
