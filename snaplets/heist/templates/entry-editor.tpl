@@ -9,6 +9,6 @@
 <dt>Content</dt>
 <dd><textarea name="body"><lupo:entry-body/></textarea></dd>
 </label>
-<dd class="submit"><input type="submit" name="action" value="Submit"/></dd>
+<dd class="submit"><input type="submit" name="action" value="Preview"/> <input type="submit" name="action" value="Submit"/></dd>
 </dl>
 </form>
