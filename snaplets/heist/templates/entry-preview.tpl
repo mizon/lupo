@@ -1,4 +1,5 @@
-<h2 id="preview">Preview</h2>
+<h2><lupo:preview-title/></h2>
+<h2>[Preview]</h2>
 <div class="day">
 <lupo:preview-body/>
 </div>

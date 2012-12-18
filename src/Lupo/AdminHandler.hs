@@ -14,20 +14,16 @@ module Lupo.AdminHandler (
 
 import Data.Enumerator hiding (replicate, sequence, mapM)
 import qualified Data.Enumerator.List as EL
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Auth as A
-import qualified Snap.Snaplet.Heist as H
 
 import Lupo.Application
 import qualified Lupo.Database as LDB
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as View
-import qualified Lupo.ViewFragment as V
 
 handleLogin :: LupoHandler ()
 handleLogin =
@@ -86,23 +82,24 @@ handleNewEntry = requireAuth $
           db <- LDB.getDatabase
           LDB.insert db entry
           redirect =<< U.getURL U.adminPath
-        "Preview" ->
-          showPreview "New Entry: Preview" entry
+        "Preview" -> View.renderAdmin =<< getPreview <$> dummySaved entry
         "Edit" -> View.renderAdmin =<< getEditor entry
         _ -> error "invalid request"
 
     getEditor entry = do
-      saved <- dummySaved
+      saved <- dummySaved entry
       pure $ View.entryEditorView saved "New" $ flip U.fullPath "admin/new"
-      where
-        dummySaved = do
-          today <- liftIO $ Time.getZonedTime
-          pure LDB.Saved {
-              LDB.idx = undefined
-            , LDB.createdAt = today
-            , LDB.modifiedAt = undefined
-            , LDB.savedContent = entry
-            }
+
+    getPreview entry = View.entryPreviewView entry "New" $ flip U.fullPath "admin/new"
+
+    dummySaved entry = do
+      today <- liftIO Time.getZonedTime
+      pure LDB.Saved {
+          LDB.idx = undefined
+        , LDB.createdAt = today
+        , LDB.modifiedAt = undefined
+        , LDB.savedContent = entry
+        }
 
 handleEditEntry :: LupoHandler ()
 handleEditEntry = requireAuth $
@@ -142,18 +139,6 @@ handleDeleteEntry = requireAuth $ do
   db <- LDB.getDatabase
   LDB.delete db =<< paramId
   redirect =<< U.getURL U.adminPath
-
-showPreview :: T.Text -> LDB.Entry -> LupoHandler ()
-showPreview prevTitle e@LDB.Entry {..} = do
-  (TE.decodeUtf8 -> submitPath) <- getsRequest rqURI
-  H.renderWithSplices "preview-entry" [
-      ("lupo:style-sheet", textSplice "admin")
-    , ("lupo:preview-title", textSplice prevTitle)
-    , ("lupo:submit-path", textSplice submitPath)
-    , ("lupo:entry-title", textSplice entryTitle)
-    , ("lupo:entry-body", textSplice entryBody)
-    , ("lupo:rendered-body", pure $ V.renderBody e)
-    ]
 
 requireAuth :: LupoHandler a -> LupoHandler a
 requireAuth h = do

@@ -196,7 +196,6 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin" [
   , ("lupo:new-entry-url", U.urlSplice $ flip U.fullPath "admin/new")
   ]
   where
-    makeDayRow :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m)) => DB.Day -> H.Splice m
     makeDayRow DB.Day {
         DB.dayEntries = []
       } = pure []
@@ -239,14 +238,16 @@ entryEditorView DB.Saved {..} editType editPath =
 entryPreviewView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m))
                  => DB.Saved DB.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
 entryPreviewView e@DB.Saved {..} editType editPath =
-  View editorTitle $ H.callTemplate "entry-preview" [
-    ("lupo:preview-body", pure $ V.anEntry Nothing e)
+  View previewTitle $ H.callTemplate "entry-preview" [
+    ("lupo:preview-title",
+     H.textSplice [st|#{editType}: #{previewTitle}: #{DB.entryTitle savedContent}|])
+  , ("lupo:preview-body", pure $ V.anEntry Nothing e)
   , ("lupo:edit-path", U.urlSplice editPath)
   , ("lupo:entry-title", H.textSplice $ DB.entryTitle savedContent)
   , ("lupo:entry-body", H.textSplice $ DB.entryBody savedContent)
   ]
   where
-    editorTitle = formatTime "%Y-%m-%d" createdAt
+    previewTitle = formatTime "%Y-%m-%d" createdAt
 
 makePageTitle :: GetLupoConfig n => View m -> n T.Text
 makePageTitle View {..} = do
