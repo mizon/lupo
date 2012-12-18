@@ -120,13 +120,9 @@ body {
 #entry-editor {
   margin: 0;
   padding: 0; }
-  #entry-editor dt {
-    position: absolute; }
-  #entry-editor dd {
-    margin-left: 5em; }
   #entry-editor textarea {
     width: 100%;
-    height: 30em; }
+    height: 40em; }
   #entry-editor .buttons {
     text-align: right; }
     #entry-editor .buttons input {
@@ -144,6 +140,8 @@ body {
   font-size: 80%;
   padding-top: 1em;
   padding-bottom: 2em; }
+  #main h2 {
+    margin-bottom: 0.5em; }
 
 #entries-table {
   border-collapse: collapse;
