@@ -1,8 +1,8 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
-module Lupo.FieldValidator (
-    FieldValidator(..)
+module Lupo.FieldValidator
+  ( FieldValidator (..)
   , makeFieldValidator
   , checkIsEmtpy
   , checkIsTooLong
@@ -20,13 +20,13 @@ import Lupo.Exception
 tooLong :: Int
 tooLong = 1024 * 1024
 
-data FieldValidator a = FieldValidator {
-    validate :: (Functor m, Applicative m, MonadCatchIO m) => a -> m ()
+data FieldValidator a = FieldValidator
+  { validate :: (Functor m, Applicative m, MonadCatchIO m) => a -> m ()
   }
 
 makeFieldValidator :: (a -> Writer [T.Text] ()) -> FieldValidator a
-makeFieldValidator f = FieldValidator {
-    validate = \a ->
+makeFieldValidator f = FieldValidator
+  { validate = \a ->
       case execWriter $ f a of
         [] -> pure ()
         messages -> throw $ InvalidField messages

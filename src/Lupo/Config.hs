@@ -1,6 +1,6 @@
-module Lupo.Config (
-    LupoConfig(..)
-  , GetLupoConfig(..)
+module Lupo.Config
+  ( LupoConfig (..)
+  , GetLupoConfig (..)
   , refLupoConfig
   ) where
 
@@ -9,8 +9,8 @@ import Control.Applicative
 import qualified Data.Text as T
 import Text.XmlHtml
 
-data LupoConfig = LupoConfig {
-    lcSiteTitle :: T.Text
+data LupoConfig = LupoConfig
+  { lcSiteTitle :: T.Text
   , lcSqlitePath :: FilePath
   , lcLocaleFile :: FilePath
   , lcDaysPerPage :: Integer

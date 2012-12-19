@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-module SyntaxSpec (
-    syntaxSpec
+module SyntaxSpec
+  ( syntaxSpec
   ) where
 
 import qualified Data.Attoparsec.Text as A
@@ -17,9 +17,9 @@ syntaxSpec = describe "diary syntax parser" $ do
     parseDiary [st|
 * foo
 * bar
-|] `shouldBe` Right [
-      Element "ul" [] [
-        Element "li" [] [TextNode "foo"]
+|] `shouldBe` Right
+    [ Element "ul" []
+      [ Element "li" [] [TextNode "foo"]
       , Element "li" [] [TextNode "bar"]
       ]
     ]
@@ -32,8 +32,8 @@ syntaxSpec = describe "diary syntax parser" $ do
     parseDiary [st|
 headline
 --------------------------------
-|] `shouldBe` Right [
-      Element "h2" [] [TextNode "headline"]
+|] `shouldBe` Right
+    [ Element "h2" [] [TextNode "headline"]
     ]
 
   it "parses paragraphs" $
@@ -43,8 +43,8 @@ Paragraph A, line 2.
 
 Paragraph B, line 1.
 Paragraph B, line 2.
-|] `shouldBe` Right [
-      Element "p" [] [TextNode "Paragraph A, line 1.Paragraph A, line 2."]
+|] `shouldBe` Right
+    [ Element "p" [] [TextNode "Paragraph A, line 1.Paragraph A, line 2."]
     , Element "p" [] [TextNode "Paragraph B, line 1.Paragraph B, line 2."]
     ]
 
@@ -52,18 +52,18 @@ Paragraph B, line 2.
     parseDiary [st|
   foo
   bar
-|] `shouldBe` Right [
-      Element "pre" [] [
-        Element "code" [] [TextNode "foo\nbar\n"]
+|] `shouldBe` Right
+    [ Element "pre" []
+      [ Element "code" [] [TextNode "foo\nbar\n"]
       ]
     ]
 
   it "parses inline elements" $
     parseDiary [st|
 Click here [HaskellWiki](http://www.haskell.org/haskellwiki/Haskell) .
-|] `shouldBe` Right [
-      Element "p" [] [
-        TextNode "Click here "
+|] `shouldBe` Right
+    [ Element "p" []
+      [ TextNode "Click here "
       , Element "a" [("href", "http://www.haskell.org/haskellwiki/Haskell")] [TextNode "HaskellWiki"]
       , TextNode " ."
       ]

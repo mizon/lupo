@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module URLMapperSpec (
-    urlMapperSpec
+module URLMapperSpec
+  ( urlMapperSpec
   ) where
 
 import Control.Applicative

@@ -3,8 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.AdminHandler (
-    handleLogin
+module Lupo.AdminHandler
+  ( handleLogin
   , handleAdmin
   , handleInitAccount
   , handleNewEntry
@@ -94,8 +94,8 @@ handleNewEntry = requireAuth $
 
     dummySaved entry = do
       today <- liftIO Time.getZonedTime
-      pure LDB.Saved {
-          LDB.idx = undefined
+      pure LDB.Saved
+        { LDB.idx = undefined
         , LDB.createdAt = today
         , LDB.modifiedAt = undefined
         , LDB.savedContent = entry

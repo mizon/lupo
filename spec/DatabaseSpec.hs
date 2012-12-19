@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-module DatabaseSpec (
-    databaseSpec
+module DatabaseSpec
+  ( databaseSpec
   , savedObjectSpec
   ) where
 

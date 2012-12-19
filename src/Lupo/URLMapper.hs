@@ -3,9 +3,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.URLMapper (
-    HasURLMapper(..)
-  , URLMapper(..)
+module Lupo.URLMapper
+  ( HasURLMapper (..)
+  , URLMapper (..)
   , Path
   , getURL
   , urlSplice
@@ -27,8 +27,8 @@ import Lupo.Util
 class Functor m => HasURLMapper m where
   getURLMapper :: m URLMapper
 
-data URLMapper = URLMapper {
-    entryPath :: LDB.Saved LDB.Entry -> Path
+data URLMapper = URLMapper
+  { entryPath :: LDB.Saved LDB.Entry -> Path
   , entryEditPath :: LDB.Saved LDB.Entry -> Path
   , singleDayPath :: Time.Day -> Path
   , multiDaysPath :: Time.Day -> Int -> Path
@@ -53,8 +53,8 @@ urlSplice :: (HasURLMapper (H.HeistT m), Monad m) => (URLMapper -> BS.ByteString
 urlSplice f = H.textSplice =<< Encoding.decodeUtf8 <$> getURL f
 
 makeURLMapper :: Path -> URLMapper
-makeURLMapper basePath = URLMapper {
-    entryPath = \LDB.Saved {..} -> fullPath' $ "entries" </> show idx
+makeURLMapper basePath = URLMapper
+  { entryPath = \LDB.Saved {..} -> fullPath' $ "entries" </> show idx
   , entryEditPath = \LDB.Saved {..} -> fullPath' $ "admin" </> show idx </> "edit"
   , singleDayPath = fullPath' . dayPath
   , multiDaysPath = \d n -> fullPath' $ T.unpack [st|#{dayPath d}-#{show n}|]
@@ -71,7 +71,6 @@ makeURLMapper basePath = URLMapper {
   }
   where
     dayPath = T.unpack . formatTime "%Y%m%d"
-
     fullPath' = BS.pack . (BS.unpack basePath </>)
 
     p </> c = p <> "/" <> c

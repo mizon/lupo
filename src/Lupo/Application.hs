@@ -5,8 +5,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Lupo.Application (
-    Lupo(Lupo, entryDB)
+module Lupo.Application
+  ( Lupo (Lupo, entryDB)
   , LupoHandler
   , heist
   , session
@@ -26,8 +26,8 @@ import qualified Lupo.Locale as L
 import qualified Lupo.Notice as N
 import qualified Lupo.URLMapper as U
 
-data Lupo = Lupo {
-    _heist :: Snaplet (SH.Heist Lupo)
+data Lupo = Lupo
+  { _heist :: Snaplet (SH.Heist Lupo)
   , _session :: Snaplet S.SessionManager
   , _auth :: Snaplet (A.AuthManager Lupo)
   , entryDB :: LDB.DatabaseContext m => LDB.Database m

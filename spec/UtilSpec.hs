@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module UtilSpec (
-    utilSpec
+module UtilSpec
+  ( utilSpec
   ) where
 
 import Control.Applicative

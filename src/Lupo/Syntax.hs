@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.Syntax (
-    renderBody
+module Lupo.Syntax
+  ( renderBody
   , diaryParser
   ) where
 
@@ -13,7 +13,8 @@ import qualified Data.Text as T
 import Text.XmlHtml
 
 renderBody :: T.Text -> [Node]
-renderBody = either (\(show -> msg) -> error $ "[BUG] in body parsing: " <> msg) id . A.parseOnly diaryParser
+renderBody = either (\(show -> msg) -> error $ "[BUG] in body parsing: " <> msg) id
+           . A.parseOnly diaryParser
 
 diaryParser :: A.Parser [Node]
 diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput

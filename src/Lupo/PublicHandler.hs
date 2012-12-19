@@ -3,8 +3,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.PublicHandler (
-    handleTop
+module Lupo.PublicHandler
+  ( handleTop
   , handleDay
   , handleEntries
   , handleSearch
@@ -79,7 +79,9 @@ handleEntries = method GET $ do
   db <- LDB.getDatabase
   entry <- join $ LDB.select <$> pure db <*> paramId
   day <- LDB.selectDay db $ LDB.createdAt entry ^. zonedTimeToLocalTime ^. localDay
-  let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1) $ L.findIndex (== entry) $ LDB.dayEntries day
+  let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1)
+                             $ L.findIndex (== entry)
+                             $ LDB.dayEntries day
   (TE.decodeUtf8 -> base) <- U.getURL $ flip U.singleDayPath $ LDB.day day
   redirect $ TE.encodeUtf8 [st|#{base}##{n}|]
   where
@@ -127,8 +129,8 @@ monthResponse = do
 
     toDayContents db = EL.mapM $ LDB.selectDay db
 
-    monthParser = Time.readTime defaultTimeLocale "%Y%m" <$>
-      M.sequence (replicate 6 $ A.satisfy C.isDigit)
+    monthParser = Time.readTime defaultTimeLocale "%Y%m"
+              <$> M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = do

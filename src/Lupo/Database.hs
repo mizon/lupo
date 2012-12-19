@@ -5,14 +5,14 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.Database (
-    DatabaseContext
-  , HasDatabase(..)
-  , Day(..)
-  , Saved(..)
-  , Entry(..)
-  , Comment(..)
-  , Database(..)
+module Lupo.Database
+  ( DatabaseContext
+  , HasDatabase (..)
+  , Day (..)
+  , Saved (..)
+  , Entry (..)
+  , Comment (..)
+  , Database (..)
   , getCreatedDay
   , makeDatabase
   ) where
@@ -39,15 +39,15 @@ instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 class HasDatabase m where
   getDatabase :: DatabaseContext n => m (Database n)
 
-data Day = Day {
-    day :: Time.Day
+data Day = Day
+  { day :: Time.Day
   , dayEntries :: [Saved Entry]
   , numOfComments :: Int
   , dayComments :: [Saved Comment]
   } deriving (Eq, Show)
 
-data Saved o = Saved {
-    idx :: Integer
+data Saved o = Saved
+  { idx :: Integer
   , createdAt :: Time.ZonedTime
   , modifiedAt :: Time.ZonedTime
   , savedContent :: o
@@ -58,18 +58,18 @@ instance Eq o => Eq (Saved o) where
        idx self == idx other
     && savedContent self == savedContent other
 
-data Entry = Entry {
-    entryTitle :: T.Text
+data Entry = Entry
+  { entryTitle :: T.Text
   , entryBody :: T.Text
   } deriving (Eq, Show)
 
-data Comment = Comment {
-    commentName :: T.Text
+data Comment = Comment
+  { commentName :: T.Text
   , commentBody :: T.Text
   } deriving (Eq, Show)
 
-data Database m = Database {
-    select :: Integer -> m (Saved Entry)
+data Database m = Database
+  { select :: Integer -> m (Saved Entry)
   , selectDay :: Time.Day -> m Day
   , all :: forall a. m (Enumerator (Saved Entry) m a)
   , search :: forall a. T.Text -> m (Enumerator (Saved Entry) m a)
@@ -85,8 +85,8 @@ getCreatedDay :: Saved a -> Time.Day
 getCreatedDay = zonedDay . createdAt
 
 makeDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> Database m
-makeDatabase conn = Database {
-    select = \i -> do
+makeDatabase conn = Database
+  { select = \i -> do
       row <- liftIO $ do
         stmt <- DB.prepare conn "SELECT * FROM entries WHERE id = ?"
         void $ DB.execute stmt [DB.toSql i]
@@ -141,8 +141,8 @@ makeDatabase conn = Database {
                <> "SET modified_at = ?, title = ?, body = ? "
                <> "WHERE id = ?"
         now <- Time.getZonedTime
-        void $ DB.run conn sql [
-            DB.toSql now
+        void $ DB.run conn sql
+          [ DB.toSql now
           , DB.toSql entryTitle
           , DB.toSql entryBody
           , DB.toSql i
@@ -178,8 +178,8 @@ makeDatabase conn = Database {
       liftIO $ do
         now <- Time.getZonedTime
         void $ DB.run conn
-          "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)" [
-              DB.toSql now
+          "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)"
+            [ DB.toSql now
             , DB.toSql now
             , DB.toSql d
             , DB.toSql commentName
@@ -188,30 +188,28 @@ makeDatabase conn = Database {
         DB.commit conn
   }
   where
-    sqlToEntry [
-        DB.fromSql -> id'
-      , DB.fromSql -> c_at
-      , DB.fromSql -> m_at
-      , _
-      , DB.fromSql -> t
-      , DB.fromSql -> b
-      ] = Saved {
-        idx = id'
+    sqlToEntry [ DB.fromSql -> id'
+               , DB.fromSql -> c_at
+               , DB.fromSql -> m_at
+               , _
+               , DB.fromSql -> t
+               , DB.fromSql -> b
+               ] = Saved
+      { idx = id'
       , createdAt = c_at
       , modifiedAt = m_at
       , savedContent = Entry t b
       }
     sqlToEntry _ = error "in sql->entry conversion"
 
-    sqlToComment [
-        DB.fromSql -> id'
-      , DB.fromSql -> c_at
-      , DB.fromSql -> m_at
-      , _
-      , DB.fromSql -> n
-      , DB.fromSql -> b
-      ] = Saved {
-        idx = id'
+    sqlToComment [ DB.fromSql -> id'
+                 , DB.fromSql -> c_at
+                 , DB.fromSql -> m_at
+                 , _
+                 , DB.fromSql -> n
+                 , DB.fromSql -> b
+                 ] = Saved
+      { idx = id'
       , createdAt = c_at
       , modifiedAt = m_at
       , savedContent = Comment n b
@@ -226,8 +224,8 @@ commentValidator = FV.makeFieldValidator $ \Comment {..} -> do
   FV.checkIsTooLong commentBody "Content"
 
 makeDay :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Day
-makeDay d es cs = Day {
-    day = d
+makeDay d es cs = Day
+  { day = d
   , dayEntries = es
   , dayComments = cs
   , numOfComments = Prelude.length cs

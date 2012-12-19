@@ -1,6 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.Navigation (
-    Navigation(..)
+module Lupo.Navigation
+  ( Navigation (..)
   , makeNavigation
   ) where
 
@@ -12,8 +12,8 @@ import qualified Data.Time as Time
 import qualified Lupo.Database as LDB
 import Lupo.Util
 
-data Navigation m = Navigation {
-    getNextDay :: m (Maybe Time.Day)
+data Navigation m = Navigation
+  { getNextDay :: m (Maybe Time.Day)
   , getPreviousDay :: m (Maybe Time.Day)
   , getThisMonth :: Time.Day
   , getNextPageTop :: Integer -> m (Maybe Time.Day)
@@ -24,8 +24,8 @@ data Navigation m = Navigation {
 
 makeNavigation :: (Functor m, Applicative m, Monad m)
                => LDB.Database m -> Time.Day -> Navigation m
-makeNavigation db base = Navigation {
-    getNextDay = do
+makeNavigation db base = Navigation
+  { getNextDay = do
       enum <- daysAfterTommorow
       run_ $ enum $$ EL.head
 

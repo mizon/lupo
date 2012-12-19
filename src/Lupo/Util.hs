@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lupo.Util (
-    localDay
+module Lupo.Util
+  ( localDay
   , zonedTimeToLocalTime
   , paramId
   , paramNum

@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Lupo.Main (
-    main
+module Lupo.Main
+  ( main
   , lupoInit
   ) where
 
@@ -29,14 +29,14 @@ import qualified Lupo.URLMapper as U
 import Lupo.Util
 
 main :: IO ()
-main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig {
-    lcSiteTitle = "Lupo Web Diary"
+main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
+  { lcSiteTitle = "Lupo Web Diary"
   , lcSqlitePath = "./development.sqlite3"
   , lcLocaleFile = "./ja.yml"
   , lcDaysPerPage = 5
-  , lcFooterBody = [
-      Element "p" [] [
-        TextNode "Powered by "
+  , lcFooterBody =
+    [ Element "p" []
+      [ TextNode "Powered by "
       , Element "a" [("href", "http://www.haskell.org/haskellwiki/Haskell")] [TextNode "Haskell"]
       , TextNode ", "
       , Element "a" [("href", "http://snapframework.com/")] [TextNode "Snap Framework"]
@@ -55,8 +55,8 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   A.addAuthSplices auth
-  addRoutes [
-      ("", Public.handleTop)
+  addRoutes
+    [ ("", Public.handleTop)
     , ("admin", Admin.handleAdmin)
     , ("admin/new", Admin.handleNewEntry)
     , ("admin/:id/edit", Admin.handleEditEntry)
@@ -71,8 +71,8 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , (":day/comment", Public.handleComment)
     ]
   onUnload $ DB.disconnect conn
-  H.addSplices [
-      ("lupo:top-page-path", H.liftHeist $ U.urlSplice U.topPagePath)
+  H.addSplices
+    [ ("lupo:top-page-path", H.liftHeist $ U.urlSplice U.topPagePath)
     , ("lupo:search-path", H.liftHeist $ U.urlSplice $ flip U.fullPath "search")
     ]
   pure $ Lupo h s a (EDB.makeDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath

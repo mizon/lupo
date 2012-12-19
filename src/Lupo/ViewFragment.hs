@@ -6,8 +6,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.ViewFragment (
-    renderBody
+module Lupo.ViewFragment
+  ( renderBody
   , daySummary
   , dayTitle
   , anEntry
@@ -41,8 +41,8 @@ renderBody LDB.Entry {..} = S.renderBody entryBody
 
 daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
            => LDB.Day -> H.Splice m
-daySummary LDB.Day {..} = H.callTemplate "_day-summary" [
-    ("lupo:day-title", dayTitle day)
+daySummary LDB.Day {..} = H.callTemplate "_day-summary"
+  [ ("lupo:day-title", dayTitle day)
   , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
   , ("lupo:link-to-comment", linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
@@ -74,8 +74,8 @@ anEntry index LDB.Saved {..} =
     entryHeadlineAttr = maybe [] (\i -> [("id", T.justifyRight 2 '0' $ toText i)]) index
 
 comment :: (Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Saved LDB.Comment -> H.Splice m
-comment LDB.Saved {..} = H.callTemplate "_comment" [
-    ("lupo:comment-name", H.textSplice $ LDB.commentName savedContent)
+comment LDB.Saved {..} = H.callTemplate "_comment"
+  [ ("lupo:comment-name", H.textSplice $ LDB.commentName savedContent)
   , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ createdAt)
   , ("lupo:comment-content", commentBodySplice)
   ]
@@ -93,13 +93,13 @@ searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m))
 searchResult e@LDB.Saved {..} = do
   (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ flip U.singleDayPath $ zonedDay createdAt
   (Encoding.decodeUtf8 -> entryLink) <- U.getURL $ flip U.entryPath e
-  pure [
-      Element "tr" [] [
-        Element "th" [("class", "result-day")] [
-          Element "a" [("href", dayLink)] [TextNode $ timeToText createdAt]
+  pure
+    [ Element "tr" []
+      [ Element "th" [("class", "result-day")]
+        [ Element "a" [("href", dayLink)] [TextNode $ timeToText createdAt]
         ]
-      , Element "th" [("class", "result-title")] [
-          Element "a" [("href", entryLink)] [TextNode $ LDB.entryTitle savedContent]
+      , Element "th" [("class", "result-title")]
+        [ Element "a" [("href", entryLink)] [TextNode $ LDB.entryTitle savedContent]
         ]
       , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
       ]
@@ -112,8 +112,8 @@ monthNavigation nav = do
   next <- N.getNextMonth nav
   previousLabel <- LL.localize "Previous Month"
   nextLabel <- LL.localize "Next Month"
-  H.callTemplate "_navigation" [
-      ("lupo:previous-link", mkMonthLink previousLabel previous)
+  H.callTemplate "_navigation"
+    [ ("lupo:previous-link", mkMonthLink previousLabel previous)
     , ("lupo:middle-link", newestLink)
     , ("lupo:next-link", mkMonthLink nextLabel next)
     ]
@@ -130,8 +130,8 @@ singleDayNavigation nav = do
   previousLabel <- LL.localize "Previous Day"
   thisMonthLabel <- LL.localize "This Month"
   nextLabel <- LL.localize "Next Day"
-  H.callTemplate "_navigation" [
-      ("lupo:previous-link", mkDayLink previousLabel previous)
+  H.callTemplate "_navigation"
+    [ ("lupo:previous-link", mkDayLink previousLabel previous)
     , ("lupo:middle-link", thisMonthLink thisMonthLabel)
     , ("lupo:next-link", mkDayLink nextLabel next)
     ]
@@ -151,8 +151,8 @@ multiDaysNavigation nDays nav = do
   next <- N.getNextPageTop nav nDays
   previousLabel <- LL.localize "Previous %d Days"
   nextLabel <- LL.localize "Next %d Days"
-  H.callTemplate "_navigation" [
-      ("lupo:previous-link", mkDayLink previousLabel previous)
+  H.callTemplate "_navigation"
+    [ ("lupo:previous-link", mkDayLink previousLabel previous)
     , ("lupo:middle-link", newestLink)
     , ("lupo:next-link", mkDayLink nextLabel next)
     ]

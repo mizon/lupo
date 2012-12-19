@@ -1,8 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
-module Lupo.Notice (
-    NoticeDB(..)
-  , SessionBackend(..)
+module Lupo.Notice
+  ( NoticeDB (..)
+  , SessionBackend (..)
   , makeNoticeDB
   , makeSessionBackend
   ) where
@@ -13,27 +13,25 @@ import qualified Database.HDBC as DB
 import Snap
 import qualified Snap.Snaplet.Session as SS
 
-data NoticeDB m = NoticeDB {
-    addNotice :: T.Text -> m ()
+data NoticeDB m = NoticeDB
+  { addNotice :: T.Text -> m ()
   , popAllNotice :: m [T.Text]
   }
 
-data SessionBackend m = SessionBackend {
-    getCsrfToken :: m T.Text
+data SessionBackend m = SessionBackend
+  { getCsrfToken :: m T.Text
   , commitSession :: m ()
   }
 
 makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m)
-             => c
-             -> SessionBackend m
-             -> NoticeDB m
-makeNoticeDB conn SessionBackend {..} = NoticeDB {
-    addNotice = \(DB.toSql -> msg) -> do
+             => c -> SessionBackend m -> NoticeDB m
+makeNoticeDB conn SessionBackend {..} = NoticeDB
+  { addNotice = \(DB.toSql -> msg) -> do
       (DB.toSql -> token) <- getCsrfToken
       commitSession
       liftIO $ do
-        void $ DB.run conn "INSERT INTO notice (token, message) VALUES (?, ?)" [
-            token
+        void $ DB.run conn "INSERT INTO notice (token, message) VALUES (?, ?)"
+          [ token
           , msg
           ]
         DB.commit conn
@@ -51,7 +49,7 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB {
   }
 
 makeSessionBackend :: Lens v (Snaplet SS.SessionManager) -> SessionBackend (Handler b v)
-makeSessionBackend session = SessionBackend {
-    getCsrfToken = with session SS.csrfToken
+makeSessionBackend session = SessionBackend
+  { getCsrfToken = with session SS.csrfToken
   , commitSession = with session SS.commitSession
   }

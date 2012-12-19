@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ExistentialQuantification #-}
-module Lupo.Exception (
-    LupoException
-  , RecordNotFound(..)
-  , InvalidLocaleFile(..)
-  , InvalidField(..)
+module Lupo.Exception
+  ( LupoException
+  , RecordNotFound (..)
+  , InvalidLocaleFile (..)
+  , InvalidField (..)
   ) where
 
 import Control.Exception

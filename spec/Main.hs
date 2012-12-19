@@ -9,8 +9,8 @@ import URLMapperSpec
 import UtilSpec
 
 main :: IO ()
-main = hspec $ sequence_ [
-    databaseSpec
+main = hspec $ sequence_
+  [ databaseSpec
   , savedObjectSpec
   , navigationSpec
   , noticeSpec

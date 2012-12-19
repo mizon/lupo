@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module NoticeSpec (
-    noticeSpec
+module NoticeSpec
+  ( noticeSpec
   ) where
 
 import Control.Applicative
@@ -49,8 +49,8 @@ data SessionAction = GetCsrfToken | CommitSession
   deriving (Eq, Show)
 
 makeSessionMock :: T.Text -> N.SessionBackend (TestM [SessionAction])
-makeSessionMock token = N.SessionBackend {
-    N.getCsrfToken = tell [GetCsrfToken] >> pure token
+makeSessionMock token = N.SessionBackend
+  { N.getCsrfToken = tell [GetCsrfToken] >> pure token
   , N.commitSession = tell [CommitSession]
   }
 

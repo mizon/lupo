@@ -1,6 +1,6 @@
-module Lupo.Locale (
-    Localizer
-  , HasLocalizer(..)
+module Lupo.Locale
+  ( Localizer
+  , HasLocalizer (..)
   , localize
   , loadYamlLocalizer
   ) where
