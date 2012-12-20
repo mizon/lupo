@@ -6,7 +6,7 @@ module UtilSpec
   ) where
 
 import Control.Applicative
-import Data.Lens.Common
+import Control.Lens.Getter
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import Test.Hspec

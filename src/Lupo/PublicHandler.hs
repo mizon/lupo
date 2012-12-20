@@ -11,6 +11,7 @@ module Lupo.PublicHandler
   , handleComment
   ) where
 
+import Control.Lens.Getter
 import Control.Monad as M
 import Control.Monad.CatchIO
 import qualified Data.Attoparsec.Text as A
@@ -18,7 +19,6 @@ import qualified Data.ByteString as BS
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
-import Data.Lens.Common
 import qualified Data.List as L
 import Data.Maybe
 import qualified Data.Text as T
