@@ -19,7 +19,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Time as Time
 import Text.Shakespeare.Text
-import qualified Text.Templating.Heist as H
+import qualified Heist as H
+import qualified Heist.Interpreted as H
 
 import qualified Lupo.Database as LDB
 import Lupo.Util
@@ -49,7 +50,7 @@ type Path = BS.ByteString
 getURL :: HasURLMapper m => (URLMapper -> Path) -> m Path
 getURL = (<$> getURLMapper)
 
-urlSplice :: (HasURLMapper (H.HeistT m), Monad m) => (URLMapper -> BS.ByteString) -> H.Splice m
+urlSplice :: (HasURLMapper (H.HeistT m m), Monad m) => (URLMapper -> BS.ByteString) -> H.Splice m
 urlSplice f = H.textSplice =<< Encoding.decodeUtf8 <$> getURL f
 
 makeURLMapper :: Path -> URLMapper

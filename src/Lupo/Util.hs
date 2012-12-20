@@ -24,7 +24,7 @@ import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import qualified System.Locale as L
-import qualified Text.Templating.Heist as H
+import qualified Heist as H
 import Text.XmlHtml
 
 localDay :: Lens Time.LocalTime Time.Day

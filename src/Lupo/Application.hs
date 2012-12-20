@@ -14,6 +14,7 @@ module Lupo.Application
   , getNoticeDB
   ) where
 
+import Control.Lens
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Auth as A
@@ -36,7 +37,7 @@ data Lupo = Lupo
   , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
   , urlMapper :: U.URLMapper
   }
-makeLens ''Lupo
+makeLenses ''Lupo
 
 type LupoHandler = Handler Lupo Lupo
 

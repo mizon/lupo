@@ -48,7 +48,7 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB
       pure $ DB.fromSql <$> messages
   }
 
-makeSessionBackend :: Lens v (Snaplet SS.SessionManager) -> SessionBackend (Handler b v)
+makeSessionBackend :: SnapletLens v SS.SessionManager -> SessionBackend (Handler b v)
 makeSessionBackend session = SessionBackend
   { getCsrfToken = with session SS.csrfToken
   , commitSession = with session SS.commitSession

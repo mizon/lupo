@@ -26,7 +26,8 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Data.Time as Time
 import Snap
 import Text.Shakespeare.Text hiding (toText)
-import qualified Text.Templating.Heist as H
+import qualified Heist as H
+import qualified Heist.Interpreted as H
 import Text.XmlHtml
 
 import qualified Lupo.Database as LDB
@@ -39,7 +40,7 @@ import Lupo.Util
 renderBody :: LDB.Entry -> H.Template
 renderBody LDB.Entry {..} = S.renderBody entryBody
 
-daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
+daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
            => LDB.Day -> H.Splice m
 daySummary LDB.Day {..} = H.callTemplate "_day-summary"
   [ ("lupo:day-title", dayTitle day)
@@ -58,7 +59,7 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary"
       | numOfComments > 0 = U.urlSplice $ flip U.commentsPath day
       | otherwise = U.urlSplice $ flip U.newCommentPath day
 
-dayTitle :: (U.HasURLMapper (H.HeistT m), Monad m, Functor m) => Time.Day -> H.Splice m
+dayTitle :: (U.HasURLMapper (H.HeistT m m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
   (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.singleDayPath d
   pure $ [Element "a" [("href", link)] [TextNode $ dayFormat d]]
@@ -73,7 +74,7 @@ anEntry index LDB.Saved {..} =
   where
     entryHeadlineAttr = maybe [] (\i -> [("id", T.justifyRight 2 '0' $ toText i)]) index
 
-comment :: (Monad m, LL.HasLocalizer (H.HeistT m)) => LDB.Saved LDB.Comment -> H.Splice m
+comment :: (Monad m, LL.HasLocalizer (H.HeistT m m)) => LDB.Saved LDB.Comment -> H.Splice m
 comment LDB.Saved {..} = H.callTemplate "_comment"
   [ ("lupo:comment-name", H.textSplice $ LDB.commentName savedContent)
   , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ createdAt)
@@ -88,7 +89,7 @@ emptyMonth = do
   message <- LL.localize "no this month entries"
   pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
-searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m))
+searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m))
              => LDB.Saved LDB.Entry -> H.Splice m
 searchResult e@LDB.Saved {..} = do
   (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ flip U.singleDayPath $ zonedDay createdAt
@@ -105,8 +106,8 @@ searchResult e@LDB.Saved {..} = do
       ]
     ]
 
-monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
-                => N.Navigation (H.HeistT m) -> H.Splice m
+monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
+                => N.Navigation (H.HeistT m m) -> H.Splice m
 monthNavigation nav = do
   previous <- N.getPreviousMonth nav
   next <- N.getNextMonth nav
@@ -122,8 +123,8 @@ monthNavigation nav = do
       (Encoding.decodeUtf8 -> monthPath) <- U.getURL $ flip U.monthPath m
       pure [Element "a" [("href", monthPath)] [TextNode body]]
 
-singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
-                    => N.Navigation (H.HeistT m) -> H.Splice m
+singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
+                    => N.Navigation (H.HeistT m m) -> H.Splice m
 singleDayNavigation nav = do
   previous <- N.getPreviousDay nav
   next <- N.getNextDay nav
@@ -144,8 +145,8 @@ singleDayNavigation nav = do
       (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
       pure [Element "a" [("href", link)] [TextNode body]]
 
-multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
-                    => Integer -> N.Navigation (H.HeistT m) -> H.Splice m
+multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
+                    => Integer -> N.Navigation (H.HeistT m m) -> H.Splice m
 multiDaysNavigation nDays nav = do
   previous <- N.getPreviousPageTop nav nDays
   next <- N.getNextPageTop nav nDays
@@ -167,7 +168,7 @@ multiDaysNavigation nDays nav = do
 timeToText :: Time.ZonedTime -> T.Text
 timeToText = formatTime "%Y-%m-%d"
 
-newestLink :: (LL.HasLocalizer (H.HeistT m), U.HasURLMapper (H.HeistT m))
+newestLink :: (LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
            => H.Splice m
 newestLink = do
   label <- LL.localize "Newest"
