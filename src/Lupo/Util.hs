@@ -13,10 +13,10 @@ module Lupo.Util
   , safeIndex
   ) where
 
+import Control.Lens
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Ix as Ix
-import Data.Lens.Common
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -27,11 +27,11 @@ import qualified System.Locale as L
 import qualified Heist as H
 import Text.XmlHtml
 
-localDay :: Lens Time.LocalTime Time.Day
-localDay = lens Time.localDay $ \d ld -> ld {Time.localDay = d}
+localDay :: Simple Lens Time.LocalTime Time.Day
+localDay = lens Time.localDay $ \ld d -> ld {Time.localDay = d}
 
-zonedTimeToLocalTime :: Lens Time.ZonedTime Time.LocalTime
-zonedTimeToLocalTime = lens Time.zonedTimeToLocalTime $ \ld zd -> zd {Time.zonedTimeToLocalTime = ld}
+zonedTimeToLocalTime :: Simple Lens Time.ZonedTime Time.LocalTime
+zonedTimeToLocalTime = lens Time.zonedTimeToLocalTime $ \zd ld -> zd {Time.zonedTimeToLocalTime = ld}
 
 paramId :: (MonadSnap m, Integral a) => m a
 paramId = paramNum "id"

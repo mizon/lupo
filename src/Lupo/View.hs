@@ -66,7 +66,7 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
     bindSplices = H.bindSplices
       [ ("lupo:page-title", H.textSplice viewTitle)
       , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "plain.css")
-      , ("content", viewSplice)
+      , ("apply-content", viewSplice)
       ]
 
 renderAdmin :: (h ~ (H.HeistT (Handler b b) (Handler b b)), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
