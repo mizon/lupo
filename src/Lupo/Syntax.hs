@@ -4,6 +4,7 @@
 module Lupo.Syntax
   ( renderBody
   , diaryParser
+  , renderInline
   ) where
 
 import Control.Applicative
@@ -21,13 +22,25 @@ diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
   where
     trimEmptyLines = many $ A.try $ blanks *> A.endOfLine
 
+renderInline :: T.Text -> [Node]
+renderInline = either undefined id . parse
+  where
+    parse = A.parseOnly $ many $ anchor <|> text
+      where
+        anchor = do
+          name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
+          href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
+          pure $ Element "a" [("href", href)] [TextNode name]
+
+        text = TextNode . T.pack <$> some (A.satisfy (/= '['))
+
 block :: A.Parser Node
 block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
   where
     blockQuote = do
       begin <- bqLine
       follows <- T.concat <$> many (bqLine <|> plainLine)
-      pure $ Element "blockquote" [] $ inlineElemnents $ T.append begin follows
+      pure $ Element "blockquote" [] $ renderInline $ T.append begin follows
       where
         bqLine = snd <$> beginWith (A.char '>')
 
@@ -35,11 +48,11 @@ block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
       lis <- some $ snd <$> beginWith (A.satisfy $ A.inClass "*+-")
       pure $ Element "ul" [] $ makeElem <$> lis
       where
-        makeElem body = Element "li" [] $ inlineElemnents body
+        makeElem body = Element "li" [] $ renderInline body
 
     paragraph = do
       ls <- some plainLine
-      pure $ Element "p" [] $ inlineElemnents $ T.concat ls
+      pure $ Element "p" [] $ renderInline $ T.concat ls
 
     plainLine = do
       (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
@@ -64,7 +77,7 @@ heading = prefixStyle <|> underlineStyle
         chars symbol = A.char symbol <* some (A.char symbol)
 
     makeElem (level :: Int) body =
-      Element (T.concat ["h", T.pack $ show level]) [] $ inlineElemnents body
+      Element (T.concat ["h", T.pack $ show level]) [] $ renderInline body
 
 code :: A.Parser Node
 code = do
@@ -84,18 +97,6 @@ beginWith p = do
 
 toEOL :: A.Parser T.Text
 toEOL = A.takeTill A.isEndOfLine <* blanks <* A.option () A.endOfLine
-
-inlineElemnents :: T.Text -> [Node]
-inlineElemnents = either undefined id . parse
-  where
-    parse = A.parseOnly $ many $ anchor <|> text
-      where
-        anchor = do
-          name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
-          href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
-          pure $ Element "a" [("href", href)] [TextNode name]
-
-        text = TextNode . T.pack <$> some (A.satisfy (/= '['))
 
 blanks :: A.Parser ()
 blanks = A.skipWhile $ A.inClass " \t"
