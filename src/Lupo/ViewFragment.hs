@@ -68,7 +68,7 @@ dayTitle d = do
 
 anEntry :: Maybe Int -> LDB.Saved LDB.Entry -> H.Template
 anEntry index LDB.Saved {..} =
-     Element "h3" entryHeadlineAttr [TextNode $ LDB.entryTitle savedContent]
+     Element "h3" entryHeadlineAttr (S.renderInline $ LDB.entryTitle savedContent)
    : S.renderBody (LDB.entryBody savedContent)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
   where
