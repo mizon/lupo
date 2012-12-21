@@ -12,6 +12,7 @@ import Text.XmlHtml
 data LupoConfig = LupoConfig
   { lcSiteTitle :: T.Text
   , lcSqlitePath :: FilePath
+  , lcLanguage :: T.Text
   , lcLocaleFile :: FilePath
   , lcDaysPerPage :: Integer
   , lcFooterBody :: [Node]
