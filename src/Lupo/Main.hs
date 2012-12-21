@@ -8,6 +8,7 @@ module Lupo.Main
 
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
+import qualified Heist.Interpreted as H
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Http.Server.Config as C
@@ -32,6 +33,7 @@ main :: IO ()
 main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
   { lcSiteTitle = "Lupo Web Diary"
   , lcSqlitePath = "./development.sqlite3"
+  , lcLanguage = "ja"
   , lcLocaleFile = "./ja.yml"
   , lcDaysPerPage = 5
   , lcFooterBody =
@@ -72,7 +74,8 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     ]
   onUnload $ DB.disconnect conn
   H.addSplices
-    [ ("lupo:top-page-path", U.urlSplice U.topPagePath)
+    [ ("lupo:language", H.textSplice lcLanguage)
+    , ("lupo:top-page-path", U.urlSplice U.topPagePath)
     , ("lupo:search-path", U.urlSplice $ flip U.fullPath "search")
     ]
   pure $ Lupo h s a (EDB.makeDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
