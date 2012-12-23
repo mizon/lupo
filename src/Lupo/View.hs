@@ -56,6 +56,8 @@ render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
         , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "diary.css")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
+        , ("lupo:feed-path", U.urlSplice $ flip U.fullPath "recent.atom")
+        , ("lupo:feed-icon-path", U.urlSplice $ flip U.fullPath "images/feed.png")
         ]
       . H.bindSplice "lupo:main-body" viewSplice
 
