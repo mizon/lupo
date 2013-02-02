@@ -5,6 +5,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Lupo.Database
   ( DatabaseContext
   , HasDatabase (..)
@@ -126,8 +127,8 @@ makeDatabase conn = Database
         let sql = "INSERT INTO entries (created_at, modified_at, day, title, body) "
                <> "VALUES (?, ?, ?, ?, ?)"
         now <- Time.getZonedTime
-        void $ DB.run conn sql [
-            DB.toSql now
+        void $ DB.run conn sql
+          [ DB.toSql now
           , DB.toSql now
           , DB.toSql $ zonedDay now
           , DB.toSql entryTitle

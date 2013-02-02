@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Lupo.Util
   ( localDay
   , zonedTimeToLocalTime
@@ -21,10 +22,10 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
+import qualified Heist as H
 import Prelude hiding (filter)
 import Snap
 import qualified System.Locale as L
-import qualified Heist as H
 import Text.XmlHtml
 
 localDay :: Simple Lens Time.LocalTime Time.Day

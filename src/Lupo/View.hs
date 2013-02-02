@@ -6,6 +6,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Lupo.View
   ( View (..)
   , render
@@ -46,7 +47,11 @@ data View m = View
   , viewSplice :: H.Splice m
   }
 
-render :: (h ~ H.HeistT (Handler b b) (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
+render :: ( h ~ H.HeistT (Handler b b) (Handler b b)
+          , SH.HasHeist b
+          , GetLupoConfig h
+          , U.HasURLMapper h
+          )
        => View (Handler b b) -> Handler b v ()
 render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
   where
@@ -71,7 +76,11 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
       , ("apply-content", viewSplice)
       ]
 
-renderAdmin :: (h ~ (H.HeistT (Handler b b) (Handler b b)), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
+renderAdmin :: ( h ~ H.HeistT (Handler b b) (Handler b b)
+               , SH.HasHeist b
+               , GetLupoConfig h
+               , U.HasURLMapper h
+               )
             => View (Handler b b) -> Handler b v ()
 renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
   where
