@@ -3,6 +3,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Lupo.URLMapper
   ( HasURLMapper (..)
   , URLMapper (..)

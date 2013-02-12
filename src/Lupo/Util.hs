@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Lupo.Util
   ( localDay
   , zonedTimeToLocalTime

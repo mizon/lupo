@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Lupo.Notice
   ( NoticeDB (..)
   , SessionBackend (..)

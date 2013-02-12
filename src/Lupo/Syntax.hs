@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
+
 module Lupo.Syntax
   ( renderBody
   , diaryParser
@@ -25,14 +26,14 @@ diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
 renderInline :: T.Text -> [Node]
 renderInline = either undefined id . parse
   where
-    parse = A.parseOnly $ many $ anchor <|> text
+    parse = A.parseOnly $ many $ A.try anchor <|> text
       where
         anchor = do
           name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
           href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
           pure $ Element "a" [("href", href)] [TextNode name]
 
-        text = TextNode . T.pack <$> some (A.satisfy (/= '['))
+        text = TextNode . T.pack <$> ((:) <$> A.anyChar <*> many (A.satisfy (/= '[')))
 
 block :: A.Parser Node
 block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph

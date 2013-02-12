@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module NoticeSpec
   ( noticeSpec
   ) where

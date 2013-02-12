@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE ExistentialQuantification #-}
+
 module Lupo.Exception
   ( LupoException
   , RecordNotFound (..)
