@@ -37,6 +37,7 @@ instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 data EntryDatabase m = EntryDatabase
   { selectOne :: Integer -> m (Saved Entry)
   , selectAll :: forall a. E.Enumerator (Saved Entry) m a
+  , search :: T.Text -> forall a. E.Enumerator (Saved Entry) m a
   , insert :: Entry -> m ()
   , update :: Integer -> Entry -> m ()
   , delete :: Integer -> m ()
@@ -77,6 +78,7 @@ makeEntryDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> IO (Ent
 makeEntryDatabase conn = do
   selectStatement <- prepareMutexStatement "SELECT * FROM entries WHERE id = ?"
   selectAllStatement <- prepareMutexStatement "SELECT * FROM entries ORDER BY created_at DESC"
+  searchStatement <- prepareMutexStatement "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC"
   insertStatement <- prepareMutexStatement "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
   updateStatement <- prepareMutexStatement "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
   deleteStatement <- prepareMutexStatement "DELETE FROM entries WHERE id = ?"
@@ -93,6 +95,9 @@ makeEntryDatabase conn = do
               maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
     , selectAll = enumStatement conn selectAllStatement [] E.$= EL.map sqlToEntry
+
+    , search = \(DB.toSql -> word) ->
+        enumStatement conn searchStatement [word, word] E.$= EL.map sqlToEntry
 
     , insert = \Entry {..} ->
         withTransactionGeneric conn $
