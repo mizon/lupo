@@ -36,14 +36,14 @@ entrySpec = describe "database wrapper" $ do
       e <- E.selectOne db 6
       e `shouldSameContent` E.Entry "title newest" "body newest"
 
-  -- it "selects by specified day" $ do
-  --   withDB $ \db -> do
-  --     d <- E.selectDay db $ Time.fromGregorian 2012 8 15
-  --     E.numOfComments d `shouldBe` 0
-  --     let es = E.dayEntries d
-  --     Prelude.length es `shouldBe` 2
-  --     (es !! 0) `shouldSameContent` E.Entry "title 8-15-1" "body 8-15-1"
-  --     (es !! 1) `shouldSameContent` E.Entry "title 8-15-2" "body 8-15-2"
+  it "selects by specified day" $ do
+    withDB $ \db -> do
+      page <- E.selectPage db $ Time.fromGregorian 2012 8 15
+      E.numOfComments page `shouldBe` 0
+      let es = E.pageEntries page
+      Prelude.length es `shouldBe` 2
+      (es !! 0) `shouldSameContent` E.Entry "title 8-15-1" "body 8-15-1"
+      (es !! 1) `shouldSameContent` E.Entry "title 8-15-2" "body 8-15-2"
 
   it "deletes an entry" $ do
     withDB $ \db -> do
