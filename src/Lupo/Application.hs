@@ -16,6 +16,7 @@ module Lupo.Application
   ) where
 
 import Control.Lens
+import Control.Monad
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Auth as A
@@ -23,7 +24,7 @@ import qualified Snap.Snaplet.Heist as SH
 import qualified Snap.Snaplet.Session as S
 
 import Lupo.Config
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import qualified Lupo.Locale as L
 import qualified Lupo.Notice as N
 import qualified Lupo.URLMapper as U
@@ -32,7 +33,7 @@ data Lupo = Lupo
   { _heist :: Snaplet (SH.Heist Lupo)
   , _session :: Snaplet S.SessionManager
   , _auth :: Snaplet (A.AuthManager Lupo)
-  , entryDB :: LDB.DatabaseContext m => LDB.Database m
+  , entryDB :: E.DatabaseContext m => IO (E.EntryDatabase m)
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer
   , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
@@ -45,8 +46,10 @@ type LupoHandler = Handler Lupo Lupo
 instance SH.HasHeist Lupo where
   heistLens = subSnaplet heist
 
-instance (LDB.DatabaseContext m, MonadState Lupo m) => LDB.HasDatabase m where
-  getDatabase = gets entryDB
+instance (E.DatabaseContext m, MonadState Lupo m) => E.HasDatabase m where
+  getDatabase = do
+    getDB <- gets entryDB
+    liftIO getDB
 
 instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
   getLupoConfig = gets lupoConfig

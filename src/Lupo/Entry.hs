@@ -6,12 +6,15 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Lupo.Entry
-  ( EntryDatabase (..)
+  ( DatabaseContext
+  , HasDatabase (..)
+  , EntryDatabase (..)
   , Page (..)
   , Saved (..)
-  , makeEntryDatabase
   , Entry (..)
   , Comment (..)
+  , makeEntryDatabase
+  , getCreatedDay
   ) where
 
 import Control.Applicative
@@ -34,9 +37,13 @@ import Lupo.Util
 class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
 
+class HasDatabase m where
+  getDatabase :: DatabaseContext n => m (EntryDatabase n)
+
 data EntryDatabase m = EntryDatabase
   { selectOne :: Integer -> m (Saved Entry)
   , selectAll :: forall a. E.Enumerator (Saved Entry) m a
+  , selectPage :: Time.Day -> m Page
   , search :: T.Text -> forall a. E.Enumerator (Saved Entry) m a
   , insert :: Entry -> m ()
   , update :: Integer -> Entry -> m ()
@@ -78,6 +85,8 @@ makeEntryDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> IO (Ent
 makeEntryDatabase conn = do
   selectStatement <- prepareMutexStatement "SELECT * FROM entries WHERE id = ?"
   selectAllStatement <- prepareMutexStatement "SELECT * FROM entries ORDER BY created_at DESC"
+  selectByDayStatement <- prepareMutexStatement "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
+  selectCommentsStatement <- prepareMutexStatement "SELECT * FROM comments WHERE day = ? ORDER BY created_at ASC"
   searchStatement <- prepareMutexStatement "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC"
   insertStatement <- prepareMutexStatement "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
   updateStatement <- prepareMutexStatement "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
@@ -95,6 +104,12 @@ makeEntryDatabase conn = do
               maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
     , selectAll = enumStatement conn selectAllStatement [] E.$= EL.map sqlToEntry
+
+    , selectPage = \d@(DB.toSql -> sqlDay) ->
+        withTransactionGeneric conn $ do
+          entries <- E.run_ $ enumStatement conn selectByDayStatement [sqlDay] E.$= EL.map sqlToEntry E.$$ EL.consume
+          comments <- E.run_ $ enumStatement conn selectCommentsStatement [sqlDay] E.$= EL.map sqlToComment E.$$ EL.consume
+          pure $ makePage d entries comments
 
     , search = \(DB.toSql -> word) ->
         enumStatement conn searchStatement [word, word] E.$= EL.map sqlToEntry
@@ -151,6 +166,23 @@ makeEntryDatabase conn = do
     where
       prepareMutexStatement = newMVar <=< DB.prepare conn
 
+      sqlToComment [ DB.fromSql -> id'
+                   , DB.fromSql -> c_at
+                   , DB.fromSql -> m_at
+                   , _
+                   , DB.fromSql -> n
+                   , DB.fromSql -> b
+                   ] = Saved
+        { idx = id'
+        , createdAt = c_at
+        , modifiedAt = m_at
+        , savedContent = Comment n b
+        }
+      sqlToComment _ = error "in sql->comment conversion"
+
+getCreatedDay :: Saved a -> Time.Day
+getCreatedDay = zonedDay . createdAt
+
 enumStatement :: (DB.IConnection conn, Functor m, MonadCatchIO m) => conn -> MVar DB.Statement -> [DB.SqlValue] -> E.Enumerator [DB.SqlValue] m a
 enumStatement conn mutex values step =
   withTransactionGeneric conn $
@@ -197,3 +229,11 @@ withMutexStatement mutex = bracket takeStatement finishStatement
     finishStatement stmt = liftIO $ do
       DB.finish stmt
       putMVar mutex stmt
+
+makePage :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Page
+makePage d es cs = Page
+  { pageDay = d
+  , pageEntries = es
+  , pageComments = cs
+  , numOfComments = Prelude.length cs
+  }

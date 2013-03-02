@@ -12,17 +12,17 @@ import qualified Data.Time as Time
 import Test.Hspec
 import Test.QuickCheck
 
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import qualified Lupo.URLMapper as U
 
 urlMapperSpec :: Spec
 urlMapperSpec = describe "URL Mapper" $ do
   it "provides a path to the single entry page" $
-    U.entryPath urlMapper (LDB.Saved 8 undefined undefined undefined) `shouldBe`
+    U.entryPath urlMapper (E.Saved 8 undefined undefined undefined) `shouldBe`
       "/lupo/entries/8"
 
   it "provides a path to the entry editor page" $
-    U.entryEditPath urlMapper (LDB.Saved 8 undefined undefined undefined) `shouldBe`
+    U.entryEditPath urlMapper (E.Saved 8 undefined undefined undefined) `shouldBe`
       "/lupo/admin/8/edit"
 
   it "provides a path to the day page" $

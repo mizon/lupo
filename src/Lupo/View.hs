@@ -35,7 +35,7 @@ import qualified Heist.Interpreted as H
 import Text.XmlHtml hiding (render)
 
 import Lupo.Config
-import qualified Lupo.Database as DB
+import qualified Lupo.Entry as E
 import qualified Lupo.Locale as L
 import qualified Lupo.Navigation as N
 import qualified Lupo.URLMapper as U
@@ -47,8 +47,7 @@ data View m = View
   , viewSplice :: H.Splice m
   }
 
-render :: (h ~ H.HeistT (Handler b b) (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
-       => View (Handler b b) -> Handler b v ()
+render :: (h ~ H.HeistT (Handler b b) (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h) => View (Handler b b) -> Handler b v ()
 render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
   where
     bindSplices =
@@ -60,8 +59,7 @@ render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
         ]
       . H.bindSplice "lupo:main-body" viewSplice
 
-renderPlain :: (h ~ (Handler b b), SH.HasHeist b, U.HasURLMapper (H.HeistT h h))
-            => View h -> Handler b v ()
+renderPlain :: (h ~ (Handler b b), SH.HasHeist b, U.HasURLMapper (H.HeistT h h)) => View h -> Handler b v ()
 renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
   where
     bindSplices = H.bindSplices
@@ -70,8 +68,7 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
       , ("apply-content", viewSplice)
       ]
 
-renderAdmin :: (h ~ (H.HeistT (Handler b b) (Handler b b)), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h)
-            => View (Handler b b) -> Handler b v ()
+renderAdmin :: (h ~ (H.HeistT (Handler b b) (Handler b b)), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h) => View (Handler b b) -> Handler b v ()
 renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
   where
     bindSplices =
@@ -84,40 +81,33 @@ renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
         ]
       . H.bindSplice "lupo:main-body" viewSplice
 
-singleDayView :: ( m ~ H.HeistT n n
-                 , Functor n
-                 , Monad n
-                 , GetLupoConfig m
-                 , L.HasLocalizer m
-                 , U.HasURLMapper m
-                 )
-              => DB.Day -> N.Navigation m -> DB.Comment -> [T.Text] -> [T.Text] -> View n
-singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) $ do
+singleDayView :: (m ~ H.HeistT n n, Functor n, Monad n, GetLupoConfig m, L.HasLocalizer m, U.HasURLMapper m) => E.Page -> N.Navigation m -> E.Comment -> [T.Text] -> [T.Text] -> View n
+singleDayView page nav c notice errs = View (formatTime "%Y-%m-%d" $ E.pageDay page) $ do
   H.callTemplate "day"
     [ ("lupo:day-title", V.dayTitle reqDay)
     , ("lupo:entries", pure entriesTemplate)
     , ("lupo:if-commented", ifCommented)
     , ("lupo:comments-caption", H.textSplice =<< L.localize "Comments")
-    , ("lupo:comments", H.mapSplices V.comment $ DB.dayComments day)
+    , ("lupo:comments", H.mapSplices V.comment $ E.pageComments page)
     , ("lupo:page-navigation", V.singleDayNavigation nav)
     , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
     , ("lupo:new-comment-notice", newCommentNotice)
     , ("lupo:new-comment-errors", newCommentErrors)
     , ("lupo:new-comment-url", U.urlSplice $ flip U.commentPostPath reqDay)
-    , ("lupo:comment-name", H.textSplice $ DB.commentName c)
-    , ("lupo:comment-body", H.textSplice $ DB.commentBody c)
+    , ("lupo:comment-name", H.textSplice $ E.commentName c)
+    , ("lupo:comment-body", H.textSplice $ E.commentBody c)
     , ("lupo:name-label", H.textSplice =<< L.localize "Name")
     , ("lupo:content-label", H.textSplice =<< L.localize "Content")
     ]
   where
-    reqDay = DB.day day
+    reqDay = E.pageDay page
 
-    entriesTemplate = concat $ snd $ L.mapAccumL accum 1 $ DB.dayEntries day
+    entriesTemplate = concat $ snd $ L.mapAccumL accum 1 $ E.pageEntries page
       where
         accum i e = (succ i, V.anEntry (Just i) e)
 
     ifCommented
-      | DB.numOfComments day > 0 = childNodes <$> H.getParamNode
+      | E.numOfComments page > 0 = childNodes <$> H.getParamNode
       | otherwise = pure []
 
     newCommentNotice
@@ -138,49 +128,30 @@ singleDayView day nav c notice errs = View (formatTime "%Y-%m-%d" $ DB.day day) 
       txt' <- L.localize txt
       pure $ [Element "li" [] [TextNode txt']]
 
-multiDaysView :: ( m ~ H.HeistT n n
-                 , Functor n
-                 , Monad n
-                 , L.HasLocalizer m
-                 , GetLupoConfig m
-                 , U.HasURLMapper m
-                 )
-              => N.Navigation m -> [DB.Day] -> View n
-multiDaysView nav days = View title $ do
+multiDaysView :: (m ~ H.HeistT n n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m, U.HasURLMapper m) => N.Navigation m -> [E.Page] -> View n
+multiDaysView nav pages = View title $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   H.callTemplate "multi-days"
     [ ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
-    , ("lupo:day-summaries", H.mapSplices V.daySummary days)
+    , ("lupo:day-summaries", H.mapSplices V.daySummary pages)
     ]
   where
     title =
-      case days of
-        ds@((DB.day -> d) : _) -> [st|#{formatTime "%Y-%m-%d" d}-#{toText $ length ds}|]
+      case pages of
+        ds@((E.pageDay -> d) : _) -> [st|#{formatTime "%Y-%m-%d" d}-#{toText $ length ds}|]
         _ -> ""
 
-monthView :: ( m ~ H.HeistT n n
-             , Functor n
-             , Monad n
-             , L.HasLocalizer m
-             , GetLupoConfig m
-             , U.HasURLMapper m
-             )
-          => N.Navigation m -> [DB.Day] -> View n
-monthView nav days = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
+monthView :: (m ~ H.HeistT n n, Functor n, Monad n, L.HasLocalizer m, GetLupoConfig m, U.HasURLMapper m) => N.Navigation m -> [E.Page] -> View n
+monthView nav pages = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
   H.callTemplate "multi-days"
     [ ("lupo:page-navigation", V.monthNavigation nav)
-    , ("lupo:day-summaries", if null days then
+    , ("lupo:day-summaries", if null pages then
                                V.emptyMonth
                              else
-                               H.mapSplices V.daySummary days)
+                               H.mapSplices V.daySummary pages)
     ]
 
-searchResultView :: ( Functor m
-                    , MonadIO m
-                    , GetLupoConfig (H.HeistT m m)
-                    , U.HasURLMapper (H.HeistT m m)
-                    )
-                 => T.Text -> [DB.Saved DB.Entry] -> View m
+searchResultView :: (Functor m, MonadIO m, GetLupoConfig (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => T.Text -> [E.Saved E.Entry] -> View m
 searchResultView word es = View word $ H.callTemplate "search-result"
   [ ("lupo:search-word", H.textSplice word)
   , ("lupo:search-results", H.mapSplices V.searchResult es)
@@ -196,60 +167,57 @@ initAccountView = View "Init Account" $ H.callTemplate "init-account"
   [ ("lupo:init-account-url", U.urlSplice U.initAccountPath)
   ]
 
-adminView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => [DB.Day] -> View m
+adminView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => [E.Page] -> View m
 adminView days = View "Lupo Admin" $ H.callTemplate "admin"
   [ ("lupo:days", H.mapSplices makeDayRow days)
   , ("lupo:new-entry-url", U.urlSplice $ flip U.fullPath "admin/new")
   ]
   where
-    makeDayRow DB.Day { DB.dayEntries = []
+    makeDayRow E.Page { E.pageEntries = []
                       } = pure []
-    makeDayRow DB.Day { DB.dayEntries = e : es
+    makeDayRow E.Page { E.pageEntries = e : es
                       , ..
                       } = do
-        headRow
-           <- (dateTh :) <$> makeEntryRow e
+        headRow <- (dateTh :) <$> makeEntryRow e
         tailRows <- sequence $ makeEntryRow <$> es
         pure $ tr <$> headRow : tailRows
       where
         tr t = Element "tr" [] t
 
         dateTh = Element "th" [("class", "date"), ("rowspan", toText $ length $ e : es)]
-          [ TextNode $ formatTime "%Y-%m-%d" day
+          [ TextNode $ formatTime "%Y-%m-%d" pageDay
           ]
 
-        makeEntryRow e'@DB.Saved {..} = do
+        makeEntryRow e'@E.Saved {..} = do
           (Encoding.decodeUtf8 -> editPath) <- U.getURL $ flip U.entryEditPath e'
           pure
-            [ Element "td" [] [TextNode $ DB.entryTitle savedContent]
+            [ Element "td" [] [TextNode $ E.entryTitle savedContent]
             , Element "td" [("class", "action")]
               [ Element "a" [("href", editPath)] [TextNode "Edit"]
               ]
             ]
 
-entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
-                => DB.Saved DB.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
-entryEditorView DB.Saved {..} editType editPath =
+entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => E.Saved E.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
+entryEditorView E.Saved {..} editType editPath =
   View editorTitle $ H.callTemplate "entry-editor"
-    [ ("lupo:editor-title", H.textSplice [st|#{editType}: #{editorTitle}: #{DB.entryTitle savedContent}|])
+    [ ("lupo:editor-title", H.textSplice [st|#{editType}: #{editorTitle}: #{E.entryTitle savedContent}|])
     , ("lupo:edit-path", U.urlSplice editPath)
-    , ("lupo:entry-title", H.textSplice $ DB.entryTitle savedContent)
-    , ("lupo:entry-body", H.textSplice $ DB.entryBody savedContent)
+    , ("lupo:entry-title", H.textSplice $ E.entryTitle savedContent)
+    , ("lupo:entry-body", H.textSplice $ E.entryBody savedContent)
     ]
   where
     editorTitle = formatTime "%Y-%m-%d" createdAt
 
-entryPreviewView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m))
-                 => DB.Saved DB.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
-entryPreviewView e@DB.Saved {..} editType editPath =
+entryPreviewView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => E.Saved E.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View m
+entryPreviewView e@E.Saved {..} editType editPath =
   View previewTitle $ H.callTemplate "entry-preview"
     [ ( "lupo:preview-title"
-      , H.textSplice [st|#{editType}: #{previewTitle}: #{DB.entryTitle savedContent}|]
+      , H.textSplice [st|#{editType}: #{previewTitle}: #{E.entryTitle savedContent}|]
       )
     , ("lupo:preview-body", pure $ V.anEntry Nothing e)
     , ("lupo:edit-path", U.urlSplice editPath)
-    , ("lupo:entry-title", H.textSplice $ DB.entryTitle savedContent)
-    , ("lupo:entry-body", H.textSplice $ DB.entryBody savedContent)
+    , ("lupo:entry-title", H.textSplice $ E.entryTitle savedContent)
+    , ("lupo:entry-body", H.textSplice $ E.entryBody savedContent)
     ]
   where
     previewTitle = formatTime "%Y-%m-%d" createdAt
