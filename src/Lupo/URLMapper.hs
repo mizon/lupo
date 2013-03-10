@@ -9,7 +9,7 @@ module Lupo.URLMapper
   , URLMapper (..)
   , Path
   , getURL
-  , urlSplice
+  , toURLSplice
   , makeURLMapper
   ) where
 
@@ -20,7 +20,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Time as Time
 import Text.Shakespeare.Text
-import qualified Heist as H
 import qualified Heist.Interpreted as H
 
 import qualified Lupo.Entry as E
@@ -51,8 +50,8 @@ type Path = BS.ByteString
 getURL :: HasURLMapper m => (URLMapper -> a) -> m a
 getURL = (<$> getURLMapper)
 
-urlSplice :: (HasURLMapper (H.HeistT m m), Monad m) => (URLMapper -> BS.ByteString) -> H.Splice m
-urlSplice f = H.textSplice =<< Encoding.decodeUtf8 <$> getURL f
+toURLSplice :: Monad m => Path -> H.Splice m
+toURLSplice = H.textSplice . Encoding.decodeUtf8
 
 makeURLMapper :: Path -> URLMapper
 makeURLMapper basePath = URLMapper

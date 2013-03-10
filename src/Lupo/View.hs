@@ -54,7 +54,7 @@ render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
         H.bindSplices
         [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "diary.css")
+        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "diary.css")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
@@ -64,7 +64,7 @@ renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
   where
     bindSplices = H.bindSplices
       [ ("lupo:page-title", H.textSplice viewTitle)
-      , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "plain.css")
+      , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "plain.css")
       , ("apply-content", viewSplice)
       ]
 
@@ -75,8 +75,8 @@ renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
         H.bindSplices
         [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", U.urlSplice $ flip U.cssPath "admin.css")
-        , ("lupo:admin-url", U.urlSplice U.adminPath)
+        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "admin.css")
+        , ("lupo:admin-url", U.toURLSplice =<< U.getURL U.adminPath)
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
@@ -93,7 +93,7 @@ singleDayView page nav c notice errs = View (formatTime "%Y-%m-%d" $ E.pageDay p
     , ("lupo:new-comment-caption", H.textSplice =<< L.localize "New Comment")
     , ("lupo:new-comment-notice", newCommentNotice)
     , ("lupo:new-comment-errors", newCommentErrors)
-    , ("lupo:new-comment-url", U.urlSplice $ flip U.commentPostPath reqDay)
+    , ("lupo:new-comment-url", U.toURLSplice =<< U.getURL U.commentPostPath <*> pure reqDay)
     , ("lupo:comment-name", H.textSplice $ E.commentName c)
     , ("lupo:comment-body", H.textSplice $ E.commentBody c)
     , ("lupo:name-label", H.textSplice =<< L.localize "Name")
@@ -159,18 +159,18 @@ searchResultView word es = View word $ H.callTemplate "search-result"
 
 loginView :: (Monad m, U.HasURLMapper (H.HeistT m m)) => View m
 loginView = View "Login" $ H.callTemplate "login"
-  [ ("lupo:login-url", U.urlSplice U.loginPath)
+  [ ("lupo:login-url", U.toURLSplice =<< U.getURL U.loginPath)
   ]
 
 initAccountView :: (Monad m, U.HasURLMapper (H.HeistT m m)) => View m
 initAccountView = View "Init Account" $ H.callTemplate "init-account"
-  [ ("lupo:init-account-url", U.urlSplice U.initAccountPath)
+  [ ("lupo:init-account-url", U.toURLSplice =<< U.getURL U.initAccountPath)
   ]
 
 adminView :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => [E.Page] -> View m
 adminView days = View "Lupo Admin" $ H.callTemplate "admin"
   [ ("lupo:days", H.mapSplices makeDayRow days)
-  , ("lupo:new-entry-url", U.urlSplice $ flip U.fullPath "admin/new")
+  , ("lupo:new-entry-url", U.toURLSplice =<< U.getURL U.fullPath <*> pure "admin/new")
   ]
   where
     makeDayRow E.Page { E.pageEntries = []
@@ -189,7 +189,7 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin"
           ]
 
         makeEntryRow e'@E.Saved {..} = do
-          (Encoding.decodeUtf8 -> editPath) <- U.getURL $ flip U.entryEditPath e'
+          editPath <- Encoding.decodeUtf8 <$> (U.getURL U.entryEditPath <*> pure e')
           pure
             [ Element "td" [] [TextNode $ E.entryTitle savedContent]
             , Element "td" [("class", "action")]
@@ -201,7 +201,7 @@ entryEditorView :: (Monad m, L.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.He
 entryEditorView E.Saved {..} editType editPath =
   View editorTitle $ H.callTemplate "entry-editor"
     [ ("lupo:editor-title", H.textSplice [st|#{editType}: #{editorTitle}: #{E.entryTitle savedContent}|])
-    , ("lupo:edit-path", U.urlSplice editPath)
+    , ("lupo:edit-path", U.toURLSplice =<< U.getURL editPath)
     , ("lupo:entry-title", H.textSplice $ E.entryTitle savedContent)
     , ("lupo:entry-body", H.textSplice $ E.entryBody savedContent)
     ]
@@ -215,7 +215,7 @@ entryPreviewView e@E.Saved {..} editType editPath =
       , H.textSplice [st|#{editType}: #{previewTitle}: #{E.entryTitle savedContent}|]
       )
     , ("lupo:preview-body", pure $ V.anEntry Nothing e)
-    , ("lupo:edit-path", U.urlSplice editPath)
+    , ("lupo:edit-path", U.toURLSplice =<< U.getURL editPath)
     , ("lupo:entry-title", H.textSplice $ E.entryTitle savedContent)
     , ("lupo:entry-body", H.textSplice $ E.entryBody savedContent)
     ]

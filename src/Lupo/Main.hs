@@ -75,8 +75,8 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   onUnload $ DB.disconnect conn
   H.addSplices
     [ ("lupo:language", H.textSplice lcLanguage)
-    , ("lupo:top-page-path", U.urlSplice U.topPagePath)
-    , ("lupo:search-path", U.urlSplice $ flip U.fullPath "search")
+    , ("lupo:top-page-path", U.toURLSplice =<< U.getURL U.topPagePath)
+    , ("lupo:search-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "search")
     ]
   pure $ Lupo h s a (E.makeEntryDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
   where

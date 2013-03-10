@@ -56,8 +56,8 @@ daySummary E.Page {..} = H.callTemplate "_day-summary"
       | otherwise = LL.localize "New Comment"
 
     linkToComment
-      | numOfComments > 0 = U.urlSplice $ flip U.commentsPath pageDay
-      | otherwise = U.urlSplice $ flip U.newCommentPath pageDay
+      | numOfComments > 0 = U.toURLSplice =<< U.getURL U.commentsPath <*> pure pageDay
+      | otherwise = U.toURLSplice =<< U.getURL U.newCommentPath <*> pure pageDay
 
 dayTitle :: (U.HasURLMapper (H.HeistT m m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
