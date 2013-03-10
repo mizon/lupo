@@ -48,7 +48,7 @@ data URLMapper = URLMapper
 
 type Path = BS.ByteString
 
-getURL :: HasURLMapper m => (URLMapper -> Path) -> m Path
+getURL :: HasURLMapper m => (URLMapper -> a) -> m a
 getURL = (<$> getURLMapper)
 
 urlSplice :: (HasURLMapper (H.HeistT m m), Monad m) => (URLMapper -> BS.ByteString) -> H.Splice m

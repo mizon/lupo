@@ -83,7 +83,7 @@ handleEntries = method GET $ do
   let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1)
                              $ L.findIndex (== entry)
                              $ LE.pageEntries day
-  (TE.decodeUtf8 -> base) <- U.getURL $ flip U.singleDayPath $ LE.pageDay day
+  base <- TE.decodeUtf8 <$> (U.getURL U.singleDayPath <*> pure (LE.pageDay day))
   redirect $ TE.encodeUtf8 [st|#{base}##{n}|]
   where
     makeEntryNumber = T.justifyRight 2 '0' . toText
@@ -110,7 +110,7 @@ handleComment = method POST $ do
     Right _ -> do
       ndb <- getNoticeDB
       Notice.addNotice ndb "Your comment was posted successfully."
-      redirect =<< U.getURL (flip U.newCommentPath reqDay)
+      redirect =<< U.getURL U.newCommentPath <*> pure reqDay
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do

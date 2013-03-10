@@ -53,7 +53,7 @@ handleAdmin = requireAuth $ do
   View.renderAdmin $ View.adminView dayContents
   where
     getAllDays db = do
-      (zonedDay -> today) <- liftIO $ Time.getZonedTime
+      today <- zonedDay <$> liftIO Time.getZonedTime
       run_ $ E.beforeSavedDays db today $$ EL.consume
 
 handleInitAccount :: LupoHandler ()
@@ -62,8 +62,7 @@ handleInitAccount = do
   when exists pass
   method GET getInitAccountForm <|> method POST registerNewAccount
   where
-    getInitAccountForm =
-      View.renderPlain View.initAccountView
+    getInitAccountForm = View.renderPlain View.initAccountView
 
     registerNewAccount = do
       pass' <- bsParam "pass"
@@ -71,9 +70,8 @@ handleInitAccount = do
       redirect =<< U.getURL U.adminPath
 
 handleNewEntry :: LupoHandler ()
-handleNewEntry = requireAuth $
-      method GET (View.renderAdmin =<< getEditor (E.Entry "" ""))
-  <|> method POST submitEntry
+handleNewEntry = requireAuth $ method GET (View.renderAdmin =<< getEditor (E.Entry "" ""))
+                           <|> method POST submitEntry
   where
     submitEntry = do
       action <- textParam "action"
