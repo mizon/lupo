@@ -35,7 +35,7 @@ form dd.submit {
   #main .day h3 {
     color: #039; }
   #main .day h5 {
-    font-size: medium; }
+    font-size: 80%; }
   #main .day p, #main .day ul, #main .day pre {
     margin: 0.5em 0 1em; }
   #main .day p.time {
