@@ -9,6 +9,7 @@ module Lupo.Entry
   ( DatabaseContext
   , HasDatabase (..)
   , EntryDatabase (..)
+  , EDBWrapper (..)
   , Page (..)
   , Saved (..)
   , Entry (..)
@@ -53,6 +54,10 @@ data EntryDatabase m = EntryDatabase
   , insertComment :: Time.Day -> Comment -> m ()
   }
 
+data EDBWrapper = EDBWrapper
+  { unEDBWrapper :: DatabaseContext m => EntryDatabase m
+  }
+
 data Page = Page
   { pageDay :: Time.Day
   , pageEntries :: [Saved Entry]
@@ -81,7 +86,7 @@ data Comment = Comment
   , commentBody :: T.Text
   } deriving (Eq, Show)
 
-makeEntryDatabase :: (DB.IConnection conn, DatabaseContext m) => conn -> IO (EntryDatabase m)
+makeEntryDatabase :: DB.IConnection conn => conn -> IO EDBWrapper
 makeEntryDatabase conn = do
   selectStatement <- prepareMutexStatement "SELECT * FROM entries WHERE id = ?"
   selectAllStatement <- prepareMutexStatement "SELECT * FROM entries ORDER BY created_at DESC"
@@ -94,7 +99,7 @@ makeEntryDatabase conn = do
   beforeSavedDaysStatement <- prepareMutexStatement "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC"
   afterSavedDaysStatement <- prepareMutexStatement "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC"
   insertCommentStatement <- prepareMutexStatement "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)"
-  pure EntryDatabase
+  pure $ EDBWrapper EntryDatabase
     { selectOne = \(DB.toSql -> id') ->
         withTransactionGeneric conn $
           withMutexStatement selectStatement $ \stmt ->
