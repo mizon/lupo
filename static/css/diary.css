@@ -45,6 +45,9 @@ form dd.submit {
   #main .day pre {
     background-color: #EEF;
     padding: 0.5em; }
+  #main .day blockquote {
+    background-color: #EEE;
+    padding: 0.5em; }
 
 * {
   margin: 0;
