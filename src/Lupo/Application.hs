@@ -33,7 +33,7 @@ data Lupo = Lupo
   { _heist :: Snaplet (SH.Heist Lupo)
   , _session :: Snaplet S.SessionManager
   , _auth :: Snaplet (A.AuthManager Lupo)
-  , entryDB :: E.DatabaseContext m => IO (E.EntryDatabase m)
+  , entryDB :: E.EDBWrapper
   , lupoConfig :: LupoConfig
   , localizer :: L.Localizer
   , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
@@ -47,9 +47,7 @@ instance SH.HasHeist Lupo where
   heistLens = subSnaplet heist
 
 instance (E.DatabaseContext m, MonadState Lupo m) => E.HasDatabase m where
-  getDatabase = do
-    getDB <- gets entryDB
-    liftIO getDB
+  getDatabase = E.unEDBWrapper <$> gets entryDB
 
 instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
   getLupoConfig = gets lupoConfig

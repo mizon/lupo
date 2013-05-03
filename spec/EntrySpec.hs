@@ -115,7 +115,7 @@ shouldSameContent (E.savedContent -> actual) expected = actual `shouldBe` expect
 
 withDB :: (E.EntryDatabase IO -> Expectation) -> Expectation
 withDB testBody = bracket initialize finalize $ \conn ->
-  testBody =<< E.makeEntryDatabase conn
+  testBody =<< E.unEDBWrapper <$>  E.makeEntryDatabase conn
   where
     initialize = do
       conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
