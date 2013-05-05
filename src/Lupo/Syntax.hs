@@ -56,8 +56,9 @@ block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
       pure $ Element "p" [] $ renderInline $ T.concat ls
 
     plainLine = do
-      (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
-      pure $ T.append (T.singleton h) t
+      c <- A.satisfy $ not . flip elem specialSymbols
+      cs <- toEOL
+      pure $ T.append (T.singleton c) cs
 
     specialSymbols = ['#', '*', '>', ' ', '\n', '\r']
 
