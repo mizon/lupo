@@ -23,6 +23,7 @@ import Control.Concurrent
 import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Trans
+import Control.Monad.Writer
 import qualified Data.Enumerator as E
 import qualified Data.Enumerator.Internal as EI
 import qualified Data.Enumerator.List as EL
@@ -86,8 +87,8 @@ data Comment = Comment
   , commentBody :: T.Text
   } deriving (Eq, Show)
 
-makeEntryDatabase :: DB.IConnection conn => conn -> IO EDBWrapper
-makeEntryDatabase conn = do
+makeEntryDatabase :: DB.IConnection conn => conn -> (Comment -> Bool) -> IO EDBWrapper
+makeEntryDatabase conn spamFilter = do
   selectStatement <- prepareMutexStatement "SELECT * FROM entries WHERE id = ?"
   selectAllStatement <- prepareMutexStatement "SELECT * FROM entries ORDER BY created_at DESC"
   selectByDayStatement <- prepareMutexStatement "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC"
@@ -185,6 +186,14 @@ makeEntryDatabase conn = do
         }
       sqlToComment _ = error "in sql->comment conversion"
 
+      commentValidator = FV.makeFieldValidator $ \c@Comment {..} -> do
+        FV.checkIsEmtpy commentName "Name"
+        FV.checkIsTooLong commentName "Name"
+        FV.checkIsEmtpy commentBody "Content"
+        FV.checkIsTooLong commentBody "Content"
+        unless (spamFilter c) $
+          tell $ pure "Comment is invalid."
+
 getCreatedDay :: Saved a -> Time.Day
 getCreatedDay = zonedDay . createdAt
 
@@ -199,13 +208,6 @@ enumStatement conn mutex values step =
       e <- liftIO $ DB.fetchRow stmt
       loop stmt E.==<< f (maybe E.EOF (E.Chunks . pure) e)
     loop _ s = EI.returnI s
-
-commentValidator :: FV.FieldValidator Comment
-commentValidator = FV.makeFieldValidator $ \Comment {..} -> do
-  FV.checkIsEmtpy commentName "Name"
-  FV.checkIsTooLong commentName "Name"
-  FV.checkIsEmtpy commentBody "Content"
-  FV.checkIsTooLong commentBody "Content"
 
 sqlToEntry :: [DB.SqlValue] -> Saved Entry
 sqlToEntry [ DB.fromSql -> id'

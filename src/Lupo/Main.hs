@@ -47,6 +47,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
       ]
     ]
   , lcBasePath = ""
+  , lcSpamFilter = const True
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
@@ -55,7 +56,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   s <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "site_key.txt" "sess" $ Just 3600
   a <- nestSnaplet "auth" auth $ JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
-  edb <- liftIO $ E.makeEntryDatabase conn
+  edb <- liftIO $ E.makeEntryDatabase conn lcSpamFilter
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   A.addAuthSplices auth
   addRoutes

@@ -9,6 +9,8 @@ import Control.Applicative
 import qualified Data.Text as T
 import Text.XmlHtml
 
+import qualified Lupo.Entry as E
+
 data LupoConfig = LupoConfig
   { lcSiteTitle :: T.Text
   , lcSqlitePath :: FilePath
@@ -17,7 +19,8 @@ data LupoConfig = LupoConfig
   , lcDaysPerPage :: Integer
   , lcFooterBody :: [Node]
   , lcBasePath :: BS.ByteString
-  } deriving Show
+  , lcSpamFilter :: E.Comment -> Bool
+  }
 
 class (Monad m, Applicative m, Functor m) => GetLupoConfig m where
   getLupoConfig :: m LupoConfig

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -13,6 +14,7 @@ import Control.Lens
 import Control.Monad
 import Data.Enumerator
 import qualified Data.Enumerator.List as EL
+import qualified Data.Text as T
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
@@ -100,6 +102,13 @@ entrySpec = describe "database wrapper" $ do
         `shouldThrow` \(InvalidField msgs) ->
           Prelude.length msgs == 2
 
+  it "denies a spam comments" $ do
+    withDB $ \db -> do
+      let spamComment = E.Comment "spammer" "foo spam string bar"
+      E.insertComment db (Time.fromGregorian 2012 8 16) spamComment
+        `shouldThrow` \(InvalidField (msg : _)) ->
+          msg == "Comment is invalid."
+
 savedObjectSpec :: Spec
 savedObjectSpec = describe "container for persisted object" $
   it "has created day" $ do
@@ -115,7 +124,7 @@ shouldSameContent (E.savedContent -> actual) expected = actual `shouldBe` expect
 
 withDB :: (E.EntryDatabase IO -> Expectation) -> Expectation
 withDB testBody = bracket initialize finalize $ \conn ->
-  testBody =<< E.unEDBWrapper <$>  E.makeEntryDatabase conn
+  testBody =<< E.unEDBWrapper <$> E.makeEntryDatabase conn spamFilter
   where
     initialize = do
       conn <- Sqlite3.connectSqlite3 "./test.sqlite3"
@@ -127,3 +136,5 @@ withDB testBody = bracket initialize finalize $ \conn ->
         void $ DB.run conn "DELETE FROM entries" []
         void $ DB.run conn "DELETE FROM comments" []
       DB.disconnect conn
+
+    spamFilter E.Comment {..} = not $ T.isInfixOf "spam string" commentBody
