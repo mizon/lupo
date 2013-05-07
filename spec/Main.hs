@@ -1,7 +1,7 @@
 import Control.Monad
 import Test.Hspec
 
-import DatabaseSpec
+import EntrySpec
 import NavigationSpec
 import NoticeSpec
 import SyntaxSpec
@@ -10,7 +10,7 @@ import UtilSpec
 
 main :: IO ()
 main = hspec $ sequence_
-  [ databaseSpec
+  [ entrySpec
   , savedObjectSpec
   , navigationSpec
   , noticeSpec

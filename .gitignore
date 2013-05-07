@@ -5,3 +5,4 @@ cabal-dev/
 log/
 site_key.txt
 users.json
+tmp/

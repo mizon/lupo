@@ -9,7 +9,7 @@ module Lupo.URLMapper
   , URLMapper (..)
   , Path
   , getURL
-  , urlSplice
+  , toURLSplice
   , makeURLMapper
   ) where
 
@@ -20,18 +20,17 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Time as Time
 import Text.Shakespeare.Text
-import qualified Heist as H
 import qualified Heist.Interpreted as H
 
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import Lupo.Util
 
 class Functor m => HasURLMapper m where
   getURLMapper :: m URLMapper
 
 data URLMapper = URLMapper
-  { entryPath :: LDB.Saved LDB.Entry -> Path
-  , entryEditPath :: LDB.Saved LDB.Entry -> Path
+  { entryPath :: E.Saved E.Entry -> Path
+  , entryEditPath :: E.Saved E.Entry -> Path
   , singleDayPath :: Time.Day -> Path
   , multiDaysPath :: Time.Day -> Int -> Path
   , monthPath :: Time.Day -> Path
@@ -51,13 +50,13 @@ type Path = BS.ByteString
 getURL :: HasURLMapper m => (URLMapper -> a) -> m a
 getURL = (<$> getURLMapper)
 
-urlSplice :: (HasURLMapper (H.HeistT m m), Monad m) => (URLMapper -> BS.ByteString) -> H.Splice m
-urlSplice f = H.textSplice =<< Encoding.decodeUtf8 <$> getURL f
+toURLSplice :: Monad m => Path -> H.Splice m
+toURLSplice = H.textSplice . Encoding.decodeUtf8
 
 makeURLMapper :: Path -> URLMapper
 makeURLMapper basePath = URLMapper
-  { entryPath = \LDB.Saved {..} -> fullPath' $ "entries" </> show idx
-  , entryEditPath = \LDB.Saved {..} -> fullPath' $ "admin" </> show idx </> "edit"
+  { entryPath = \E.Saved {..} -> fullPath' $ "entries" </> show idx
+  , entryEditPath = \E.Saved {..} -> fullPath' $ "admin" </> show idx </> "edit"
   , singleDayPath = fullPath' . dayPath
   , multiDaysPath = \d n -> fullPath' $ T.unpack [st|#{dayPath d}-#{show n}|]
   , monthPath = fullPath' . T.unpack . formatTime "%Y%m"

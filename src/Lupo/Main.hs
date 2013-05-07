@@ -1,3 +1,4 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -24,7 +25,7 @@ import qualified Lupo.Locale as L
 import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
 import Lupo.Config
-import qualified Lupo.Database as EDB
+import qualified Lupo.Entry as E
 import qualified Lupo.Notice as N
 import qualified Lupo.PublicHandler as Public
 import qualified Lupo.URLMapper as U
@@ -46,16 +47,16 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
       ]
     ]
   , lcBasePath = ""
+  , lcSpamFilter = const True
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
   h <- nestSnaplet "heist" heist $ H.heistInit "templates"
-  s <- nestSnaplet "session" session $
-    Cookie.initCookieSessionManager "site_key.txt" "sess" (Just 3600)
-  a <- nestSnaplet "auth" auth $
-    JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
+  s <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "site_key.txt" "sess" $ Just 3600
+  a <- nestSnaplet "auth" auth $ JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
+  edb <- liftIO $ E.makeEntryDatabase conn lcSpamFilter
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   A.addAuthSplices auth
   addRoutes
@@ -77,9 +78,9 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   onUnload $ DB.disconnect conn
   H.addSplices
     [ ("lupo:language", H.textSplice lcLanguage)
-    , ("lupo:top-page-path", U.urlSplice U.topPagePath)
-    , ("lupo:search-path", U.urlSplice $ flip U.fullPath "search")
+    , ("lupo:top-page-path", U.toURLSplice =<< U.getURL U.topPagePath)
+    , ("lupo:search-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "search")
     ]
-  pure $ Lupo h s a (EDB.makeDatabase conn) lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
+  pure $ Lupo h s a edb lc l (initNoticeDB conn) $ U.makeURLMapper lcBasePath
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session

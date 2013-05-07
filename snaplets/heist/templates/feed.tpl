@@ -4,6 +4,6 @@
   <title><lupo:feed-title/></title>
   <updated><lupo:last-updated/></updated>
   <id><lupo:document-id/></id>
-  <author><name><lupo:author-name></name></author>
+  <author><name><lupo:author-name/></name></author>
   <lupo:entries/>
 </feed>

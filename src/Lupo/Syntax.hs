@@ -26,14 +26,14 @@ diaryParser = trimEmptyLines *> many (block <* trimEmptyLines) <* A.endOfInput
 renderInline :: T.Text -> [Node]
 renderInline = either undefined id . parse
   where
-    parse = A.parseOnly $ many $ anchor <|> text
+    parse = A.parseOnly $ many $ A.try anchor <|> text
       where
         anchor = do
           name <- A.char '[' *> A.takeTill (== ']') <* A.char ']'
           href <- A.char '(' *> A.takeTill (== ')') <* A.char ')'
           pure $ Element "a" [("href", href)] [TextNode name]
 
-        text = TextNode . T.pack <$> some (A.satisfy (/= '['))
+        text = TextNode . T.pack <$> ((:) <$> A.anyChar <*> many (A.satisfy (/= '[')))
 
 block :: A.Parser Node
 block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
@@ -56,8 +56,9 @@ block = heading <|> blockQuote <|> unorderedList <|> code <|> paragraph
       pure $ Element "p" [] $ renderInline $ T.concat ls
 
     plainLine = do
-      (h, t) <- beginWith $ A.satisfy $ not . flip elem specialSymbols
-      pure $ T.append (T.singleton h) t
+      c <- A.satisfy $ not . flip elem specialSymbols
+      cs <- toEOL
+      pure $ T.append (T.singleton c) cs
 
     specialSymbols = ['#', '*', '>', ' ', '\n', '\r']
 

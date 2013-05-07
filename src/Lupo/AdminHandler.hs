@@ -21,7 +21,7 @@ import Snap
 import qualified Snap.Snaplet.Auth as A
 
 import Lupo.Application
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as View
@@ -48,13 +48,13 @@ handleLogin =
 
 handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ do
-  db <- LDB.getDatabase
-  dayContents <- mapM (LDB.selectDay db) =<< getAllDays db
+  db <- E.getDatabase
+  dayContents <- mapM (E.selectPage db) =<< getAllDays db
   View.renderAdmin $ View.adminView dayContents
   where
     getAllDays db = do
-      (zonedDay -> today) <- liftIO $ Time.getZonedTime
-      run_ =<< (EL.consume >>==) <$> LDB.beforeSavedDays db today
+      today <- zonedDay <$> liftIO Time.getZonedTime
+      run_ $ E.beforeSavedDays db today $$ EL.consume
 
 handleInitAccount :: LupoHandler ()
 handleInitAccount = do
@@ -62,8 +62,7 @@ handleInitAccount = do
   when exists pass
   method GET getInitAccountForm <|> method POST registerNewAccount
   where
-    getInitAccountForm =
-      View.renderPlain View.initAccountView
+    getInitAccountForm = View.renderPlain View.initAccountView
 
     registerNewAccount = do
       pass' <- bsParam "pass"
@@ -71,17 +70,16 @@ handleInitAccount = do
       redirect =<< U.getURL U.adminPath
 
 handleNewEntry :: LupoHandler ()
-handleNewEntry = requireAuth $
-      method GET (View.renderAdmin =<< getEditor (LDB.Entry "" ""))
-  <|> method POST submitEntry
+handleNewEntry = requireAuth $ method GET (View.renderAdmin =<< getEditor (E.Entry "" ""))
+                           <|> method POST submitEntry
   where
     submitEntry = do
       action <- textParam "action"
-      entry <- LDB.Entry <$> textParam "title" <*> textParam "body"
+      entry <- E.Entry <$> textParam "title" <*> textParam "body"
       case action of
         "Submit" -> do
-          db <- LDB.getDatabase
-          LDB.insert db entry
+          db <- E.getDatabase
+          E.insert db entry
           redirect =<< U.getURL U.adminPath
         "Preview" -> View.renderAdmin =<< getPreview <$> dummySaved entry
         "Edit" -> View.renderAdmin =<< getEditor entry
@@ -95,11 +93,11 @@ handleNewEntry = requireAuth $
 
     dummySaved entry = do
       today <- liftIO Time.getZonedTime
-      pure LDB.Saved
-        { LDB.idx = undefined
-        , LDB.createdAt = today
-        , LDB.modifiedAt = undefined
-        , LDB.savedContent = entry
+      pure E.Saved
+        { E.idx = undefined
+        , E.createdAt = today
+        , E.modifiedAt = undefined
+        , E.savedContent = entry
         }
 
 handleEditEntry :: LupoHandler ()
@@ -108,23 +106,23 @@ handleEditEntry = requireAuth $
   <|> method POST updateEntry
   where
     showEntryEditor = do
-      db <- LDB.getDatabase
+      db <- E.getDatabase
       id' <- paramId
-      entry <- LDB.select db id'
+      entry <- E.selectOne db id'
       View.renderAdmin =<< getEditor entry
 
     updateEntry = do
       action <- textParam "action"
-      db <- LDB.getDatabase
+      db <- E.getDatabase
       id' <- paramId
-      entry <- LDB.Entry <$> textParam "title" <*> textParam "body"
-      baseEntry <- LDB.select db id'
+      entry <- E.Entry <$> textParam "title" <*> textParam "body"
+      baseEntry <- E.selectOne db id'
       case action of
         "Submit" -> do
-          LDB.update db id' entry
+          E.update db id' entry
           redirect =<< U.getURL U.adminPath
-        "Preview" -> View.renderAdmin =<< getPreview baseEntry {LDB.savedContent = entry}
-        "Edit" -> View.renderAdmin =<< getEditor baseEntry {LDB.savedContent = entry}
+        "Preview" -> View.renderAdmin =<< getPreview baseEntry {E.savedContent = entry}
+        "Edit" -> View.renderAdmin =<< getEditor baseEntry {E.savedContent = entry}
         _ -> undefined
 
     getEditor entry = pure
@@ -137,8 +135,8 @@ handleEditEntry = requireAuth $
 
 handleDeleteEntry :: LupoHandler ()
 handleDeleteEntry = requireAuth $ do
-  db <- LDB.getDatabase
-  LDB.delete db =<< paramId
+  db <- E.getDatabase
+  E.delete db =<< paramId
   redirect =<< U.getURL U.adminPath
 
 requireAuth :: LupoHandler a -> LupoHandler a

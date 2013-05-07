@@ -31,21 +31,20 @@ import qualified Heist as H
 import qualified Heist.Interpreted as H
 import Text.XmlHtml
 
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import qualified Lupo.Locale as LL
 import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 
-renderBody :: LDB.Entry -> H.Template
-renderBody LDB.Entry {..} = S.renderBody entryBody
+renderBody :: E.Entry -> H.Template
+renderBody E.Entry {..} = S.renderBody entryBody
 
-daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
-           => LDB.Day -> H.Splice m
-daySummary LDB.Day {..} = H.callTemplate "_day-summary"
-  [ ("lupo:day-title", dayTitle day)
-  , ("lupo:day-entries", pure $ anEntry Nothing =<< dayEntries)
+daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => E.Page -> H.Splice m
+daySummary E.Page {..} = H.callTemplate "_day-summary"
+  [ ("lupo:day-title", dayTitle pageDay)
+  , ("lupo:day-entries", pure $ anEntry Nothing =<< pageEntries)
   , ("lupo:link-to-comment", linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
@@ -57,8 +56,8 @@ daySummary LDB.Day {..} = H.callTemplate "_day-summary"
       | otherwise = LL.localize "New Comment"
 
     linkToComment
-      | numOfComments > 0 = U.urlSplice $ flip U.commentsPath day
-      | otherwise = U.urlSplice $ flip U.newCommentPath day
+      | numOfComments > 0 = U.toURLSplice =<< U.getURL U.commentsPath <*> pure pageDay
+      | otherwise = U.toURLSplice =<< U.getURL U.newCommentPath <*> pure pageDay
 
 dayTitle :: (U.HasURLMapper (H.HeistT m m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
@@ -67,32 +66,31 @@ dayTitle d = do
   where
     dayFormat = formatTime "%Y-%m-%d"
 
-anEntry :: Maybe Int -> LDB.Saved LDB.Entry -> H.Template
-anEntry index LDB.Saved {..} =
-     Element "h3" entryHeadlineAttr (S.renderInline $ LDB.entryTitle savedContent)
-   : S.renderBody (LDB.entryBody savedContent)
+anEntry :: Maybe Int -> E.Saved E.Entry -> H.Template
+anEntry index E.Saved {..} =
+     Element "h3" entryHeadlineAttr (S.renderInline $ E.entryTitle savedContent)
+   : S.renderBody (E.entryBody savedContent)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
   where
     entryHeadlineAttr = maybe [] (\i -> [("id", T.justifyRight 2 '0' $ toText i)]) index
 
-comment :: (Monad m, LL.HasLocalizer (H.HeistT m m)) => LDB.Saved LDB.Comment -> H.Splice m
-comment LDB.Saved {..} = H.callTemplate "_comment"
-  [ ("lupo:comment-name", H.textSplice $ LDB.commentName savedContent)
+comment :: (Monad m, LL.HasLocalizer (H.HeistT m m)) => E.Saved E.Comment -> H.Splice m
+comment E.Saved {..} = H.callTemplate "_comment"
+  [ ("lupo:comment-name", H.textSplice $ E.commentName savedContent)
   , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ createdAt)
   , ("lupo:comment-content", commentBodySplice)
   ]
   where
     commentBodySplice = pure $ L.intersperse (Element "br" [] [])
-                      $ TextNode <$> (T.lines $ LDB.commentBody savedContent)
+                      $ TextNode <$> (T.lines $ E.commentBody savedContent)
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do
   message <- LL.localize "no this month entries"
   pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
-searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m))
-             => LDB.Saved LDB.Entry -> H.Splice m
-searchResult e@LDB.Saved {..} = do
+searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => E.Saved E.Entry -> H.Splice m
+searchResult e@E.Saved {..} = do
   (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ flip U.singleDayPath $ zonedDay createdAt
   (Encoding.decodeUtf8 -> entryLink) <- U.getURL $ flip U.entryPath e
   pure
@@ -101,14 +99,13 @@ searchResult e@LDB.Saved {..} = do
         [ Element "a" [("href", dayLink)] [TextNode $ timeToText createdAt]
         ]
       , Element "th" [("class", "result-title")]
-        [ Element "a" [("href", entryLink)] [TextNode $ LDB.entryTitle savedContent]
+        [ Element "a" [("href", entryLink)] [TextNode $ E.entryTitle savedContent]
         ]
-      , Element "td" [] [TextNode $ T.take 30 $ LDB.entryBody savedContent]
+      , Element "td" [] [TextNode $ T.take 30 $ E.entryBody savedContent]
       ]
     ]
 
-monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
-                => N.Navigation (H.HeistT m m) -> H.Splice m
+monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => N.Navigation (H.HeistT m m) -> H.Splice m
 monthNavigation nav = do
   previous <- N.getPreviousMonth nav
   next <- N.getNextMonth nav
@@ -124,8 +121,7 @@ monthNavigation nav = do
       (Encoding.decodeUtf8 -> monthPath) <- U.getURL $ flip U.monthPath m
       pure [Element "a" [("href", monthPath)] [TextNode body]]
 
-singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
-                    => N.Navigation (H.HeistT m m) -> H.Splice m
+singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => N.Navigation (H.HeistT m m) -> H.Splice m
 singleDayNavigation nav = do
   previous <- N.getPreviousDay nav
   next <- N.getNextDay nav
@@ -146,8 +142,7 @@ singleDayNavigation nav = do
       (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
       pure [Element "a" [("href", link)] [TextNode body]]
 
-multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
-                    => Integer -> N.Navigation (H.HeistT m m) -> H.Splice m
+multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => Integer -> N.Navigation (H.HeistT m m) -> H.Splice m
 multiDaysNavigation nDays nav = do
   previous <- N.getPreviousPageTop nav nDays
   next <- N.getNextPageTop nav nDays

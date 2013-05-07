@@ -69,5 +69,15 @@ Click here [HaskellWiki](http://www.haskell.org/haskellwiki/Haskell) .
       , TextNode " ."
       ]
     ]
+
+  it "doesn't expand partial markups" $
+    parseDiary [st|
+Click here [HaskellWiki](http://www.haskell.org/haskellwiki/Haskell .
+|] `shouldBe` Right
+   [ Element "p" []
+     [ TextNode "Click here "
+     , TextNode "[HaskellWiki](http://www.haskell.org/haskellwiki/Haskell ."
+     ]
+   ]
   where
     parseDiary = A.parseOnly S.diaryParser

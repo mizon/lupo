@@ -10,7 +10,7 @@ import Data.Enumerator
 import qualified Data.Enumerator.List as EL
 import qualified Data.Time as Time
 
-import qualified Lupo.Database as LDB
+import qualified Lupo.Entry as E
 import Lupo.Util
 
 data Navigation m = Navigation
@@ -23,47 +23,37 @@ data Navigation m = Navigation
   , getPreviousMonth :: m (Maybe Time.Day)
   }
 
-makeNavigation :: (Functor m, Applicative m, Monad m)
-               => LDB.Database m -> Time.Day -> Navigation m
+makeNavigation :: (Functor m, Applicative m, Monad m) => E.EntryDatabase m -> Time.Day -> Navigation m
 makeNavigation db base = Navigation
-  { getNextDay = do
-      enum <- daysAfterTommorow
-      run_ $ enum $$ EL.head
-
-  , getPreviousDay = do
-      enum <- daysBeforeYesterday
-      run_ $ enum $$ EL.head
+  { getNextDay = run_ $ daysAfterTommorow $$ EL.head
+  , getPreviousDay = run_ $ daysBeforeYesterday $$ EL.head
 
   , getThisMonth =
       case Time.toGregorian base of
         (y, m, _) -> Time.fromGregorian y m 1
 
   , getNextPageTop = \nDays -> do
-      enum <- daysAfterTommorow
-      nextDays <- run_ $ enum $$ EL.take nDays
+      nextDays <- run_ $ daysAfterTommorow $$ EL.take nDays
       pure $ nextDays `safeIndex` (fromIntegral $ pred nDays)
 
   , getPreviousPageTop = \nDays -> do
-      enum <- daysBeforeYesterday
-      previousDays <- run_ $ enum $$ EL.take nDays
+      previousDays <- run_ $ daysBeforeYesterday $$ EL.take nDays
       pure $ previousDays `safeIndex` (fromIntegral $ pred nDays)
 
   , getNextMonth = do
-      days <- daysAfterTommorow
-      e <- run_ $ days $$ findOtherMonthEntries
+      e <- run_ $ daysAfterTommorow $$ findOtherMonthEntries
       pure $ pure getNextMonth' <* e
 
   , getPreviousMonth = do
-      days <- daysBeforeYesterday
-      e <- run_ $ days $$ findOtherMonthEntries
+      e <- run_ $ daysBeforeYesterday $$ findOtherMonthEntries
       pure $ pure getPreviousMonth' <* e
   }
   where
-    daysBeforeYesterday = LDB.beforeSavedDays db yesterday
+    daysBeforeYesterday = E.beforeSavedDays db yesterday
       where
         yesterday = Time.addDays (-1) base
 
-    daysAfterTommorow = LDB.afterSavedDays db tommorow
+    daysAfterTommorow = E.afterSavedDays db tommorow
       where
         tommorow = Time.addDays 1 base
 
