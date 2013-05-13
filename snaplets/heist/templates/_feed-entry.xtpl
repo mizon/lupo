@@ -1,0 +1,8 @@
+<entry>
+<title><lupo:title/></title>
+<link href="${lupo:link}"/>
+<id><lupo:entry-id/></id>
+<published><lupo:published/></published>
+<updated><lupo:updated/></updated>
+<summary><lupo:summary/></summary>
+</entry>
