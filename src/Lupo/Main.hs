@@ -74,6 +74,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("entries/:id", Public.handleEntries)
     , (":query", Public.handleDay =<< textParam "query")
     , (":day/comment", Public.handleComment)
+    , ("recent.atom", Public.handleFeed)
     ]
   onUnload $ DB.disconnect conn
   H.addSplices

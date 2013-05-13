@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -10,6 +11,7 @@ module Lupo.PublicHandler
   , handleEntries
   , handleSearch
   , handleComment
+  , handleFeed
   ) where
 
 import Control.Lens.Getter
@@ -25,8 +27,10 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
+import qualified Heist.Interpreted as H
 import Prelude hiding (catch, filter)
 import Snap
+import qualified Snap.Snaplet.Heist as SH
 import System.Locale
 import Text.Shakespeare.Text hiding (toText)
 
@@ -111,6 +115,37 @@ handleComment = method POST $ do
       ndb <- getNoticeDB
       Notice.addNotice ndb "Your comment was posted successfully."
       redirect =<< U.getURL U.newCommentPath <*> pure reqDay
+
+handleFeed :: LupoHandler ()
+handleFeed = method GET $ do
+  db <- LE.getDatabase
+  title <- refLupoConfig lcSiteTitle
+  entries <- E.run_ $ LE.selectAll db $$ EL.take 10
+  let lastUpdated = LE.modifiedAt <$> listToMaybe entries
+  urls <- U.getURLMapper
+  SH.withSplices
+    [ ("lupo:feed-title", textSplice title)
+    , ("lupo:last-updated", textSplice $ maybe "" (formatTime "%Y-%m-%d") lastUpdated)
+    , ("lupo:index-path", textSplice $ TE.decodeUtf8 $ U.fullPath urls "")
+    , ("lupo:feed-id", textSplice $ TE.decodeUtf8 $ U.fullPath urls "recent.atom")
+    , ("lupo:author-name", textSplice "Keita Mizuochi")
+    , ("lupo:entries", H.mapSplices entryToFeed entries)
+    ] $ SH.renderAs "application/atom+xml" "feed"
+  where
+    entryToFeed :: LE.Saved LE.Entry -> H.Splice LupoHandler
+    entryToFeed e@LE.Saved {..} = do
+      H.callTemplate "_feed-entry"
+        [ ("lupo:title", textSplice $ LE.entryTitle savedContent)
+        , ("lupo:link", urlSplice)
+        , ("lupo:entry-id", urlSplice)
+        , ("lupo:published", textSplice $ formatTimeForAtom createdAt)
+        , ("lupo:updated", textSplice $ formatTimeForAtom modifiedAt)
+        , ("lupo:summary", textSplice $ LE.entryBody savedContent)
+        ]
+      where
+        urlSplice = do
+          urls <- U.getURLMapper
+          textSplice $ TE.decodeUtf8 $ U.entryPath urls e
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
