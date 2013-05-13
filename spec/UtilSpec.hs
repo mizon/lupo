@@ -10,6 +10,7 @@ import Control.Applicative
 import Control.Lens.Getter
 import qualified Data.Text as T
 import qualified Data.Time as Time
+import System.Locale
 import Test.Hspec
 import Test.QuickCheck
 
@@ -30,6 +31,10 @@ utilSpec = describe "utility functions" $ do
       case U.safeIndex xs i of
         Just x -> x == xs !! i
         Nothing -> i < 0 || length xs <= i
+
+  it "format zoned-time for atom feeds" $ do
+    property $ \zoned ->
+      U.formatTimeForAtom zoned == T.pack (Time.formatTime defaultTimeLocale "%FT%T%z" zoned)
 
 instance Arbitrary Time.ZonedTime where
   arbitrary = do

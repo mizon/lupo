@@ -12,6 +12,7 @@ module Lupo.Util
   , toText
   , formatTime
   , safeIndex
+  , formatTimeForAtom
   ) where
 
 import Control.Lens
@@ -64,3 +65,6 @@ safeIndex :: [b] -> Int -> Maybe b
 safeIndex xs i
   | Ix.inRange (0, length xs - 1) i = Just $ xs !! i
   | otherwise = Nothing
+
+formatTimeForAtom :: Time.ZonedTime -> T.Text
+formatTimeForAtom = formatTime "%FT%T%z"
