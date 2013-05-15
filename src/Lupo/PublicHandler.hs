@@ -82,11 +82,11 @@ handleEntries :: LupoHandler ()
 handleEntries = method GET $ do
   db <- LE.getDatabase
   entry <- join $ LE.selectOne <$> pure db <*> paramId
-  day <- LE.selectPage db $ LE.createdAt entry ^. zonedTimeToLocalTime ^. localDay
+  page <- LE.selectPage db $ LE.createdAt entry ^. zonedTimeToLocalTime ^. localDay
   let n = maybe (error "must not happen") (+ 1)
         $ L.findIndex (== entry)
-        $ LE.pageEntries day
-  base <- U.getURL U.singleDayPath <*> pure (LE.pageDay day)
+        $ LE.pageEntries page
+  base <- U.getURL U.singleDayPath <*> pure (LE.pageDay page)
   redirect $ TE.encodeUtf8 [st|#{TE.decodeUtf8 base}##{makeEntryNumber n}|]
   where
     makeEntryNumber = T.justifyRight 2 '0' . toText
