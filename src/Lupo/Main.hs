@@ -48,6 +48,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
     ]
   , lcBasePath = ""
   , lcSpamFilter = const True
+  , lcAuthorName = ""
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo

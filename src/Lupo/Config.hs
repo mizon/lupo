@@ -20,6 +20,7 @@ data LupoConfig = LupoConfig
   , lcFooterBody :: [Node]
   , lcBasePath :: BS.ByteString
   , lcSpamFilter :: E.Comment -> Bool
+  , lcAuthorName :: T.Text
   }
 
 class (Monad m, Applicative m, Functor m) => GetLupoConfig m where
