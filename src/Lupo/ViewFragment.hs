@@ -61,8 +61,8 @@ daySummary E.Page {..} = H.callTemplate "_day-summary"
 
 dayTitle :: (U.HasURLMapper (H.HeistT m m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
-  (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.singleDayPath d
-  pure $ [Element "a" [("href", link)] [TextNode $ dayFormat d]]
+  link <- U.getURL $ flip U.singleDayPath d
+  pure $ [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode $ dayFormat d]]
   where
     dayFormat = formatTime "%Y-%m-%d"
 
@@ -135,12 +135,12 @@ singleDayNavigation nav = do
     ]
   where
     mkDayLink body = maybe (pure [TextNode body]) $ \d_ -> do
-      (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.singleDayPath d_
-      pure [Element "a" [("href", link)] [TextNode body]]
+      link <- U.getURL $ flip U.singleDayPath d_
+      pure [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode body]]
 
     thisMonthLink body = do
-      (Encoding.decodeUtf8 -> link) <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
-      pure [Element "a" [("href", link)] [TextNode body]]
+      link <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
+      pure [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode body]]
 
 multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => Integer -> N.Navigation (H.HeistT m m) -> H.Splice m
 multiDaysNavigation nDays nav = do
@@ -168,5 +168,5 @@ newestLink :: (LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m))
            => H.Splice m
 newestLink = do
   label <- LL.localize "Newest"
-  (Encoding.decodeUtf8 -> link) <- U.getURL U.topPagePath
-  pure [Element "a" [("href", link)] [TextNode label]]
+  link <- U.getURL U.topPagePath
+  pure [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode label]]

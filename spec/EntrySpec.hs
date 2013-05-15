@@ -21,6 +21,7 @@ import qualified Database.HDBC.Sqlite3 as Sqlite3
 
 import Test.Hspec
 
+import qualified Lupo.Backend.Entry as E
 import qualified Lupo.Entry as E
 import Lupo.Exception
 import Lupo.Util

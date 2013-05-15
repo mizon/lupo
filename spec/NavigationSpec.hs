@@ -13,6 +13,7 @@ import qualified Data.Enumerator as E
 import qualified Data.Time as Time
 import Test.Hspec
 
+import qualified Lupo.Backend.Navigation as N
 import qualified Lupo.Entry as DB
 import qualified Lupo.Navigation as N
 

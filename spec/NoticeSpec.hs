@@ -12,6 +12,7 @@ import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
 import Test.Hspec
 
+import qualified Lupo.Backend.Notice as N
 import qualified Lupo.Notice as N
 
 noticeSpec :: Spec

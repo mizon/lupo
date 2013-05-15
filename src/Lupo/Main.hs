@@ -21,12 +21,13 @@ import qualified Snap.Snaplet.Session.Backends.CookieSession as Cookie
 import Snap.Util.FileServe
 import Text.XmlHtml
 
-import qualified Lupo.Locale as L
 import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
+import qualified Lupo.Backend.Entry as E
+import qualified Lupo.Backend.Notice as N
+import qualified Lupo.Backend.URLMapper as U
 import Lupo.Config
-import qualified Lupo.Entry as E
-import qualified Lupo.Notice as N
+import qualified Lupo.Locale as L
 import qualified Lupo.PublicHandler as Public
 import qualified Lupo.URLMapper as U
 import Lupo.Util
