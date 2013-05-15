@@ -73,6 +73,10 @@ library
   exposed-modules:
     Lupo.AdminHandler,
     Lupo.Application,
+    Lupo.Backend.Entry,
+    Lupo.Backend.Navigation,
+    Lupo.Backend.Notice,
+    Lupo.Backend.URLMapper,
     Lupo.Config,
     Lupo.Entry,
     Lupo.Exception,
@@ -86,4 +90,4 @@ library
     Lupo.URLMapper,
     Lupo.Util,
     Lupo.View,
-    Lupo.ViewFragment
+    Lupo.View.Internal
