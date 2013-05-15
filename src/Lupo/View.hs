@@ -42,7 +42,7 @@ import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
 import qualified Lupo.URLMapper as U
 import Lupo.Util
-import qualified Lupo.ViewFragment as V
+import qualified Lupo.View.Internal as V
 
 data View m = View
   { render :: m ()
