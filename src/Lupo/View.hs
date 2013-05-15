@@ -18,7 +18,7 @@ module Lupo.View
   , adminView
   , entryEditorView
   , entryPreviewView
-  , feedSplice
+  , entriesFeed
   ) where
 
 import Control.Applicative
@@ -189,19 +189,19 @@ entryPreviewView e@E.Saved {..} editType editPath = makeView renderAdmin $
   where
     previewTitle = formatTime "%Y-%m-%d" createdAt
 
-feedSplice :: [E.Saved E.Entry] -> H.Splice LupoHandler
-feedSplice entries = do
+entriesFeed :: [E.Saved E.Entry] -> View LupoHandler
+entriesFeed entries = View $ do
   title <- refLupoConfig lcSiteTitle
   author <- refLupoConfig lcAuthorName
   urls <- U.getURLMapper
-  H.callTemplate "feed"
+  SH.withSplices
     [ ("lupo:feed-title", textSplice title)
     , ("lupo:last-updated", textSplice $ maybe "" (formatTime "%Y-%m-%d") lastUpdated)
     , ("lupo:index-path", textSplice $ Encoding.decodeUtf8 $ U.fullPath urls "")
     , ("lupo:feed-id", textSplice $ Encoding.decodeUtf8 $ U.fullPath urls "recent.atom")
     , ("lupo:author-name", textSplice author)
     , ("lupo:entries", H.mapSplices entryToFeed entries)
-    ]
+    ] $ SH.renderAs "application/atom+xml" "feed"
   where
     lastUpdated = E.modifiedAt <$> listToMaybe entries
 
@@ -227,28 +227,15 @@ entryToFeed e@E.Saved {..} = H.callTemplate "_feed-entry"
       urls <- U.getURLMapper
       textSplice $ Encoding.decodeUtf8 $ U.entryPath urls e
 
-makePageTitle :: GetLupoConfig n => ViewRep m -> n T.Text
-makePageTitle ViewRep {..} = do
-  siteTitle <- refLupoConfig lcSiteTitle
-  pure $
-    case viewTitle of
-      "" -> siteTitle
-      t -> [st|#{siteTitle} | #{t}|]
-
-makeView :: (ViewRep m -> m ()) -> ViewRep m -> View m
-makeView renderer rep = View $ renderer rep
-
 data ViewRep m = ViewRep
   { viewTitle :: T.Text
   , viewSplice :: H.Splice m
   }
 
-renderPublic :: ( h ~ H.HeistT (Handler b b) (Handler b b)
-          , SH.HasHeist b
-          , GetLupoConfig h
-          , U.HasURLMapper h
-          )
-       => ViewRep (Handler b b) -> Handler b v ()
+makeView :: (ViewRep m -> m ()) -> ViewRep m -> View m
+makeView renderer rep = View $ renderer rep
+
+renderPublic :: ( h ~ H.HeistT (Handler b b) (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h) => ViewRep (Handler b b) -> Handler b v ()
 renderPublic v@ViewRep {..} = SH.heistLocal bindSplices $ SH.render "public"
   where
     bindSplices =
@@ -271,12 +258,7 @@ renderPlain ViewRep {..} = SH.heistLocal bindSplices $ SH.render "default"
       , ("apply-content", viewSplice)
       ]
 
-renderAdmin :: ( h ~ H.HeistT (Handler b b) (Handler b b)
-               , SH.HasHeist b
-               , GetLupoConfig h
-               , U.HasURLMapper h
-               )
-            => ViewRep (Handler b b) -> Handler b v ()
+renderAdmin :: ( h ~ H.HeistT (Handler b b) (Handler b b), SH.HasHeist b, GetLupoConfig h, U.HasURLMapper h) => ViewRep (Handler b b) -> Handler b v ()
 renderAdmin v@ViewRep {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
   where
     bindSplices =
@@ -288,3 +270,11 @@ renderAdmin v@ViewRep {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
         ]
       . H.bindSplice "lupo:main-body" viewSplice
+
+makePageTitle :: GetLupoConfig n => ViewRep m -> n T.Text
+makePageTitle ViewRep {..} = do
+  siteTitle <- refLupoConfig lcSiteTitle
+  pure $
+    case viewTitle of
+      "" -> siteTitle
+      t -> [st|#{siteTitle} | #{t}|]

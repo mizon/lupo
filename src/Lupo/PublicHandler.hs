@@ -24,17 +24,13 @@ import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
 import qualified Data.List as L
 import Data.Maybe
-import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
-import qualified Heist.Interpreted as H
 import Prelude hiding (catch, filter)
 import Snap
-import qualified Snap.Snaplet.Heist as SH
 import System.Locale
 import Text.Shakespeare.Text hiding (toText)
-import qualified Text.XmlHtml as X
 
 import Lupo.Application
 import Lupo.Config
@@ -42,7 +38,6 @@ import qualified Lupo.Entry as LE
 import Lupo.Exception
 import qualified Lupo.Navigation as N
 import qualified Lupo.Notice as Notice
-import qualified Lupo.Syntax as S
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
@@ -122,40 +117,8 @@ handleComment = method POST $ do
 handleFeed :: LupoHandler ()
 handleFeed = method GET $ do
   db <- LE.getDatabase
-  title <- refLupoConfig lcSiteTitle
   entries <- E.run_ $ LE.selectAll db $$ EL.take 10
-  let lastUpdated = LE.modifiedAt <$> listToMaybe entries
-  urls <- U.getURLMapper
-  SH.withSplices
-    [ ("lupo:feed-title", textSplice title)
-    , ("lupo:last-updated", textSplice $ maybe "" (formatTime "%Y-%m-%d") lastUpdated)
-    , ("lupo:index-path", textSplice $ TE.decodeUtf8 $ U.fullPath urls "")
-    , ("lupo:feed-id", textSplice $ TE.decodeUtf8 $ U.fullPath urls "recent.atom")
-    , ("lupo:author-name", textSplice "Keita Mizuochi")
-    , ("lupo:entries", H.mapSplices entryToFeed entries)
-    ] $ SH.renderAs "application/atom+xml" "feed"
-  where
-    entryToFeed e@LE.Saved {..} = do
-      H.callTemplate "_feed-entry"
-        [ ("lupo:title", textSplice $ LE.entryTitle savedContent)
-        , ("lupo:link", urlSplice)
-        , ("lupo:entry-id", urlSplice)
-        , ("lupo:published", textSplice $ formatTimeForAtom createdAt)
-        , ("lupo:updated", textSplice $ formatTimeForAtom modifiedAt)
-        , ("lupo:summary", textSplice $ getSummary $ LE.entryBody savedContent)
-        ]
-      where
-        getSummary = summarize . nodesToPlainText . S.renderBody
-          where
-            summarize t = if T.length t <= 140
-                          then t
-                          else T.take 140 t <> "..."
-
-            nodesToPlainText = L.foldl' (\l r -> l <> X.nodeText r) ""
-
-        urlSplice = do
-          urls <- U.getURLMapper
-          textSplice $ TE.decodeUtf8 $ U.entryPath urls e
+  V.render $ V.entriesFeed entries
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
