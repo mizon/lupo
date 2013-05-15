@@ -36,7 +36,7 @@ handleLogin =
       if cond then
         redirect =<< U.getURL U.adminPath
       else
-        View.renderPlain View.loginView
+        View.render View.loginView
 
     authenticate = do
       name <- bsParam "name"
@@ -50,7 +50,7 @@ handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ do
   db <- E.getDatabase
   dayContents <- mapM (E.selectPage db) =<< getAllDays db
-  View.renderAdmin $ View.adminView dayContents
+  View.render $ View.adminView dayContents
   where
     getAllDays db = do
       today <- zonedDay <$> liftIO Time.getZonedTime
@@ -62,7 +62,7 @@ handleInitAccount = do
   when exists pass
   method GET getInitAccountForm <|> method POST registerNewAccount
   where
-    getInitAccountForm = View.renderPlain View.initAccountView
+    getInitAccountForm = View.render View.initAccountView
 
     registerNewAccount = do
       pass' <- bsParam "pass"
@@ -70,7 +70,7 @@ handleInitAccount = do
       redirect =<< U.getURL U.adminPath
 
 handleNewEntry :: LupoHandler ()
-handleNewEntry = requireAuth $ method GET (View.renderAdmin =<< getEditor (E.Entry "" ""))
+handleNewEntry = requireAuth $ method GET (View.render =<< getEditor (E.Entry "" ""))
                            <|> method POST submitEntry
   where
     submitEntry = do
@@ -81,8 +81,8 @@ handleNewEntry = requireAuth $ method GET (View.renderAdmin =<< getEditor (E.Ent
           db <- E.getDatabase
           E.insert db entry
           redirect =<< U.getURL U.adminPath
-        "Preview" -> View.renderAdmin =<< getPreview <$> dummySaved entry
-        "Edit" -> View.renderAdmin =<< getEditor entry
+        "Preview" -> View.render =<< getPreview <$> dummySaved entry
+        "Edit" -> View.render =<< getEditor entry
         _ -> error "invalid request"
 
     getEditor entry = do
@@ -109,7 +109,7 @@ handleEditEntry = requireAuth $
       db <- E.getDatabase
       id' <- paramId
       entry <- E.selectOne db id'
-      View.renderAdmin =<< getEditor entry
+      View.render =<< getEditor entry
 
     updateEntry = do
       action <- textParam "action"
@@ -121,8 +121,8 @@ handleEditEntry = requireAuth $
         "Submit" -> do
           E.update db id' entry
           redirect =<< U.getURL U.adminPath
-        "Preview" -> View.renderAdmin =<< getPreview baseEntry {E.savedContent = entry}
-        "Edit" -> View.renderAdmin =<< getEditor baseEntry {E.savedContent = entry}
+        "Preview" -> View.render =<< getPreview baseEntry {E.savedContent = entry}
+        "Edit" -> View.render =<< getEditor baseEntry {E.savedContent = entry}
         _ -> undefined
 
     getEditor entry = pure

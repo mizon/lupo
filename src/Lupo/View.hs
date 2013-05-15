@@ -9,9 +9,6 @@
 
 module Lupo.View
   ( View (..)
-  , render
-  , renderPlain
-  , renderAdmin
   , singleDayView
   , multiDaysView
   , monthView
@@ -48,58 +45,11 @@ import Lupo.Util
 import qualified Lupo.ViewFragment as V
 
 data View m = View
-  { viewTitle :: T.Text
-  , viewSplice :: H.Splice m
+  { render :: m ()
   }
 
-render :: ( h ~ H.HeistT (Handler b b) (Handler b b)
-          , SH.HasHeist b
-          , GetLupoConfig h
-          , U.HasURLMapper h
-          )
-       => View (Handler b b) -> Handler b v ()
-render v@View {..} = SH.heistLocal bindSplices $ SH.render "public"
-  where
-    bindSplices =
-        H.bindSplices
-        [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
-        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "diary.css")
-        , ("lupo:footer-body", refLupoConfig lcFooterBody)
-        , ("lupo:feed-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "recent.atom")
-        , ("lupo:feed-icon-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "images/feed.png")
-        ]
-      . H.bindSplice "lupo:main-body" viewSplice
-
-renderPlain :: (h ~ (Handler b b), SH.HasHeist b, U.HasURLMapper (H.HeistT h h)) => View h -> Handler b v ()
-renderPlain View {..} = SH.heistLocal bindSplices $ SH.render "default"
-  where
-    bindSplices = H.bindSplices
-      [ ("lupo:page-title", H.textSplice viewTitle)
-      , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "plain.css")
-      , ("apply-content", viewSplice)
-      ]
-
-renderAdmin :: ( h ~ H.HeistT (Handler b b) (Handler b b)
-               , SH.HasHeist b
-               , GetLupoConfig h
-               , U.HasURLMapper h
-               )
-            => View (Handler b b) -> Handler b v ()
-renderAdmin v@View {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
-  where
-    bindSplices =
-        H.bindSplices
-        [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
-        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
-        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "admin.css")
-        , ("lupo:admin-url", U.toURLSplice =<< U.getURL U.adminPath)
-        , ("lupo:footer-body", refLupoConfig lcFooterBody)
-        ]
-      . H.bindSplice "lupo:main-body" viewSplice
-
 singleDayView :: m ~ H.HeistT LupoHandler LupoHandler => E.Page -> N.Navigation m -> E.Comment -> [T.Text] -> [T.Text] -> View LupoHandler
-singleDayView page nav c notice errs = View (formatTime "%Y-%m-%d" $ E.pageDay page) $ do
+singleDayView page nav c notice errs = makeView renderPublic $ ViewRep (formatTime "%Y-%m-%d" $ E.pageDay page) $ do
   H.callTemplate "day"
     [ ("lupo:day-title", V.dayTitle reqDay)
     , ("lupo:entries", pure entriesTemplate)
@@ -146,7 +96,7 @@ singleDayView page nav c notice errs = View (formatTime "%Y-%m-%d" $ E.pageDay p
       pure $ [Element "li" [] [TextNode txt']]
 
 multiDaysView :: m ~ H.HeistT LupoHandler LupoHandler => N.Navigation m -> [E.Page] -> View LupoHandler
-multiDaysView nav pages = View title $ do
+multiDaysView nav pages = makeView renderPublic $ ViewRep title $ do
   daysPerPage <- refLupoConfig lcDaysPerPage
   H.callTemplate "multi-days"
     [ ("lupo:page-navigation", V.multiDaysNavigation daysPerPage nav)
@@ -159,7 +109,7 @@ multiDaysView nav pages = View title $ do
         _ -> ""
 
 monthView :: m ~ H.HeistT LupoHandler LupoHandler => N.Navigation m -> [E.Page] -> View LupoHandler
-monthView nav pages = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
+monthView nav pages = makeView renderPublic $ ViewRep (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
   H.callTemplate "multi-days"
     [ ("lupo:page-navigation", V.monthNavigation nav)
     , ("lupo:day-summaries", if null pages then
@@ -169,23 +119,23 @@ monthView nav pages = View (formatTime "%Y-%m" $ N.getThisMonth nav) $ do
     ]
 
 searchResultView :: T.Text -> [E.Saved E.Entry] -> View LupoHandler
-searchResultView word es = View word $ H.callTemplate "search-result"
+searchResultView word es = makeView renderPublic $ ViewRep word $ H.callTemplate "search-result"
   [ ("lupo:search-word", H.textSplice word)
   , ("lupo:search-results", H.mapSplices V.searchResult es)
   ]
 
 loginView :: View LupoHandler
-loginView = View "Login" $ H.callTemplate "login"
+loginView = makeView renderPlain $ ViewRep "Login" $ H.callTemplate "login"
   [ ("lupo:login-url", U.toURLSplice =<< U.getURL U.loginPath)
   ]
 
 initAccountView :: View LupoHandler
-initAccountView = View "Init Account" $ H.callTemplate "init-account"
+initAccountView = makeView renderPlain $ ViewRep "Init Account" $ H.callTemplate "init-account"
   [ ("lupo:init-account-url", U.toURLSplice =<< U.getURL U.initAccountPath)
   ]
 
 adminView :: [E.Page] -> View LupoHandler
-adminView days = View "Lupo Admin" $ H.callTemplate "admin"
+adminView days = makeView renderAdmin $ ViewRep "Lupo Admin" $ H.callTemplate "admin"
   [ ("lupo:days", H.mapSplices makeDayRow days)
   , ("lupo:new-entry-url", U.toURLSplice =<< U.getURL U.fullPath <*> pure "admin/new")
   ]
@@ -215,8 +165,8 @@ adminView days = View "Lupo Admin" $ H.callTemplate "admin"
             ]
 
 entryEditorView :: E.Saved E.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View LupoHandler
-entryEditorView E.Saved {..} editType editPath =
-  View editorTitle $ H.callTemplate "entry-editor"
+entryEditorView E.Saved {..} editType editPath = makeView renderAdmin $
+  ViewRep editorTitle $ H.callTemplate "entry-editor"
     [ ("lupo:editor-title", H.textSplice [st|#{editType}: #{editorTitle}: #{E.entryTitle savedContent}|])
     , ("lupo:edit-path", U.toURLSplice =<< U.getURL editPath)
     , ("lupo:entry-title", H.textSplice $ E.entryTitle savedContent)
@@ -226,8 +176,8 @@ entryEditorView E.Saved {..} editType editPath =
     editorTitle = formatTime "%Y-%m-%d" createdAt
 
 entryPreviewView :: E.Saved E.Entry -> T.Text -> (U.URLMapper -> U.Path) -> View LupoHandler
-entryPreviewView e@E.Saved {..} editType editPath =
-  View previewTitle $ H.callTemplate "entry-preview"
+entryPreviewView e@E.Saved {..} editType editPath = makeView renderAdmin $
+  ViewRep previewTitle $ H.callTemplate "entry-preview"
     [ ( "lupo:preview-title"
       , H.textSplice [st|#{editType}: #{previewTitle}: #{E.entryTitle savedContent}|]
       )
@@ -277,10 +227,64 @@ entryToFeed e@E.Saved {..} = H.callTemplate "_feed-entry"
       urls <- U.getURLMapper
       textSplice $ Encoding.decodeUtf8 $ U.entryPath urls e
 
-makePageTitle :: GetLupoConfig n => View m -> n T.Text
-makePageTitle View {..} = do
+makePageTitle :: GetLupoConfig n => ViewRep m -> n T.Text
+makePageTitle ViewRep {..} = do
   siteTitle <- refLupoConfig lcSiteTitle
   pure $
     case viewTitle of
       "" -> siteTitle
       t -> [st|#{siteTitle} | #{t}|]
+
+makeView :: (ViewRep m -> m ()) -> ViewRep m -> View m
+makeView renderer rep = View $ renderer rep
+
+data ViewRep m = ViewRep
+  { viewTitle :: T.Text
+  , viewSplice :: H.Splice m
+  }
+
+renderPublic :: ( h ~ H.HeistT (Handler b b) (Handler b b)
+          , SH.HasHeist b
+          , GetLupoConfig h
+          , U.HasURLMapper h
+          )
+       => ViewRep (Handler b b) -> Handler b v ()
+renderPublic v@ViewRep {..} = SH.heistLocal bindSplices $ SH.render "public"
+  where
+    bindSplices =
+        H.bindSplices
+        [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
+        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
+        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "diary.css")
+        , ("lupo:footer-body", refLupoConfig lcFooterBody)
+        , ("lupo:feed-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "recent.atom")
+        , ("lupo:feed-icon-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "images/feed.png")
+        ]
+      . H.bindSplice "lupo:main-body" viewSplice
+
+renderPlain :: (h ~ (Handler b b), SH.HasHeist b, U.HasURLMapper (H.HeistT h h)) => ViewRep h -> Handler b v ()
+renderPlain ViewRep {..} = SH.heistLocal bindSplices $ SH.render "default"
+  where
+    bindSplices = H.bindSplices
+      [ ("lupo:page-title", H.textSplice viewTitle)
+      , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "plain.css")
+      , ("apply-content", viewSplice)
+      ]
+
+renderAdmin :: ( h ~ H.HeistT (Handler b b) (Handler b b)
+               , SH.HasHeist b
+               , GetLupoConfig h
+               , U.HasURLMapper h
+               )
+            => ViewRep (Handler b b) -> Handler b v ()
+renderAdmin v@ViewRep {..} = SH.heistLocal bindSplices $ SH.render "admin-frame"
+  where
+    bindSplices =
+        H.bindSplices
+        [ ("lupo:page-title", H.textSplice =<< makePageTitle v)
+        , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
+        , ("lupo:style-sheet", U.toURLSplice =<< U.getURL U.cssPath <*> pure "admin.css")
+        , ("lupo:admin-url", U.toURLSplice =<< U.getURL U.adminPath)
+        , ("lupo:footer-body", refLupoConfig lcFooterBody)
+        ]
+      . H.bindSplice "lupo:main-body" viewSplice
