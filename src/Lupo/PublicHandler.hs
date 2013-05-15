@@ -24,6 +24,7 @@ import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
 import qualified Data.List as L
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
@@ -33,6 +34,7 @@ import Snap
 import qualified Snap.Snaplet.Heist as SH
 import System.Locale
 import Text.Shakespeare.Text hiding (toText)
+import qualified Text.XmlHtml as X
 
 import Lupo.Application
 import Lupo.Config
@@ -40,6 +42,7 @@ import qualified Lupo.Entry as LE
 import Lupo.Exception
 import qualified Lupo.Navigation as N
 import qualified Lupo.Notice as Notice
+import qualified Lupo.Syntax as S
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
@@ -48,12 +51,12 @@ handleTop :: LupoHandler ()
 handleTop = do
   mustNoPathInfo
   db <- LE.getDatabase
-  (zonedDay -> today) <- liftIO $ Time.getZonedTime
+  today <- zonedDay <$> liftIO Time.getZonedTime
   latest <- run_ $ LE.beforeSavedDays db today $$ EL.head
   renderMultiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
   where
     mustNoPathInfo = do
-      (rqPathInfo -> path') <- getRequest
+      path' <- rqPathInfo <$> getRequest
       unless (BS.null path') pass
 
 handleDay :: T.Text -> LupoHandler ()
@@ -84,19 +87,19 @@ handleEntries = method GET $ do
   db <- LE.getDatabase
   entry <- join $ LE.selectOne <$> pure db <*> paramId
   day <- LE.selectPage db $ LE.createdAt entry ^. zonedTimeToLocalTime ^. localDay
-  let (makeEntryNumber -> n) = maybe (error "must not happen") (+ 1)
-                             $ L.findIndex (== entry)
-                             $ LE.pageEntries day
-  (TE.decodeUtf8 -> base) <- U.getURL U.singleDayPath <*> pure (LE.pageDay day)
-  redirect $ TE.encodeUtf8 [st|#{base}##{n}|]
+  let n = maybe (error "must not happen") (+ 1)
+        $ L.findIndex (== entry)
+        $ LE.pageEntries day
+  base <- U.getURL U.singleDayPath <*> pure (LE.pageDay day)
+  redirect $ TE.encodeUtf8 [st|#{TE.decodeUtf8 base}##{makeEntryNumber n}|]
   where
     makeEntryNumber = T.justifyRight 2 '0' . toText
 
 handleSearch :: LupoHandler ()
 handleSearch = do
   word <- textParam "word"
-  enum <- LE.search <$> LE.getDatabase <*> pure word
-  es <- run_ $ enum $$ EL.consume
+  esE <- LE.search <$> LE.getDatabase <*> pure word
+  es <- run_ $ esE $$ EL.consume
   V.render $ V.searchResultView word es
 
 handleComment :: LupoHandler ()
@@ -132,7 +135,6 @@ handleFeed = method GET $ do
     , ("lupo:entries", H.mapSplices entryToFeed entries)
     ] $ SH.renderAs "application/atom+xml" "feed"
   where
-    entryToFeed :: LE.Saved LE.Entry -> H.Splice LupoHandler
     entryToFeed e@LE.Saved {..} = do
       H.callTemplate "_feed-entry"
         [ ("lupo:title", textSplice $ LE.entryTitle savedContent)
@@ -140,9 +142,17 @@ handleFeed = method GET $ do
         , ("lupo:entry-id", urlSplice)
         , ("lupo:published", textSplice $ formatTimeForAtom createdAt)
         , ("lupo:updated", textSplice $ formatTimeForAtom modifiedAt)
-        , ("lupo:summary", textSplice $ LE.entryBody savedContent)
+        , ("lupo:summary", textSplice $ getSummary $ LE.entryBody savedContent)
         ]
       where
+        getSummary = summarize . nodesToPlainText . S.renderBody
+          where
+            summarize t = if T.length t <= 140
+                          then t
+                          else T.take 140 t <> "..."
+
+            nodesToPlainText = L.foldl' (\l r -> l <> X.nodeText r) ""
+
         urlSplice = do
           urls <- U.getURLMapper
           textSplice $ TE.decodeUtf8 $ U.entryPath urls e
