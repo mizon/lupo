@@ -74,7 +74,7 @@ handleDay = parseQuery $
       pure $ do
         db <- LE.getDatabase
         day <- LE.selectPage db reqDay
-        nav <- makeNavigation reqDay
+        nav <- navigation reqDay
         notice <- Notice.popAllNotice =<< getNoticeDB
         V.render $ V.singleDayView day nav (LE.Comment "" "") notice []
 
@@ -108,7 +108,7 @@ handleComment = method POST $ do
   case cond of
     Left (InvalidField msgs) -> do
       page <- LE.selectPage db reqDay
-      nav <- makeNavigation reqDay
+      nav <- navigation reqDay
       V.render $ V.singleDayView page nav comment [] msgs
     Right _ -> do
       ndb <- getNoticeDB
@@ -126,7 +126,7 @@ monthResponse = do
   reqMonth <- monthParser
   pure $ do
     db <- LE.getDatabase
-    nav <- makeNavigation reqMonth
+    nav <- navigation reqMonth
     days <- run_ $ LE.afterSavedDays db reqMonth $$ toDayContents db =$ takeSameMonthDays reqMonth
     V.render $ V.monthView nav days
   where
@@ -145,12 +145,12 @@ renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = do
   db <- LE.getDatabase
   targetDays <- run_ $ LE.beforeSavedDays db from $$ EL.take nDays
-  nav <- makeNavigation from
+  nav <- navigation from
   pages <- Prelude.mapM (LE.selectPage db) targetDays
   V.render $ V.multiDaysView nav pages
 
-makeNavigation :: (Functor m, Applicative m, LE.HasDatabase m, LE.DatabaseContext n) => Time.Day -> m (N.Navigation n)
-makeNavigation current = N.makeNavigation <$> LE.getDatabase <*> pure current
+navigation :: (Functor m, Applicative m, LE.HasDatabase m, LE.DatabaseContext n) => Time.Day -> m (N.Navigation n)
+navigation current = N.makeNavigation <$> LE.getDatabase <*> pure current
 
 dayParser :: A.Parser Time.Day
 dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
