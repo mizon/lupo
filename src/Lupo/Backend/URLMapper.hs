@@ -1,12 +1,14 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Lupo.Backend.URLMapper
   ( makeURLMapper
   ) where
 
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8 as C
 import Data.Monoid
 import qualified Data.Text as T
 import Text.Shakespeare.Text
@@ -17,24 +19,49 @@ import Lupo.Util
 
 makeURLMapper :: Path -> URLMapper
 makeURLMapper basePath = URLMapper
-  { entryPath = \E.Saved {..} -> fullPath' $ "entries" </> show idx
-  , entryEditPath = \E.Saved {..} -> fullPath' $ "admin" </> show idx </> "edit"
-  , singleDayPath = fullPath' . dayPath
-  , multiDaysPath = \d n -> fullPath' $ T.unpack [st|#{dayPath d}-#{show n}|]
-  , monthPath = fullPath' . T.unpack . formatTime "%Y%m"
-  , topPagePath = fullPath' ""
-  , adminPath = fullPath' "admin"
-  , loginPath = fullPath' "login"
-  , initAccountPath = fullPath' "init-account"
-  , commentPostPath = \d -> fullPath' $ dayPath d </> "comment#new-comment"
-  , newCommentPath = \d -> fullPath' $ dayPath d <> "#new-comment"
-  , commentsPath = \d -> fullPath' $ dayPath d <> "#comments"
-  , cssPath = \(BS.unpack -> css) -> fullPath' $ "css" </> css
-  , fullPath = \(BS.unpack -> path) -> fullPath' path
+  { entryPath = \E.Saved {..} ->
+      full $ "entries" </> show idx
+
+  , entryEditPath = \E.Saved {..} ->
+      full $ "admin" </> show idx </> "edit"
+
+  , singleDayPath = full . dayPath
+
+  , multiDaysPath = \d n ->
+      full [st|#{dayPath d}-#{show n}|]
+
+  , monthPath = full . formatTime "%Y%m"
+  , topPagePath = full ""
+  , adminPath = full "admin"
+  , loginPath = full "login"
+  , initAccountPath = full "init-account"
+
+  , commentPostPath = \d ->
+      full $ dayPath d </> "comment#new-comment"
+
+  , newCommentPath = \d ->
+      full $ dayPath d <> "#new-comment"
+
+  , commentsPath = \d ->
+      full $ dayPath d <> "#comments"
+
+  , cssPath = \css ->
+      full $ "css" </> css
+
+  , fullPath = full
   }
   where
-    dayPath = T.unpack . formatTime "%Y%m%d"
-    fullPath' = BS.pack . (BS.unpack basePath </>)
+    dayPath = toString . formatTime "%Y%m%d"
+    full path = C.pack $ toString basePath </> toString path
 
-    p </> c = p <> "/" <> c
+    p </> c = toString p <> "/" <> toString c
     infixl 5 </>
+
+class ToString a where
+  toString :: a -> String
+instance ToString String where
+  toString = id
+instance ToString C.ByteString where
+  toString = C.unpack
+instance ToString T.Text where
+  toString = T.unpack

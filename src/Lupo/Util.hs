@@ -30,10 +30,12 @@ import qualified System.Locale as L
 import Text.XmlHtml
 
 localDay :: Simple Lens Time.LocalTime Time.Day
-localDay = lens Time.localDay $ \ld d -> ld {Time.localDay = d}
+localDay = lens Time.localDay $ \ld d ->
+  ld {Time.localDay = d}
 
 zonedTimeToLocalTime :: Simple Lens Time.ZonedTime Time.LocalTime
-zonedTimeToLocalTime = lens Time.zonedTimeToLocalTime $ \zd ld -> zd {Time.zonedTimeToLocalTime = ld}
+zonedTimeToLocalTime = lens Time.zonedTimeToLocalTime $ \zd ld ->
+  zd {Time.zonedTimeToLocalTime = ld}
 
 paramId :: (MonadSnap m, Integral a) => m a
 paramId = paramNum "id"

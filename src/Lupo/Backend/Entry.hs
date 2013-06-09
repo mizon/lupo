@@ -27,11 +27,10 @@ import Lupo.Util
 
 makeEntryDatabase :: DB.IConnection conn => conn -> (Comment -> Bool) -> IO EDBWrapper
 makeEntryDatabase conn spamFilter = do
-  statements <- newIORef M.empty
-  let pool = makeStatementPool conn statements
+  pool <- makeStatementPool conn <$> newIORef M.empty
   pure $ EDBWrapper EntryDatabase
     { selectOne = \(DB.toSql -> id') ->
-        withTransactionGeneric conn $ liftIO $ do
+        liftIO $ withTransactionGeneric conn $ do
           stmt <- useStatement pool "SELECT * FROM entries WHERE id = ?"
           void $ DB.execute stmt [id']
           row <- DB.fetchRow stmt
@@ -53,7 +52,7 @@ makeEntryDatabase conn spamFilter = do
         enumStatement pool "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC" [word, word] E.$= EL.map sqlToEntry
 
     , insert = \Entry {..} ->
-        withTransactionGeneric conn $ liftIO $ do
+        liftIO $ withTransactionGeneric conn $ do
           stmt <- useStatement pool "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -65,7 +64,7 @@ makeEntryDatabase conn spamFilter = do
             ]
 
     , update = \i Entry {..} ->
-        withTransactionGeneric conn $ liftIO $ do
+        liftIO $ withTransactionGeneric conn $ do
           stmt <- useStatement pool "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -75,10 +74,10 @@ makeEntryDatabase conn spamFilter = do
             , DB.toSql i
             ]
 
-    , delete = \(DB.toSql -> i) -> liftIO $
-        withTransactionGeneric conn $ do
-          stmt <- liftIO $ useStatement pool "DELETE FROM entries WHERE id = ?"
-          status <- liftIO $ DB.execute stmt [i]
+    , delete = \(DB.toSql -> i) ->
+        liftIO $ withTransactionGeneric conn $ do
+          stmt <- useStatement pool "DELETE FROM entries WHERE id = ?"
+          status <- DB.execute stmt [i]
           when (status /= 1) $
             throw RecordNotFound
 
@@ -90,7 +89,7 @@ makeEntryDatabase conn spamFilter = do
 
     , insertComment = \d c@Comment {..} -> do
         FV.validate commentValidator c
-        withTransactionGeneric conn $ liftIO $ do
+        liftIO $ withTransactionGeneric conn $ do
           stmt <- useStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -102,11 +101,10 @@ makeEntryDatabase conn spamFilter = do
             ]
     }
   where
-    enumStatement pool stmt values step =
-      withTransactionGeneric conn $ do
-        stmt' <- liftIO $ useStatement pool stmt
-        void $ liftIO $ DB.execute stmt' values
-        loop stmt' step
+    enumStatement pool stmt values step = withTransactionGeneric conn $ do
+      stmt' <- liftIO $ useStatement pool stmt
+      void $ liftIO $ DB.execute stmt' values
+      loop stmt' step
       where
         loop stmt' (E.Continue f) = do
           e <- liftIO $ DB.fetchRow stmt'
@@ -144,10 +142,10 @@ makeStatementPool conn statements = StatementPool doUseStatement
     doUseStatement stmt = do
       stmts <- readIORef statements
       case M.lookup stmt stmts of
-        Just stmt' -> pure stmt'
+        Just prepared -> pure prepared
         Nothing -> do
-          stmt' <- DB.prepare conn stmt
-          statements `modifyIORef` M.insert stmt stmt'
+          prepared <- DB.prepare conn stmt
+          statements `modifyIORef` M.insert stmt prepared
           doUseStatement stmt
 
 sqlToEntry :: [DB.SqlValue] -> Saved Entry

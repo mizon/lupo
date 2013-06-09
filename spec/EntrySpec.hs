@@ -18,7 +18,6 @@ import qualified Data.Text as T
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
 import qualified Database.HDBC.Sqlite3 as Sqlite3
-
 import Test.Hspec
 
 import qualified Lupo.Backend.Entry as E
