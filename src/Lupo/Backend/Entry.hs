@@ -106,9 +106,9 @@ makeEntryDatabase conn spamFilter = do
     }
   where
     enumStatement pool stmt values step =  do
-      prepared <- retryingTransaction conn $ do
-        prepared' <- liftIO $ useStatement pool stmt
-        void $ liftIO $ DB.execute prepared' values
+      prepared <- liftIO $ retryingTransaction conn $ do
+        prepared' <- useStatement pool stmt
+        void $ DB.execute prepared' values
         pure prepared'
       loop prepared step
       where
@@ -177,7 +177,7 @@ retryingTransaction conn action = actionWithRetrying (3 :: Int) <* liftIO (DB.co
       if count > 0 then do
         liftIO $ threadDelay delayTime
         actionWithRetrying $ pred count
-      else do
+      else
         throw e
       where
         delayTime = 1 * 10 ^ (6 :: Int)
