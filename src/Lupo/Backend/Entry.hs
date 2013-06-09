@@ -10,7 +10,7 @@ module Lupo.Backend.Entry
 
 import Control.Applicative
 import Control.Concurrent
-import Control.Exception hiding (catch, throw)
+import Control.Exception hiding (bracket, catch, throw)
 import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Trans
@@ -34,10 +34,10 @@ makeEntryDatabase conn spamFilter = do
   pool <- makeStatementPool conn <$> newIORef M.empty
   pure $ EDBWrapper EntryDatabase
     { selectOne = \(DB.toSql -> id') -> do
-        row <- liftIO $ retryingTransaction conn $ do
-          stmt <- useStatement pool "SELECT * FROM entries WHERE id = ?"
-          void $ DB.execute stmt [id']
-          DB.fetchRow stmt
+        row <- liftIO $ retryingTransaction conn $
+          withStatement pool "SELECT * FROM entries WHERE id = ?" $ \stmt -> do
+            void $ DB.execute stmt [id']
+            DB.fetchRow stmt
         maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
     , selectAll = enumStatement pool "SELECT * FROM entries ORDER BY created_at DESC" [] E.$= EL.map sqlToEntry
@@ -56,32 +56,32 @@ makeEntryDatabase conn spamFilter = do
         enumStatement pool "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC" [word, word] E.$= EL.map sqlToEntry
 
     , insert = \Entry {..} ->
-        liftIO $ retryingTransaction conn $ do
-          stmt <- useStatement pool "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
-          now <- Time.getZonedTime
-          void $ DB.execute stmt
-            [ DB.toSql now
-            , DB.toSql now
-            , DB.toSql $ zonedDay now
-            , DB.toSql entryTitle
-            , DB.toSql entryBody
-            ]
+        liftIO $ retryingTransaction conn $
+          withStatement pool "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)" $ \stmt -> do
+            now <- Time.getZonedTime
+            void $ DB.execute stmt
+              [ DB.toSql now
+              , DB.toSql now
+              , DB.toSql $ zonedDay now
+              , DB.toSql entryTitle
+              , DB.toSql entryBody
+              ]
 
     , update = \i Entry {..} ->
-        liftIO $ retryingTransaction conn $ do
-          stmt <- useStatement pool "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
-          now <- Time.getZonedTime
-          void $ DB.execute stmt
-            [ DB.toSql now
-            , DB.toSql entryTitle
-            , DB.toSql entryBody
-            , DB.toSql i
-            ]
+        liftIO $ retryingTransaction conn $
+          withStatement pool "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?" $ \stmt -> do
+            now <- Time.getZonedTime
+            void $ DB.execute stmt
+              [ DB.toSql now
+              , DB.toSql entryTitle
+              , DB.toSql entryBody
+              , DB.toSql i
+              ]
 
     , delete = \(DB.toSql -> i) -> do
         status <- liftIO $ retryingTransaction conn $ do
-          stmt <- useStatement pool "DELETE FROM entries WHERE id = ?"
-          DB.execute stmt [i]
+          withStatement pool "DELETE FROM entries WHERE id = ?" $ \stmt ->
+            DB.execute stmt [i]
         when (status /= 1) $
           throw RecordNotFound
 
@@ -94,23 +94,21 @@ makeEntryDatabase conn spamFilter = do
     , insertComment = \d c@Comment {..} -> do
         FV.validate commentValidator c
         liftIO $ retryingTransaction conn $ do
-          stmt <- useStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)"
-          now <- Time.getZonedTime
-          void $ DB.execute stmt
-            [ DB.toSql now
-            , DB.toSql now
-            , DB.toSql d
-            , DB.toSql commentName
-            , DB.toSql commentBody
-            ]
+          withStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)" $ \stmt -> do
+            now <- Time.getZonedTime
+            void $ DB.execute stmt
+              [ DB.toSql now
+              , DB.toSql now
+              , DB.toSql d
+              , DB.toSql commentName
+              , DB.toSql commentBody
+              ]
     }
   where
-    enumStatement pool stmt values step =  do
-      prepared <- liftIO $ retryingTransaction conn $ do
-        prepared' <- useStatement pool stmt
-        void $ DB.execute prepared' values
-        pure prepared'
-      loop prepared step
+    enumStatement pool stmt values step = retryingTransaction conn $
+      withStatement pool stmt $ \prepared -> do
+        void $ liftIO $ DB.execute prepared values
+        loop prepared step
       where
         loop prepared (E.Continue f) = do
           e <- liftIO $ DB.fetchRow prepared
@@ -141,6 +139,12 @@ makeEntryDatabase conn spamFilter = do
 data StatementPool = StatementPool
   { useStatement :: String -> IO DB.Statement
   }
+
+withStatement :: MonadCatchIO m => StatementPool -> String -> (DB.Statement -> m a) -> m a
+withStatement pool stmt = bracket getStatement finishStatement
+  where
+    getStatement = liftIO $ useStatement pool stmt
+    finishStatement = liftIO . DB.finish
 
 makeStatementPool :: DB.IConnection conn => conn -> IORef (M.Map String DB.Statement) -> StatementPool
 makeStatementPool conn statements = StatementPool doUseStatement
