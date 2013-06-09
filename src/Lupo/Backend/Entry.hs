@@ -1,3 +1,4 @@
+{-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -169,10 +170,9 @@ sqlToEntry [ DB.fromSql -> id'
 sqlToEntry _ = error "in sql->entry conversion"
 
 retryingTransaction :: (Applicative m, MonadCatchIO m, DB.IConnection conn) => conn -> m a -> m a
-retryingTransaction conn action = actionWithRetrying 3 <* liftIO (DB.commit conn)
+retryingTransaction conn action = actionWithRetrying (3 :: Int) <* liftIO (DB.commit conn)
   where
     actionWithRetrying count = action `catch` \(e :: SomeException) -> do
-      liftIO $ print e
       liftIO $ DB.rollback conn
       if count > 0 then do
         liftIO $ threadDelay delayTime
@@ -180,7 +180,7 @@ retryingTransaction conn action = actionWithRetrying 3 <* liftIO (DB.commit conn
       else do
         throw e
       where
-        delayTime = 1 * 10 ^ 6
+        delayTime = 1 * 10 ^ (6 :: Int)
 
 makePage :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Page
 makePage d es cs = Page
