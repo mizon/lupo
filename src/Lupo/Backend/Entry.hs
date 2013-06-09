@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Lupo.Backend.Entry
@@ -7,6 +8,8 @@ module Lupo.Backend.Entry
   ) where
 
 import Control.Applicative
+import Control.Concurrent
+import Control.Exception hiding (catch, throw)
 import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Trans
@@ -18,7 +21,7 @@ import Data.IORef
 import qualified Data.Map as M
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
-import Prelude hiding (all)
+import Prelude hiding (all, catch)
 
 import Lupo.Entry
 import Lupo.Exception
@@ -29,17 +32,17 @@ makeEntryDatabase :: DB.IConnection conn => conn -> (Comment -> Bool) -> IO EDBW
 makeEntryDatabase conn spamFilter = do
   pool <- makeStatementPool conn <$> newIORef M.empty
   pure $ EDBWrapper EntryDatabase
-    { selectOne = \(DB.toSql -> id') ->
-        liftIO $ withTransactionGeneric conn $ do
+    { selectOne = \(DB.toSql -> id') -> do
+        row <- liftIO $ retryingTransaction conn $ do
           stmt <- useStatement pool "SELECT * FROM entries WHERE id = ?"
           void $ DB.execute stmt [id']
-          row <- DB.fetchRow stmt
-          maybe (throw RecordNotFound) (pure . sqlToEntry) row
+          DB.fetchRow stmt
+        maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
     , selectAll = enumStatement pool "SELECT * FROM entries ORDER BY created_at DESC" [] E.$= EL.map sqlToEntry
 
     , selectPage = \d@(DB.toSql -> sqlDay) ->
-        withTransactionGeneric conn $ do
+        retryingTransaction conn $ do
           entries <- E.run_ $ enumStatement pool "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC" [sqlDay]
                          E.$= EL.map sqlToEntry
                          E.$$ EL.consume
@@ -52,7 +55,7 @@ makeEntryDatabase conn spamFilter = do
         enumStatement pool "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC" [word, word] E.$= EL.map sqlToEntry
 
     , insert = \Entry {..} ->
-        liftIO $ withTransactionGeneric conn $ do
+        liftIO $ retryingTransaction conn $ do
           stmt <- useStatement pool "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -64,7 +67,7 @@ makeEntryDatabase conn spamFilter = do
             ]
 
     , update = \i Entry {..} ->
-        liftIO $ withTransactionGeneric conn $ do
+        liftIO $ retryingTransaction conn $ do
           stmt <- useStatement pool "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -74,12 +77,12 @@ makeEntryDatabase conn spamFilter = do
             , DB.toSql i
             ]
 
-    , delete = \(DB.toSql -> i) ->
-        liftIO $ withTransactionGeneric conn $ do
+    , delete = \(DB.toSql -> i) -> do
+        status <- liftIO $ retryingTransaction conn $ do
           stmt <- useStatement pool "DELETE FROM entries WHERE id = ?"
-          status <- DB.execute stmt [i]
-          when (status /= 1) $
-            throw RecordNotFound
+          DB.execute stmt [i]
+        when (status /= 1) $
+          throw RecordNotFound
 
     , beforeSavedDays = \(DB.toSql -> d) ->
         enumStatement pool "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC" [d] E.$= EL.map (DB.fromSql . Prelude.head)
@@ -89,7 +92,7 @@ makeEntryDatabase conn spamFilter = do
 
     , insertComment = \d c@Comment {..} -> do
         FV.validate commentValidator c
-        liftIO $ withTransactionGeneric conn $ do
+        liftIO $ retryingTransaction conn $ do
           stmt <- useStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)"
           now <- Time.getZonedTime
           void $ DB.execute stmt
@@ -101,14 +104,16 @@ makeEntryDatabase conn spamFilter = do
             ]
     }
   where
-    enumStatement pool stmt values step = withTransactionGeneric conn $ do
-      stmt' <- liftIO $ useStatement pool stmt
-      void $ liftIO $ DB.execute stmt' values
-      loop stmt' step
+    enumStatement pool stmt values step =  do
+      prepared <- retryingTransaction conn $ do
+        prepared' <- liftIO $ useStatement pool stmt
+        void $ liftIO $ DB.execute prepared' values
+        pure prepared'
+      loop prepared step
       where
-        loop stmt' (E.Continue f) = do
-          e <- liftIO $ DB.fetchRow stmt'
-          loop stmt' E.==<< f (maybe E.EOF (E.Chunks . pure) e)
+        loop prepared (E.Continue f) = do
+          e <- liftIO $ DB.fetchRow prepared
+          loop prepared E.==<< f (maybe E.EOF (E.Chunks . pure) e)
         loop _ s = EI.returnI s
 
     sqlToComment [ DB.fromSql -> id'
@@ -163,9 +168,19 @@ sqlToEntry [ DB.fromSql -> id'
   }
 sqlToEntry _ = error "in sql->entry conversion"
 
-withTransactionGeneric :: (Applicative m, MonadCatchIO m, DB.IConnection conn) => conn -> m a -> m a
-withTransactionGeneric conn action = onException action (liftIO $ DB.rollback conn)
-                                  <* liftIO (DB.commit conn)
+retryingTransaction :: (Applicative m, MonadCatchIO m, DB.IConnection conn) => conn -> m a -> m a
+retryingTransaction conn action = actionWithRetrying 3 <* liftIO (DB.commit conn)
+  where
+    actionWithRetrying count = action `catch` \(e :: SomeException) -> do
+      liftIO $ print e
+      liftIO $ DB.rollback conn
+      if count > 0 then do
+        liftIO $ threadDelay delayTime
+        actionWithRetrying $ pred count
+      else do
+        throw e
+      where
+        delayTime = 1 * 10 ^ 6
 
 makePage :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Page
 makePage d es cs = Page
