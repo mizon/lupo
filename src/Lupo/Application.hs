@@ -7,16 +7,18 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lupo.Application
-  ( Lupo (Lupo, entryDB)
+  ( Lupo (Lupo, entryDB, entryDBPool)
   , LupoHandler
   , heist
   , session
   , auth
   , getNoticeDB
+  , withEntryDB
   ) where
 
 import Control.Lens
 import Control.Monad
+import Control.Monad.CatchIO hiding (Handler)
 import Prelude hiding (filter)
 import Snap
 import qualified Snap.Snaplet.Auth as A
@@ -24,6 +26,7 @@ import qualified Snap.Snaplet.Heist as SH
 import qualified Snap.Snaplet.Session as S
 
 import Lupo.Config
+import qualified Lupo.ConnectionPool as C
 import qualified Lupo.Entry as E
 import qualified Lupo.Locale as L
 import qualified Lupo.Notice as N
@@ -38,6 +41,7 @@ data Lupo = Lupo
   , localizer :: L.Localizer
   , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
   , urlMapper :: U.URLMapper
+  , entryDBPool :: C.ConnectionPool E.EDBWrapper
   }
 makeLenses ''Lupo
 
@@ -60,3 +64,8 @@ instance (MonadState Lupo m, Applicative m, Functor m) => U.HasURLMapper m where
 
 getNoticeDB :: MonadState Lupo m => m (N.NoticeDB LupoHandler)
 getNoticeDB = gets noticeDB
+
+withEntryDB :: (MonadCatchIO m, MonadState Lupo m, Applicative m) => (E.EntryDatabase m -> m a) -> m a
+withEntryDB handler = do
+  pool <- gets entryDBPool
+  C.withConnection pool $ handler . E.unEDBWrapper

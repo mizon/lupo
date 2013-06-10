@@ -47,8 +47,7 @@ handleLogin =
       redirect $ either (const loginPath) (const adminPath) authResult
 
 handleAdmin :: LupoHandler ()
-handleAdmin = requireAuth $ do
-  db <- E.getDatabase
+handleAdmin = requireAuth $ withEntryDB $ \db -> do
   dayContents <- mapM (E.selectPage db) =<< getAllDays db
   View.render $ View.adminView dayContents
   where
@@ -77,8 +76,7 @@ handleNewEntry = requireAuth $ method GET (View.render =<< getEditor (E.Entry ""
       action <- textParam "action"
       entry <- E.Entry <$> textParam "title" <*> textParam "body"
       case action of
-        "Submit" -> do
-          db <- E.getDatabase
+        "Submit" -> withEntryDB $ \db -> do
           E.insert db entry
           redirect =<< U.getURL U.adminPath
         "Preview" -> View.render =<< getPreview <$> dummySaved entry
@@ -105,25 +103,24 @@ handleEditEntry = requireAuth $
       method GET showEntryEditor
   <|> method POST updateEntry
   where
-    showEntryEditor = do
-      db <- E.getDatabase
+    showEntryEditor = withEntryDB $ \db -> do
       id' <- paramId
       entry <- E.selectOne db id'
       View.render =<< getEditor entry
 
     updateEntry = do
       action <- textParam "action"
-      db <- E.getDatabase
-      id' <- paramId
-      entry <- E.Entry <$> textParam "title" <*> textParam "body"
-      baseEntry <- E.selectOne db id'
-      case action of
-        "Submit" -> do
-          E.update db id' entry
-          redirect =<< U.getURL U.adminPath
-        "Preview" -> View.render =<< getPreview baseEntry {E.savedContent = entry}
-        "Edit" -> View.render =<< getEditor baseEntry {E.savedContent = entry}
-        _ -> undefined
+      withEntryDB $ \db -> do
+        id' <- paramId
+        entry <- E.Entry <$> textParam "title" <*> textParam "body"
+        baseEntry <- E.selectOne db id'
+        case action of
+          "Submit" -> do
+            E.update db id' entry
+            redirect =<< U.getURL U.adminPath
+          "Preview" -> View.render =<< getPreview baseEntry {E.savedContent = entry}
+          "Edit" -> View.render =<< getEditor baseEntry {E.savedContent = entry}
+          _ -> undefined
 
     getEditor entry = pure
                     $ View.entryEditorView entry "Edit"
@@ -134,8 +131,7 @@ handleEditEntry = requireAuth $
                      $ flip U.entryEditPath entry
 
 handleDeleteEntry :: LupoHandler ()
-handleDeleteEntry = requireAuth $ do
-  db <- E.getDatabase
+handleDeleteEntry = requireAuth $ withEntryDB $ \db -> do
   E.delete db =<< paramId
   redirect =<< U.getURL U.adminPath
 
