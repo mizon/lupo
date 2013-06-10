@@ -1,6 +1,7 @@
 import Control.Monad
 import Test.Hspec
 
+import ConnectionPoolSpec
 import EntrySpec
 import NavigationSpec
 import NoticeSpec
@@ -17,4 +18,5 @@ main = hspec $ sequence_
   , utilSpec
   , syntaxSpec
   , urlMapperSpec
+  , connectionPoolSpec
   ]

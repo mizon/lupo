@@ -78,6 +78,7 @@ library
     Lupo.Backend.Notice,
     Lupo.Backend.URLMapper,
     Lupo.Config,
+    Lupo.ConnectionPool,
     Lupo.Entry,
     Lupo.Exception,
     Lupo.FieldValidator,
