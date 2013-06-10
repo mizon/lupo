@@ -59,7 +59,6 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   s <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "site_key.txt" "sess" $ Just 3600
   a <- nestSnaplet "auth" auth $ JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
   conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
-  edb <- liftIO $ E.makeEntryDatabase conn lcSpamFilter
   edbs <- liftIO $ CP.makeConnectionPool (E.makeEntryDatabase conn lcSpamFilter) 5
   l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
   A.addAuthSplices auth
@@ -86,6 +85,6 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("lupo:top-page-path", U.toURLSplice =<< U.getURL U.topPagePath)
     , ("lupo:search-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "search")
     ]
-  pure $ Lupo h s a edb lc l (initNoticeDB conn) (U.makeURLMapper lcBasePath) edbs
+  pure $ Lupo h s a lc l (initNoticeDB conn) (U.makeURLMapper lcBasePath) edbs
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session
