@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -73,8 +74,9 @@ handleDay = parseQuery $
       reqDay <- dayParser
       pure $ do
         withEntryDB' $ \db -> do
-          day <- LE.selectPage (LE.unEDBWrapper db) reqDay
-          let nav = N.makeNavigation (LE.unEDBWrapper db) reqDay
+          let db' = LE.unEDBWrapper db
+          day <- LE.selectPage db' reqDay
+          let nav = N.makeNavigation db' reqDay
           notice <- Notice.popAllNotice =<< getNoticeDB
           V.render $ V.singleDayView day nav (LE.Comment "" "") notice []
 
@@ -109,7 +111,7 @@ handleComment = method POST $ do
     case cond of
       Left (InvalidField msgs) -> do
         page <- LE.selectPage db' reqDay
-        let nav = N.makeNavigation (LE.unEDBWrapper db) reqDay
+        let nav = N.makeNavigation db' reqDay
         V.render $ V.singleDayView page nav comment [] msgs
       Right _ -> do
         ndb <- getNoticeDB
@@ -125,9 +127,10 @@ monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
   pure $ withEntryDB' $ \db -> do
-    let nav = N.makeNavigation (LE.unEDBWrapper db) reqMonth
-    days <- run_ $ LE.afterSavedDays (LE.unEDBWrapper db) reqMonth
-                $$ toDayContents (LE.unEDBWrapper db)
+    let db' = LE.unEDBWrapper db
+        nav = N.makeNavigation db' reqMonth
+    days <- run_ $ LE.afterSavedDays db' reqMonth
+                $$ toDayContents db'
                 =$ takeSameMonthDays reqMonth
     V.render $ V.monthView nav days
   where
@@ -144,9 +147,10 @@ monthResponse = do
 
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = withEntryDB' $ \db -> do
-  targetDays <- run_ $ LE.beforeSavedDays (LE.unEDBWrapper db) from $$ EL.take nDays
-  let nav = N.makeNavigation (LE.unEDBWrapper db) from
-  pages <- Prelude.mapM (LE.selectPage $ LE.unEDBWrapper db) targetDays
+  let db' = LE.unEDBWrapper db
+  targetDays <- run_ $ LE.beforeSavedDays db' from $$ EL.take nDays
+  let nav = N.makeNavigation db' from
+  pages <- Prelude.mapM (LE.selectPage db') targetDays
   V.render $ V.multiDaysView nav pages
 
 dayParser :: A.Parser Time.Day
