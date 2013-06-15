@@ -23,9 +23,9 @@ import Text.XmlHtml
 
 import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
-import qualified Lupo.Backend.Entry as E
-import qualified Lupo.Backend.Notice as N
-import qualified Lupo.Backend.URLMapper as U
+import qualified Lupo.Backends.Entry as E
+import qualified Lupo.Backends.Notice as N
+import qualified Lupo.Backends.URLMapper as U
 import Lupo.Config
 import qualified Lupo.ConnectionPool as CP
 import qualified Lupo.Locale as L

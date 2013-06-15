@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Lupo.Backend.Entry
+module Lupo.Backends.Entry
   ( makeEntryDatabase
   ) where
 

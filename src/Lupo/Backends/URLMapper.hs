@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Lupo.Backend.URLMapper
+module Lupo.Backends.URLMapper
   ( makeURLMapper
   ) where
 

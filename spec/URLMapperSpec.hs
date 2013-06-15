@@ -12,7 +12,7 @@ import qualified Data.Time as Time
 import Test.Hspec
 import Test.QuickCheck
 
-import qualified Lupo.Backend.URLMapper as U
+import qualified Lupo.Backends.URLMapper as U
 import qualified Lupo.Entry as E
 import qualified Lupo.URLMapper as U
 

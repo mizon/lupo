@@ -34,7 +34,7 @@ import System.Locale
 import Text.Shakespeare.Text hiding (toText)
 
 import Lupo.Application
-import qualified Lupo.Backend.Navigation as N
+import qualified Lupo.Backends.Navigation as N
 import Lupo.Config
 import qualified Lupo.Entry as LE
 import Lupo.Exception

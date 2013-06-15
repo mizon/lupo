@@ -1,6 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module Lupo.Backend.Navigation
+module Lupo.Backends.Navigation
   ( makeNavigation
   ) where
 

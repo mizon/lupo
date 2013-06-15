@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Lupo.Backend.Notice
+module Lupo.Backends.Notice
   ( makeNoticeDB
   , makeSessionBackend
   ) where
