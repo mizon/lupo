@@ -1,12 +1,7 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Lupo.Entry
-  ( DatabaseContext
-  , HasDatabase (..)
-  , EntryDatabase (..)
+  ( EntryDatabase (..)
   , EDBWrapper (..)
   , Page (..)
   , Saved (..)
@@ -25,12 +20,6 @@ import Prelude hiding (all)
 
 import Lupo.Util
 
-class (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
-instance (MonadCatchIO m, Applicative m, Functor m) => DatabaseContext m
-
-class HasDatabase m where
-  getDatabase :: DatabaseContext n => m (EntryDatabase n)
-
 data EntryDatabase m = EntryDatabase
   { selectOne :: Integer -> m (Saved Entry)
   , selectAll :: forall a. E.Enumerator (Saved Entry) m a
@@ -45,7 +34,7 @@ data EntryDatabase m = EntryDatabase
   }
 
 data EDBWrapper = EDBWrapper
-  { unEDBWrapper :: DatabaseContext m => EntryDatabase m
+  { unEDBWrapper :: (MonadCatchIO m, Applicative m, Functor m) => EntryDatabase m
   }
 
 data Page = Page
