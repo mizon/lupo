@@ -14,7 +14,6 @@ module Lupo.Application
   , auth
   , getNoticeDB
   , withEntryDB
-  , withEntryDB'
   ) where
 
 import Control.Lens
@@ -62,12 +61,7 @@ instance (MonadState Lupo m, Applicative m, Functor m) => U.HasURLMapper m where
 getNoticeDB :: MonadState Lupo m => m (N.NoticeDB LupoHandler)
 getNoticeDB = gets noticeDB
 
-withEntryDB :: (MonadCatchIO m, MonadState Lupo m, Applicative m) => (E.EntryDatabase m -> m a) -> m a
+withEntryDB :: (MonadCatchIO m, MonadState Lupo m) => (E.EDBWrapper -> m a) -> m a
 withEntryDB handler = do
-  pool <- gets entryDBPool
-  C.withConnection pool $ handler . E.unEDBWrapper
-
-withEntryDB' :: (MonadCatchIO m, MonadState Lupo m) => (E.EDBWrapper -> m a) -> m a
-withEntryDB' handler = do
   pool <- gets entryDBPool
   C.withConnection pool handler

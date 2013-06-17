@@ -47,7 +47,7 @@ import qualified Lupo.View as V
 handleTop :: LupoHandler ()
 handleTop = do
   mustNoPathInfo
-  withEntryDB $ \db -> do
+  withEntryDB $ \(LE.EDBWrapper db) -> do
     today <- zonedDay <$> liftIO Time.getZonedTime
     latest <- run_ $ LE.beforeSavedDays db today $$ EL.head
     renderMultiDays (fromMaybe today latest) =<< refLupoConfig lcDaysPerPage
@@ -73,16 +73,15 @@ handleDay = parseQuery $
     singleDayResponse = do
       reqDay <- dayParser
       pure $ do
-        withEntryDB' $ \db -> do
-          let db' = LE.unEDBWrapper db
-          day <- LE.selectPage db' reqDay
-          let nav = N.makeNavigation db' reqDay
+        withEntryDB $ \(LE.EDBWrapper db) -> do
+          day <- LE.selectPage db reqDay
+          let nav = N.makeNavigation db reqDay
           notice <- Notice.popAllNotice =<< getNoticeDB
           V.render $ V.singleDayView day nav (LE.Comment "" "") notice []
 
 handleEntries :: LupoHandler ()
 handleEntries = method GET $ do
-  withEntryDB $ \db -> do
+  withEntryDB $ \(LE.EDBWrapper db) -> do
     entry <- join $ LE.selectOne <$> pure db <*> paramId
     page <- LE.selectPage db $ LE.createdAt entry ^. zonedTimeToLocalTime ^. localDay
     let n = maybe (error "must not happen") (+ 1)
@@ -96,22 +95,21 @@ handleEntries = method GET $ do
 handleSearch :: LupoHandler ()
 handleSearch = do
   word <- textParam "word"
-  withEntryDB $ \db -> do
+  withEntryDB $ \(LE.EDBWrapper db) -> do
     es <- run_ $ LE.search db word $$ EL.consume
     V.render $ V.searchResultView word es
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
   dayStr <- textParam "day"
-  withEntryDB' $ \db -> do
-    let db' = LE.unEDBWrapper db
+  withEntryDB $ \(LE.EDBWrapper db) -> do
     reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
     comment <- LE.Comment <$> textParam "name" <*> textParam "body"
-    cond <- try $ LE.insertComment db' reqDay comment
+    cond <- try $ LE.insertComment db reqDay comment
     case cond of
       Left (InvalidField msgs) -> do
-        page <- LE.selectPage db' reqDay
-        let nav = N.makeNavigation db' reqDay
+        page <- LE.selectPage db reqDay
+        let nav = N.makeNavigation db reqDay
         V.render $ V.singleDayView page nav comment [] msgs
       Right _ -> do
         ndb <- getNoticeDB
@@ -119,18 +117,17 @@ handleComment = method POST $ do
         redirect =<< U.getURL U.newCommentPath <*> pure reqDay
 
 handleFeed :: LupoHandler ()
-handleFeed = method GET $ withEntryDB $ \db -> do
+handleFeed = method GET $ withEntryDB $ \(LE.EDBWrapper db) -> do
   entries <- E.run_ $ LE.selectAll db $$ EL.take 10
   V.render $ V.entriesFeed entries
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
-  pure $ withEntryDB' $ \db -> do
-    let db' = LE.unEDBWrapper db
-        nav = N.makeNavigation db' reqMonth
-    days <- run_ $ LE.afterSavedDays db' reqMonth
-                $$ toDayContents db'
+  pure $ withEntryDB $ \(LE.EDBWrapper db) -> do
+    let nav = N.makeNavigation db reqMonth
+    days <- run_ $ LE.afterSavedDays db reqMonth
+                $$ toDayContents db
                 =$ takeSameMonthDays reqMonth
     V.render $ V.monthView nav days
   where
@@ -146,11 +143,10 @@ monthResponse = do
               <$> M.sequence (replicate 6 $ A.satisfy C.isDigit)
 
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
-renderMultiDays from nDays = withEntryDB' $ \db -> do
-  let db' = LE.unEDBWrapper db
-  targetDays <- run_ $ LE.beforeSavedDays db' from $$ EL.take nDays
-  let nav = N.makeNavigation db' from
-  pages <- Prelude.mapM (LE.selectPage db') targetDays
+renderMultiDays from nDays = withEntryDB $ \(LE.EDBWrapper db) -> do
+  targetDays <- run_ $ LE.beforeSavedDays db from $$ EL.take nDays
+  let nav = N.makeNavigation db from
+  pages <- Prelude.mapM (LE.selectPage db) targetDays
   V.render $ V.multiDaysView nav pages
 
 dayParser :: A.Parser Time.Day

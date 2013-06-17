@@ -47,7 +47,7 @@ handleLogin =
       redirect $ either (const loginPath) (const adminPath) authResult
 
 handleAdmin :: LupoHandler ()
-handleAdmin = requireAuth $ withEntryDB $ \db -> do
+handleAdmin = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
   dayContents <- mapM (E.selectPage db) =<< getAllDays db
   View.render $ View.adminView dayContents
   where
@@ -76,7 +76,7 @@ handleNewEntry = requireAuth $ method GET (View.render =<< getEditor (E.Entry ""
       action <- textParam "action"
       entry <- E.Entry <$> textParam "title" <*> textParam "body"
       case action of
-        "Submit" -> withEntryDB $ \db -> do
+        "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
           E.insert db entry
           redirect =<< U.getURL U.adminPath
         "Preview" -> View.render =<< getPreview <$> dummySaved entry
@@ -103,14 +103,14 @@ handleEditEntry = requireAuth $
       method GET showEntryEditor
   <|> method POST updateEntry
   where
-    showEntryEditor = withEntryDB $ \db -> do
+    showEntryEditor = withEntryDB $ \(E.EDBWrapper db) -> do
       id' <- paramId
       entry <- E.selectOne db id'
       View.render =<< getEditor entry
 
     updateEntry = do
       action <- textParam "action"
-      withEntryDB $ \db -> do
+      withEntryDB $ \(E.EDBWrapper db) -> do
         id' <- paramId
         entry <- E.Entry <$> textParam "title" <*> textParam "body"
         baseEntry <- E.selectOne db id'
@@ -131,7 +131,7 @@ handleEditEntry = requireAuth $
                      $ flip U.entryEditPath entry
 
 handleDeleteEntry :: LupoHandler ()
-handleDeleteEntry = requireAuth $ withEntryDB $ \db -> do
+handleDeleteEntry = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
   E.delete db =<< paramId
   redirect =<< U.getURL U.adminPath
 
