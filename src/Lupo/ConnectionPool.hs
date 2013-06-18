@@ -25,9 +25,13 @@ withConnection pool = bracket checkout checkin
 
 makeConnectionPool :: IO conn -> Int -> IO (ConnectionPool conn)
 makeConnectionPool builder nConns = do
-  chan <- CC.newChan
-  nConns `replicateM_` (CC.writeChan chan =<< builder)
-  pure ConnectionPool
-    { checkinConnection = CC.writeChan chan
-    , checkoutConnection = CC.readChan chan
-    }
+  pool <- initPool
+  nConns `replicateM_` (checkinConnection pool =<< builder)
+  pure pool
+  where
+    initPool = do
+      chan <- CC.newChan
+      pure ConnectionPool
+        { checkinConnection = CC.writeChan chan
+        , checkoutConnection = CC.readChan chan
+        }
