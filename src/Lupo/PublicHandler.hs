@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -105,16 +106,16 @@ handleComment = method POST $ do
   withEntryDB $ \(LE.EDBWrapper db) -> do
     reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
     comment <- LE.Comment <$> textParam "name" <*> textParam "body"
-    cond <- try $ LE.insertComment db reqDay comment
-    case cond of
-      Left (InvalidField msgs) -> do
-        page <- LE.selectPage db reqDay
-        let nav = N.makeNavigation db reqDay
-        V.render $ V.singleDayView page nav comment [] msgs
-      Right _ -> do
-        ndb <- getNoticeDB
-        Notice.addNotice ndb "Your comment was posted successfully."
-        redirect =<< U.getURL U.newCommentPath <*> pure reqDay
+    try (LE.insertComment db reqDay comment) >>=
+      \case
+        Left (InvalidField msgs) -> do
+          page <- LE.selectPage db reqDay
+          let nav = N.makeNavigation db reqDay
+          V.render $ V.singleDayView page nav comment [] msgs
+        Right _ -> do
+          ndb <- getNoticeDB
+          Notice.addNotice ndb "Your comment was posted successfully."
+          redirect =<< U.getURL U.newCommentPath <*> pure reqDay
 
 handleFeed :: LupoHandler ()
 handleFeed = method GET $ withEntryDB $ \(LE.EDBWrapper db) -> do

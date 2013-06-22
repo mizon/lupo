@@ -1,5 +1,6 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -73,15 +74,15 @@ handleNewEntry = requireAuth $ method GET (View.render =<< getEditor (E.Entry ""
                            <|> method POST submitEntry
   where
     submitEntry = do
-      action <- textParam "action"
       entry <- E.Entry <$> textParam "title" <*> textParam "body"
-      case action of
-        "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
-          E.insert db entry
-          redirect =<< U.getURL U.adminPath
-        "Preview" -> View.render =<< getPreview <$> dummySaved entry
-        "Edit" -> View.render =<< getEditor entry
-        _ -> error "invalid request"
+      textParam "action" >>=
+        \case
+          "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
+            E.insert db entry
+            redirect =<< U.getURL U.adminPath
+          "Preview" -> View.render =<< getPreview <$> dummySaved entry
+          "Edit" -> View.render =<< getEditor entry
+          _ -> error "invalid request"
 
     getEditor entry = do
       saved <- dummySaved entry
@@ -109,18 +110,18 @@ handleEditEntry = requireAuth $
       View.render =<< getEditor entry
 
     updateEntry = do
-      action <- textParam "action"
       withEntryDB $ \(E.EDBWrapper db) -> do
         id' <- paramId
         entry <- E.Entry <$> textParam "title" <*> textParam "body"
         baseEntry <- E.selectOne db id'
-        case action of
-          "Submit" -> do
-            E.update db id' entry
-            redirect =<< U.getURL U.adminPath
-          "Preview" -> View.render =<< getPreview baseEntry {E.savedContent = entry}
-          "Edit" -> View.render =<< getEditor baseEntry {E.savedContent = entry}
-          _ -> undefined
+        textParam "action" >>=
+          \case
+            "Submit" -> do
+              E.update db id' entry
+              redirect =<< U.getURL U.adminPath
+            "Preview" -> View.render =<< getPreview baseEntry {E.savedContent = entry}
+            "Edit" -> View.render =<< getEditor baseEntry {E.savedContent = entry}
+            _ -> undefined
 
     getEditor entry = pure
                     $ View.entryEditorView entry "Edit"

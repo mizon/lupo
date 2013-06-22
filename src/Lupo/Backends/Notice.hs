@@ -13,8 +13,7 @@ import qualified Snap.Snaplet.Session as SS
 
 import Lupo.Notice
 
-makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m)
-             => c -> SessionBackend m -> NoticeDB m
+makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m) => c -> SessionBackend m -> NoticeDB m
 makeNoticeDB conn SessionBackend {..} = NoticeDB
   { addNotice = \(DB.toSql -> msg) -> do
       (DB.toSql -> token) <- getCsrfToken
