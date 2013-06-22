@@ -29,7 +29,7 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
-import Prelude hiding (catch, filter)
+import Prelude hiding (filter)
 import Snap
 import System.Locale
 import Text.Shakespeare.Text hiding (toText)
@@ -75,10 +75,11 @@ handleDay = parseQuery $
       reqDay <- dayParser
       pure $ do
         withEntryDB $ \(LE.EDBWrapper db) -> do
+          vf <- gets viewFactory
           day <- LE.selectPage db reqDay
           let nav = N.makeNavigation db reqDay
           notice <- Notice.popAllNotice =<< getNoticeDB
-          V.render $ V.singleDayView day nav (LE.Comment "" "") notice []
+          V.render $ V.singleDayView vf day nav (LE.Comment "" "") notice []
 
 handleEntries :: LupoHandler ()
 handleEntries = method GET $ do
@@ -97,8 +98,9 @@ handleSearch :: LupoHandler ()
 handleSearch = do
   word <- textParam "word"
   withEntryDB $ \(LE.EDBWrapper db) -> do
+    vf <- gets viewFactory
     es <- run_ $ LE.search db word $$ EL.consume
-    V.render $ V.searchResultView word es
+    V.render $ V.searchResultView vf word es
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
@@ -109,9 +111,10 @@ handleComment = method POST $ do
     try (LE.insertComment db reqDay comment) >>=
       \case
         Left (InvalidField msgs) -> do
+          vf <- gets viewFactory
           page <- LE.selectPage db reqDay
           let nav = N.makeNavigation db reqDay
-          V.render $ V.singleDayView page nav comment [] msgs
+          V.render $ V.singleDayView vf page nav comment [] msgs
         Right _ -> do
           ndb <- getNoticeDB
           Notice.addNotice ndb "Your comment was posted successfully."
@@ -119,18 +122,20 @@ handleComment = method POST $ do
 
 handleFeed :: LupoHandler ()
 handleFeed = method GET $ withEntryDB $ \(LE.EDBWrapper db) -> do
+  vf <- gets viewFactory
   entries <- E.run_ $ LE.selectAll db $$ EL.take 10
-  V.render $ V.entriesFeed entries
+  V.render $ V.entriesFeed vf entries
 
 monthResponse :: A.Parser (LupoHandler ())
 monthResponse = do
   reqMonth <- monthParser
   pure $ withEntryDB $ \(LE.EDBWrapper db) -> do
+    vf <- gets viewFactory
     let nav = N.makeNavigation db reqMonth
     days <- run_ $ LE.afterSavedDays db reqMonth
                 $$ toDayContents db
                 =$ takeSameMonthDays reqMonth
-    V.render $ V.monthView nav days
+    V.render $ V.monthView vf nav days
   where
     takeSameMonthDays m = EL.takeWhile $ isSameMonth m . LE.pageDay
       where
@@ -145,10 +150,11 @@ monthResponse = do
 
 renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
 renderMultiDays from nDays = withEntryDB $ \(LE.EDBWrapper db) -> do
-  targetDays <- run_ $ LE.beforeSavedDays db from $$ EL.take nDays
+  vf <- gets viewFactory
   let nav = N.makeNavigation db from
+  targetDays <- run_ $ LE.beforeSavedDays db from $$ EL.take nDays
   pages <- Prelude.mapM (LE.selectPage db) targetDays
-  V.render $ V.multiDaysView nav pages
+  V.render $ V.multiDaysView vf nav pages
 
 dayParser :: A.Parser Time.Day
 dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)

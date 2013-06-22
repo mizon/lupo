@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Lupo.View.Internal
+module Lupo.Backends.View.Internal
   ( renderBody
   , daySummary
   , dayTitle

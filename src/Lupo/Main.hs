@@ -26,6 +26,7 @@ import Lupo.Application
 import qualified Lupo.Backends.Entry as E
 import qualified Lupo.Backends.Notice as N
 import qualified Lupo.Backends.URLMapper as U
+import qualified Lupo.Backends.View as V
 import Lupo.Config
 import qualified Lupo.ConnectionPool as CP
 import qualified Lupo.Locale as L
@@ -85,6 +86,16 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , ("lupo:top-page-path", U.toURLSplice =<< U.getURL U.topPagePath)
     , ("lupo:search-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "search")
     ]
-  pure $ Lupo h s a lc l (initNoticeDB conn) (U.makeURLMapper lcBasePath) edbs
+  pure Lupo
+    { _heist = h
+    , _session = s
+    , _auth = a
+    , lupoConfig = lc
+    , localizer = l
+    , noticeDB = initNoticeDB conn
+    , urlMapper = U.makeURLMapper lcBasePath
+    , entryDBPool = edbs
+    , viewFactory = V.makeViewFactory
+    }
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session

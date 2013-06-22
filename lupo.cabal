@@ -77,6 +77,9 @@ library
     Lupo.Backends.Navigation,
     Lupo.Backends.Notice,
     Lupo.Backends.URLMapper,
+    Lupo.Backends.View,
+    Lupo.Backends.View.Internal,
+    Lupo.Backends.View.Views,
     Lupo.Config,
     Lupo.ConnectionPool,
     Lupo.Entry,
@@ -90,5 +93,4 @@ library
     Lupo.Syntax,
     Lupo.URLMapper,
     Lupo.Util,
-    Lupo.View,
-    Lupo.View.Internal
+    Lupo.View

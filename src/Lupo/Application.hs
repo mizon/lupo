@@ -7,7 +7,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lupo.Application
-  ( Lupo (Lupo, entryDBPool)
+  ( Lupo (..)
   , LupoHandler
   , heist
   , session
@@ -31,6 +31,7 @@ import qualified Lupo.Entry as E
 import qualified Lupo.Locale as L
 import qualified Lupo.Notice as N
 import qualified Lupo.URLMapper as U
+import qualified Lupo.View as V
 
 data Lupo = Lupo
   { _heist :: Snaplet (SH.Heist Lupo)
@@ -41,6 +42,7 @@ data Lupo = Lupo
   , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
   , urlMapper :: U.URLMapper
   , entryDBPool :: C.ConnectionPool E.EDBWrapper
+  , viewFactory :: V.ViewFactory (Handler Lupo Lupo)
   }
 makeLenses ''Lupo
 
