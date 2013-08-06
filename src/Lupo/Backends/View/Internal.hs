@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -43,7 +42,7 @@ renderBody :: E.Entry -> H.Template
 renderBody e = S.renderBody $ e ^. E.entryBody
 
 daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => E.Page -> H.Splice m
-daySummary p@E.Page {..} = H.callTemplate "_day-summary"
+daySummary p = H.callTemplate "_day-summary"
   [ ("lupo:day-title", dayTitle $ p ^. E.pageDay)
   , ("lupo:day-entries", pure $ anEntry Nothing =<< p ^. E.pageEntries)
   , ("lupo:link-to-comment", linkToComment)
@@ -69,7 +68,7 @@ dayTitle d = do
     dayFormat = formatTime "%Y-%m-%d"
 
 anEntry :: Maybe Int -> E.Saved E.Entry -> H.Template
-anEntry i e@E.Saved {..} =
+anEntry i e =
      Element "h3" entryHeadlineAttr (S.renderInline $ e ^. E.savedContent . E.entryTitle)
    : S.renderBody (e ^. E.savedContent . E.entryBody)
   <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" $ e ^. E.createdAt]]
@@ -77,7 +76,7 @@ anEntry i e@E.Saved {..} =
     entryHeadlineAttr = maybe [] (\i' -> [("id", T.justifyRight 2 '0' $ toText i')]) i
 
 comment :: (Monad m, LL.HasLocalizer (H.HeistT m m)) => E.Saved E.Comment -> H.Splice m
-comment e@E.Saved {..} = H.callTemplate "_comment"
+comment e = H.callTemplate "_comment"
   [ ("lupo:comment-name", H.textSplice $ e ^. E.savedContent . E.commentName)
   , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ e ^. E.createdAt)
   , ("lupo:comment-content", commentBodySplice)

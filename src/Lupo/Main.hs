@@ -1,7 +1,6 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Lupo.Main
   ( main
@@ -56,7 +55,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
-lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing $ do
+lupoInit lc = makeSnaplet "lupo" "A personal web diary." Nothing $ do
   h <- nestSnaplet "heist" heist $ H.heistInit "templates"
   s <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "site_key.txt" "sess" $ Just 3600
   a <- nestSnaplet "auth" auth $ JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"

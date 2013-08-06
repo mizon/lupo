@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Lupo.Backends.Notice
@@ -13,10 +12,10 @@ import qualified Snap.Snaplet.Session as SS
 import Lupo.Notice
 
 makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m) => c -> SessionBackend m -> NoticeDB m
-makeNoticeDB conn SessionBackend {..} = NoticeDB
+makeNoticeDB conn back = NoticeDB
   { _addNotice = \(DB.toSql -> msg) -> do
-      (DB.toSql -> token) <- getCsrfToken
-      commitSession
+      (DB.toSql -> token) <- getCsrfToken back
+      commitSession back
       liftIO $ do
         void $ DB.run conn "INSERT INTO notice (token, message) VALUES (?, ?)"
           [ token
@@ -25,7 +24,7 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB
         DB.commit conn
 
   , _popAllNotice = do
-      (DB.toSql -> token) <- getCsrfToken
+      (DB.toSql -> token) <- getCsrfToken back
       messages <- liftIO $ DB.withTransaction conn $ const $ do
         stmt <- DB.prepare conn "SELECT message FROM notice WHERE token = ?"
         void $ DB.execute stmt [token]

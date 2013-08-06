@@ -1,7 +1,6 @@
 {-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -91,7 +90,7 @@ makeEntryDatabase conn spamFilter = do
     , _afterSavedDays = \(DB.toSql -> d) ->
         enumStatement pool "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC" [d] E.$= EL.map (DB.fromSql . Prelude.head)
 
-    , _insertComment = \d c@Comment {..} -> do
+    , _insertComment = \d c -> do
         FV.validate commentValidator c
         liftIO $ retryingTransaction conn $ do
           withStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)" $ \stmt -> do
@@ -129,7 +128,7 @@ makeEntryDatabase conn spamFilter = do
       }
     sqlToComment _ = error "in sql->comment conversion"
 
-    commentValidator = FV.makeFieldValidator $ \c@Comment {..} -> do
+    commentValidator = FV.makeFieldValidator $ \c -> do
       FV.checkIsEmtpy (c ^. commentName) "Name"
       FV.checkIsTooLong (c ^. commentName) "Name"
       FV.checkIsEmtpy (c ^. commentBody) "Content"
