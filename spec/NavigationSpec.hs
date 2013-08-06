@@ -1,3 +1,4 @@
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -15,35 +16,36 @@ import Test.Hspec
 
 import qualified Lupo.Backends.Navigation as N
 import qualified Lupo.Entry as DB
+import Lupo.Import
 import qualified Lupo.Navigation as N
 
 navigationSpec :: Spec
 navigationSpec = describe "page navigation" $ do
   it "gets the next day" $ do
     let db = def
-          { DB.afterSavedDays = \day ->
+          { DB._afterSavedDays = \day ->
               checkArgument day (Time.fromGregorian 2000 1 2) $
                 E.enumList 1 [Time.fromGregorian 2000 1 2]
           }
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 1
-    N.getNextDay nav `shouldReturn` Just (Time.fromGregorian 2000 1 2)
+    nav ^! N.getNextDay `shouldReturn` Just (Time.fromGregorian 2000 1 2)
 
   it "gets the previous day" $ do
     let db = def
-          { DB.beforeSavedDays = \day ->
+          { DB._beforeSavedDays = \day ->
               checkArgument day (Time.fromGregorian 1999 12 31) $
                 E.enumList 1 [Time.fromGregorian 1999 12 31]
           }
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 1
-    N.getPreviousDay nav `shouldReturn` Just (Time.fromGregorian 1999 12 31)
+    nav ^! N.getPreviousDay `shouldReturn` Just (Time.fromGregorian 1999 12 31)
 
   it "gets this month" $ do
     let nav = N.makeNavigation def $ Time.fromGregorian 2000 1 15 :: N.Navigation IO
-    N.getThisMonth nav `shouldBe` Time.fromGregorian 2000 1 1
+    nav ^. N.getThisMonth `shouldBe` Time.fromGregorian 2000 1 1
 
   it "gets top day of the next page" $ do
     let db = def
-          { DB.afterSavedDays = \day ->
+          { DB._afterSavedDays = \day ->
               checkArgument day (Time.fromGregorian 2000 1 2) $
                 E.enumList 1
                   [ Time.fromGregorian 2000 1 1
@@ -52,11 +54,11 @@ navigationSpec = describe "page navigation" $ do
                   ]
           }
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 1
-    N.getNextPageTop nav 3 `shouldReturn` Just (Time.fromGregorian 2000 1 3)
+    nav ^! N.getNextPageTop 3 `shouldReturn` Just (Time.fromGregorian 2000 1 3)
 
   it "gets top day of the previous page" $ do
     let db = def
-          { DB.beforeSavedDays = \day ->
+          { DB._beforeSavedDays = \day ->
               checkArgument day (Time.fromGregorian 1999 12 31) $
                 E.enumList 1
                   [ Time.fromGregorian 1999 12 31
@@ -65,26 +67,26 @@ navigationSpec = describe "page navigation" $ do
                   ]
           }
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 1
-    N.getPreviousPageTop nav 3 `shouldReturn` Just (Time.fromGregorian 1999 12 29)
+    nav ^! N.getPreviousPageTop 3 `shouldReturn` Just (Time.fromGregorian 1999 12 29)
 
   it "gets the next month" $ do
-    let db = def {DB.afterSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 2 1]}
+    let db = def {DB._afterSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 2 1]}
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 15
-    N.getNextMonth nav `shouldReturn` Just (Time.fromGregorian 2000 2 1)
+    nav ^! N.getNextMonth `shouldReturn` Just (Time.fromGregorian 2000 2 1)
 
   it "gets the previous month" $ do
-    let db = def {DB.beforeSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 12 31]}
+    let db = def {DB._beforeSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 12 31]}
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 15
-    N.getPreviousMonth nav `shouldReturn` Just (Time.fromGregorian 1999 12 1)
+    nav ^! N.getPreviousMonth `shouldReturn` Just (Time.fromGregorian 1999 12 1)
 
   it "gets the no monthes when there are no entries" $ do
     let db = def
-          { DB.afterSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 1 5]
-          , DB.beforeSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 1 3]
+          { DB._afterSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 1 5]
+          , DB._beforeSavedDays = const $ E.enumList 1 [Time.fromGregorian 2000 1 3]
           }
         nav = N.makeNavigation db $ Time.fromGregorian 2000 1 4
-    N.getNextMonth nav `shouldReturn` Nothing
-    N.getPreviousMonth nav `shouldReturn` Nothing
+    nav ^! N.getNextMonth `shouldReturn` Nothing
+    nav ^! N.getPreviousMonth `shouldReturn` Nothing
 
 checkArgument :: (Show a, Eq a) => a -> a -> b -> b
 checkArgument actual expected value
@@ -93,14 +95,14 @@ checkArgument actual expected value
 
 instance (Functor m, Applicative m, Monad m) => Default (DB.EntryDatabase m) where
   def = DB.EntryDatabase
-    { DB.selectOne = undefined
-    , DB.selectPage = undefined
-    , DB.selectAll = undefined
-    , DB.search = undefined
-    , DB.insert = undefined
-    , DB.update = undefined
-    , DB.delete = undefined
-    , DB.beforeSavedDays = undefined
-    , DB.afterSavedDays = undefined
-    , DB.insertComment = undefined
+    { _selectOne = undefined
+    , _selectPage = undefined
+    , _selectAll = undefined
+    , _search = undefined
+    , _insert = undefined
+    , _update = undefined
+    , _delete = undefined
+    , _beforeSavedDays = undefined
+    , _afterSavedDays = undefined
+    , _insertComment = undefined
     }

@@ -33,8 +33,6 @@ module Lupo.Entry
   , EDBWrapper (..)
   ) where
 
-import Control.Applicative
-import Control.Monad
 import Control.Monad.CatchIO
 import qualified Data.Enumerator as E
 import qualified Data.Text as T

@@ -4,7 +4,6 @@ module Lupo.Backends.Navigation
   ( makeNavigation
   ) where
 
-import Control.Applicative
 import Data.Enumerator
 import qualified Data.Enumerator.List as EL
 import qualified Data.Time as Time

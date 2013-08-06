@@ -20,7 +20,6 @@ module Lupo.Backends.View.Views
   , entriesFeed
   ) where
 
-import Control.Applicative
 import qualified Data.List as L
 import Data.Maybe
 import Data.Monoid

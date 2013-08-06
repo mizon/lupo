@@ -6,11 +6,11 @@ module Lupo.ConnectionPool
   , makeConnectionPool
   ) where
 
-import Control.Applicative
 import qualified Control.Concurrent.Chan as CC
-import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Trans
+
+import Lupo.Import
 
 data ConnectionPool conn = ConnectionPool
   { checkoutConnection :: IO conn

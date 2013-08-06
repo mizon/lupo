@@ -15,7 +15,6 @@ module Lupo.Util
   , formatTimeForAtom
   ) where
 
-import Control.Lens
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Ix as Ix
@@ -28,6 +27,8 @@ import Prelude hiding (filter)
 import Snap
 import qualified System.Locale as L
 import Text.XmlHtml
+
+import Lupo.Import
 
 localDay :: Simple Lens Time.LocalTime Time.Day
 localDay = lens Time.localDay $ \ld d ->

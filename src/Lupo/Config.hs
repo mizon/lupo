@@ -17,7 +17,6 @@ module Lupo.Config
   ) where
 
 import qualified Data.ByteString as BS
-import Control.Applicative
 import qualified Data.Text as T
 import Text.XmlHtml
 

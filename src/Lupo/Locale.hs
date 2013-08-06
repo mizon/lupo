@@ -5,7 +5,6 @@ module Lupo.Locale
   , loadYamlLocalizer
   ) where
 
-import Control.Applicative
 import Control.Exception
 import qualified Data.Map as M
 import Data.Maybe
@@ -13,6 +12,7 @@ import qualified Data.Text as T
 import qualified Data.Yaml as Y
 
 import Lupo.Exception
+import Lupo.Import
 
 type Localizer = T.Text -> Maybe T.Text
 

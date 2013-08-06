@@ -16,8 +16,6 @@ module Lupo.Application
   , withEntryDB
   ) where
 
-import Control.Lens
-import Control.Monad
 import Control.Monad.CatchIO hiding (Handler)
 import Prelude hiding (filter)
 import Snap
@@ -28,6 +26,7 @@ import qualified Snap.Snaplet.Session as S
 import Lupo.Config
 import qualified Lupo.ConnectionPool as C
 import qualified Lupo.Entry as E
+import Lupo.Import
 import qualified Lupo.Locale as L
 import qualified Lupo.Notice as N
 import qualified Lupo.URLMapper as U

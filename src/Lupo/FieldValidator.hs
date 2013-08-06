@@ -9,14 +9,13 @@ module Lupo.FieldValidator
   , checkIsTooLong
   ) where
 
-import Control.Applicative
-import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Writer
 import qualified Data.Text as T
 import Text.Shakespeare.Text
 
 import Lupo.Exception
+import Lupo.Import
 
 tooLong :: Int
 tooLong = 1024 * 1024

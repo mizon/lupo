@@ -9,10 +9,8 @@ module Lupo.Backends.Entry
   ( makeEntryDatabase
   ) where
 
-import Control.Applicative
 import Control.Concurrent
 import Control.Exception hiding (bracket, catch, throw)
-import Control.Monad
 import Control.Monad.CatchIO
 import Control.Monad.Trans
 import Control.Monad.Writer

@@ -13,34 +13,35 @@ import qualified Database.HDBC.Sqlite3 as Sqlite3
 import Test.Hspec
 
 import qualified Lupo.Backends.Notice as N
+import Lupo.Import
 import qualified Lupo.Notice as N
 
 noticeSpec :: Spec
 noticeSpec = describe "notice database" $ do
   it "calls commitSession before saves notice message" $ do
-    (_, as) <- withNoticeDB (makeSessionMock "abc") True $ flip N.addNotice "hello abc"
+    (_, as) <- withNoticeDB (makeSessionMock "abc") True $ perform $ N.addNotice "hello abc"
     as `shouldBe` [GetCsrfToken, CommitSession]
 
   it "adds notice and pop all notice" $ do
     void $ withNoticeDB (makeSessionMock "abc") False $ \ndb -> do
-      N.addNotice ndb "hello abc"
-      N.addNotice ndb "bye abc"
+      ndb ^! N.addNotice "hello abc"
+      ndb ^! N.addNotice "bye abc"
     void $ withNoticeDB (makeSessionMock "cde") False $ \ndb -> do
-      N.addNotice ndb "hello cde"
-      N.addNotice ndb "bye cde"
+      ndb ^! N.addNotice "hello cde"
+      ndb ^! N.addNotice "bye cde"
 
-    (noticeForAbc, _) <- withNoticeDB (makeSessionMock "abc") False N.popAllNotice
-    (noticeForCde, _) <- withNoticeDB (makeSessionMock "cde") True N.popAllNotice
+    (noticeForAbc, _) <- withNoticeDB (makeSessionMock "abc") False $ perform N.popAllNotice
+    (noticeForCde, _) <- withNoticeDB (makeSessionMock "cde") True $ perform N.popAllNotice
 
     noticeForAbc `shouldBe` ["hello abc", "bye abc"]
     noticeForCde `shouldBe` ["hello cde", "bye cde"]
 
   it "deletes all notice after fetching notice" $ do
     ((notice, afterPoped), _) <- withNoticeDB (makeSessionMock "abc") True $ \ndb -> do
-      N.addNotice ndb "hello abc"
-      N.addNotice ndb "bye abc"
-      notice' <- N.popAllNotice ndb
-      afterPoped' <- N.popAllNotice ndb
+      ndb ^! N.addNotice "hello abc"
+      ndb ^! N.addNotice "bye abc"
+      notice' <- ndb ^! N.popAllNotice
+      afterPoped' <- ndb ^! N.popAllNotice
       pure (notice', afterPoped')
     notice `shouldBe` ["hello abc", "bye abc"]
     afterPoped `shouldBe` []
@@ -59,8 +60,7 @@ makeSessionMock token = N.SessionBackend
 withNoticeDB :: Monoid w
              => N.SessionBackend (TestM w)
              -> Bool
-             -> (N.NoticeDB (TestM w)
-             -> TestM w a)
+             -> (N.NoticeDB (TestM w) -> TestM w a)
              -> IO (a, w)
 withNoticeDB ss ifCleanup handle = runWriterT $
   bracket initialize finalize $ \conn ->

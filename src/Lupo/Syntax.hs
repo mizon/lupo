@@ -8,11 +8,12 @@ module Lupo.Syntax
   , renderInline
   ) where
 
-import Control.Applicative
 import qualified Data.Attoparsec.Text as A
 import Data.Monoid
 import qualified Data.Text as T
 import Text.XmlHtml
+
+import Lupo.Import
 
 renderBody :: T.Text -> [Node]
 renderBody = either (\(show -> msg) -> error $ "[BUG] in body parsing: " <> msg) id
