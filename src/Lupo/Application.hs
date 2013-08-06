@@ -14,6 +14,7 @@ module Lupo.Application
   , auth
   , getNoticeDB
   , withEntryDB
+  , renderView
   ) where
 
 import Control.Monad.CatchIO hiding (Handler)
@@ -66,3 +67,8 @@ withEntryDB :: (MonadCatchIO m, MonadState Lupo m) => (E.EDBWrapper -> m a) -> m
 withEntryDB handler = do
   pool <- gets entryDBPool
   C.withConnection pool handler
+
+renderView :: Getter (V.ViewFactory LupoHandler) (V.View LupoHandler) -> LupoHandler ()
+renderView v = do
+  vf <- gets viewFactory
+  V.render $ vf ^. v

@@ -8,14 +8,14 @@ import Lupo.View
 
 makeViewFactory :: ViewFactory LupoHandler
 makeViewFactory = ViewFactory
-  { singleDayView = V.singleDayView
-  , multiDaysView = V.multiDaysView
-  , monthView = V.monthView
-  , searchResultView = V.searchResultView
-  , loginView = V.loginView
-  , initAccountView = V.initAccountView
-  , adminView = V.adminView
-  , entryEditorView = V.entryEditorView
-  , entryPreviewView = V.entryPreviewView
-  , entriesFeed = V.entriesFeed
+  { _singleDayView = V.singleDayView
+  , _multiDaysView = V.multiDaysView
+  , _monthView = V.monthView
+  , _searchResultView = V.searchResultView
+  , _loginView = V.loginView
+  , _initAccountView = V.initAccountView
+  , _adminView = V.adminView
+  , _entryEditorView = V.entryEditorView
+  , _entryPreviewView = V.entryPreviewView
+  , _entriesFeed = V.entriesFeed
   }

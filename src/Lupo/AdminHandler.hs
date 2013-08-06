@@ -29,16 +29,15 @@ import Lupo.Util
 import qualified Lupo.View as V
 
 handleLogin :: LupoHandler ()
-handleLogin =
-      method GET showLoginForm
-  <|> method POST authenticate
+handleLogin = method GET showLoginForm
+          <|> method POST authenticate
   where
     showLoginForm = do
       cond <- with auth $ A.isLoggedIn
       if cond then
         redirect =<< U.getURL U.adminPath
       else
-        V.render . V.loginView =<< gets viewFactory
+        renderView V.loginView
 
     authenticate = do
       name <- bsParam "name"
@@ -50,9 +49,8 @@ handleLogin =
 
 handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
-  vf <- gets viewFactory
   dayContents <- mapM (\d -> db ^! E.selectPage d) =<< getAllDays db
-  V.render $ V.adminView vf dayContents
+  renderView $ V.adminView dayContents
   where
     getAllDays db = do
       today <- zonedDay <$> liftIO Time.getZonedTime
@@ -62,11 +60,9 @@ handleInitAccount :: LupoHandler ()
 handleInitAccount = do
   exists <- with auth $ A.usernameExists "admin"
   when exists pass
-  method GET getInitAccountForm <|> method POST registerNewAccount
+  method GET showInitAccountForm <|> method POST registerNewAccount
   where
-    getInitAccountForm = do
-      vf <- gets viewFactory
-      V.render $ V.initAccountView vf
+    showInitAccountForm = renderView V.initAccountView
 
     registerNewAccount = do
       pass' <- bsParam "pass"
@@ -79,25 +75,22 @@ handleNewEntry = requireAuth $ method GET (V.render =<< getEditor (E.Entry "" ""
   where
     submitEntry = do
       entry <- E.Entry <$> textParam "title" <*> textParam "body"
-      textParam "action" >>=
-        \case
-          "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
-            db ^! E.insert entry
-            redirect =<< U.getURL U.adminPath
-          "Preview" -> do
-             p <- getPreview =<< dummySaved entry
-             V.render p
-          "Edit" -> V.render =<< getEditor entry
-          _ -> error "invalid request"
+      textParam "action" >>= \case
+        "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
+          db ^! E.insert entry
+          redirect =<< U.getURL U.adminPath
+        "Preview" -> V.render =<< getPreview =<< dummySaved entry
+        "Edit" -> V.render =<< getEditor entry
+        _ -> error "invalid request"
 
     getEditor entry = do
       vf <- gets viewFactory
       saved <- dummySaved entry
-      pure $ V.entryEditorView vf saved "New" $ U.fullPath "admin/new"
+      pure $ vf ^. V.entryEditorView saved "New" (U.fullPath "admin/new")
 
     getPreview entry = do
       vf <- gets viewFactory
-      pure $ V.entryPreviewView vf entry "New" $ U.fullPath "admin/new"
+      pure $ vf ^. V.entryPreviewView entry "New" (U.fullPath "admin/new")
 
     dummySaved entry = do
       today <- liftIO Time.getZonedTime
@@ -115,28 +108,22 @@ handleEditEntry = requireAuth $ method GET showEntryEditor
     showEntryEditor = withEntryDB $ \(E.EDBWrapper db) -> do
       id' <- paramId
       entry <- db ^! E.selectOne id'
-      V.render =<< getEditor entry
+      renderView $ getEditor entry
 
-    updateEntry = do
-      withEntryDB $ \(E.EDBWrapper db) -> do
-        id' <- paramId
-        entry <- E.Entry <$> textParam "title" <*> textParam "body"
-        baseEntry <- db ^! E.selectOne id'
-        textParam "action" >>= \case
-          "Submit" -> do
-            db ^! E.update id' entry
-            redirect =<< U.getURL U.adminPath
-          "Preview" -> V.render =<< getPreview (baseEntry & E.savedContent .~ entry)
-          "Edit" -> V.render =<< getEditor (baseEntry & E.savedContent .~ entry)
-          _ -> undefined
+    updateEntry = withEntryDB $ \(E.EDBWrapper db) -> do
+      id' <- paramId
+      entry <- E.Entry <$> textParam "title" <*> textParam "body"
+      baseEntry <- db ^! E.selectOne id'
+      textParam "action" >>= \case
+        "Submit" -> do
+          db ^! E.update id' entry
+          redirect =<< U.getURL U.adminPath
+        "Preview" -> renderView $ getPreview $ baseEntry & E.savedContent .~ entry
+        "Edit" -> renderView $ getEditor $ baseEntry & E.savedContent .~ entry
+        _ -> undefined
 
-    getEditor entry = do
-      vf <- gets viewFactory
-      pure $ V.entryEditorView vf entry "Edit" $ U.entryEditPath entry
-
-    getPreview entry = do
-      vf <- gets viewFactory
-      pure $ V.entryPreviewView vf entry "Edit" $ U.entryEditPath entry
+    getEditor entry = V.entryEditorView entry "Edit" $ U.entryEditPath entry
+    getPreview entry = V.entryPreviewView entry "Edit" $ U.entryEditPath entry
 
 handleDeleteEntry :: LupoHandler ()
 handleDeleteEntry = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
