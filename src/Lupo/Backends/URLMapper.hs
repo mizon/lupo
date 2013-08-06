@@ -13,42 +13,43 @@ import Data.Monoid
 import qualified Data.Text as T
 import Text.Shakespeare.Text
 
-import Lupo.URLMapper
 import qualified Lupo.Entry as E
+import Lupo.Import
+import Lupo.URLMapper
 import Lupo.Util
 
 makeURLMapper :: Path -> URLMapper
 makeURLMapper basePath = URLMapper
-  { entryPath = \E.Saved {..} ->
-      full $ "entries" </> show idx
+  { _entryPath = \s ->
+      full $ "entries" </> show (s ^. E.idx)
 
-  , entryEditPath = \E.Saved {..} ->
-      full $ "admin" </> show idx </> "edit"
+  , _entryEditPath = \s ->
+      full $ "admin" </> show (s ^. E.idx) </> "edit"
 
-  , singleDayPath = full . dayPath
+  , _singleDayPath = full . dayPath
 
-  , multiDaysPath = \d n ->
+  , _multiDaysPath = \d n ->
       full [st|#{dayPath d}-#{show n}|]
 
-  , monthPath = full . formatTime "%Y%m"
-  , topPagePath = full ""
-  , adminPath = full "admin"
-  , loginPath = full "login"
-  , initAccountPath = full "init-account"
+  , _monthPath = full . formatTime "%Y%m"
+  , _topPagePath = full ""
+  , _adminPath = full "admin"
+  , _loginPath = full "login"
+  , _initAccountPath = full "init-account"
 
-  , commentPostPath = \d ->
+  , _commentPostPath = \d ->
       full $ dayPath d </> "comment#new-comment"
 
-  , newCommentPath = \d ->
+  , _newCommentPath = \d ->
       full $ dayPath d <> "#new-comment"
 
-  , commentsPath = \d ->
+  , _commentsPath = \d ->
       full $ dayPath d <> "#comments"
 
-  , cssPath = \css ->
+  , _cssPath = \css ->
       full $ "css" </> css
 
-  , fullPath = full
+  , _fullPath = full
   }
   where
     dayPath = toString . formatTime "%Y%m%d"

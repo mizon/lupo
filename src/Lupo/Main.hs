@@ -29,6 +29,7 @@ import qualified Lupo.Backends.URLMapper as U
 import qualified Lupo.Backends.View as V
 import Lupo.Config
 import qualified Lupo.ConnectionPool as CP
+import Lupo.Import
 import qualified Lupo.Locale as L
 import qualified Lupo.PublicHandler as Public
 import qualified Lupo.URLMapper as U
@@ -36,12 +37,12 @@ import Lupo.Util
 
 main :: IO ()
 main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
-  { lcSiteTitle = "Lupo Web Diary"
-  , lcSqlitePath = "./development.sqlite3"
-  , lcLanguage = "ja"
-  , lcLocaleFile = "./ja.yml"
-  , lcDaysPerPage = 5
-  , lcFooterBody =
+  { _lcSiteTitle = "Lupo Web Diary"
+  , _lcSqlitePath = "./development.sqlite3"
+  , _lcLanguage = "ja"
+  , _lcLocaleFile = "./ja.yml"
+  , _lcDaysPerPage = 5
+  , _lcFooterBody =
     [ Element "p" []
       [ TextNode "Powered by "
       , Element "a" [("href", "http://www.haskell.org/haskellwiki/Haskell")] [TextNode "Haskell"]
@@ -49,9 +50,9 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
       , Element "a" [("href", "http://snapframework.com/")] [TextNode "Snap Framework"]
       ]
     ]
-  , lcBasePath = ""
-  , lcSpamFilter = const True
-  , lcAuthorName = ""
+  , _lcBasePath = ""
+  , _lcSpamFilter = const True
+  , _lcAuthorName = ""
   }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
@@ -59,9 +60,9 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
   h <- nestSnaplet "heist" heist $ H.heistInit "templates"
   s <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "site_key.txt" "sess" $ Just 3600
   a <- nestSnaplet "auth" auth $ JsonFile.initJsonFileAuthManager A.defAuthSettings session "users.json"
-  conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 lcSqlitePath
-  edbs <- liftIO $ CP.makeConnectionPool (E.makeEntryDatabase conn lcSpamFilter) 5
-  l <- liftIO $ L.loadYamlLocalizer lcLocaleFile
+  conn <- liftIO $ DB.ConnWrapper <$> Sqlite3.connectSqlite3 (lc ^. lcSqlitePath)
+  edbs <- liftIO $ CP.makeConnectionPool (E.makeEntryDatabase conn $ lc ^. lcSpamFilter) 5
+  l <- liftIO $ L.loadYamlLocalizer $ lc ^. lcLocaleFile
   A.addAuthSplices auth
   addRoutes
     [ ("", Public.handleTop)
@@ -82,9 +83,9 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     ]
   onUnload $ DB.disconnect conn
   H.addSplices
-    [ ("lupo:language", H.textSplice lcLanguage)
-    , ("lupo:top-page-path", U.toURLSplice =<< U.getURL U.topPagePath)
-    , ("lupo:search-path", U.toURLSplice =<< U.getURL U.fullPath <*> pure "search")
+    [ ("lupo:language", H.textSplice $ lc ^. lcLanguage)
+    , ("lupo:top-page-path", U.urlSplice U.topPagePath)
+    , ("lupo:search-path", U.urlSplice (U.fullPath "search"))
     ]
   pure Lupo
     { _heist = h
@@ -93,7 +94,7 @@ lupoInit lc@LupoConfig {..} = makeSnaplet "lupo" "A personal web diary." Nothing
     , lupoConfig = lc
     , localizer = l
     , noticeDB = initNoticeDB conn
-    , urlMapper = U.makeURLMapper lcBasePath
+    , urlMapper = U.makeURLMapper $ lc ^. lcBasePath
     , entryDBPool = edbs
     , viewFactory = V.makeViewFactory
     }

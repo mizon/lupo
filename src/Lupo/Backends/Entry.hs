@@ -1,3 +1,4 @@
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -22,27 +23,28 @@ import Data.IORef
 import qualified Data.Map as M
 import qualified Data.Time as Time
 import qualified Database.HDBC as DB
-import Prelude hiding (all, catch)
+import Prelude hiding (all)
 
 import Lupo.Entry
 import Lupo.Exception
 import qualified Lupo.FieldValidator as FV
+import Lupo.Import
 import Lupo.Util
 
 makeEntryDatabase :: DB.IConnection conn => conn -> (Comment -> Bool) -> IO EDBWrapper
 makeEntryDatabase conn spamFilter = do
   pool <- makeStatementPool conn <$> newIORef M.empty
   pure $ EDBWrapper EntryDatabase
-    { selectOne = \(DB.toSql -> id') -> do
+    { _selectOne = \(DB.toSql -> id') -> do
         row <- liftIO $ retryingTransaction conn $
           withStatement pool "SELECT * FROM entries WHERE id = ?" $ \stmt -> do
             void $ DB.execute stmt [id']
             DB.fetchRow stmt
         maybe (throw RecordNotFound) (pure . sqlToEntry) row
 
-    , selectAll = enumStatement pool "SELECT * FROM entries ORDER BY created_at DESC" [] E.$= EL.map sqlToEntry
+    , _selectAll = enumStatement pool "SELECT * FROM entries ORDER BY created_at DESC" [] E.$= EL.map sqlToEntry
 
-    , selectPage = \d@(DB.toSql -> sqlDay) ->
+    , _selectPage = \d@(DB.toSql -> sqlDay) ->
         retryingTransaction conn $ do
           entries <- E.run_ $ enumStatement pool "SELECT * FROM entries WHERE day = ? ORDER BY created_at ASC" [sqlDay]
                          E.$= EL.map sqlToEntry
@@ -52,10 +54,10 @@ makeEntryDatabase conn spamFilter = do
                           E.$$ EL.consume
           pure $ makePage d entries comments
 
-    , search = \(DB.toSql -> word) ->
+    , _search = \(DB.toSql -> word) ->
         enumStatement pool "SELECT * FROM entries WHERE title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%' ORDER BY id DESC" [word, word] E.$= EL.map sqlToEntry
 
-    , insert = \Entry {..} ->
+    , _insert = \e ->
         liftIO $ retryingTransaction conn $
           withStatement pool "INSERT INTO entries (created_at, modified_at, day, title, body) VALUES (?, ?, ?, ?, ?)" $ \stmt -> do
             now <- Time.getZonedTime
@@ -63,35 +65,35 @@ makeEntryDatabase conn spamFilter = do
               [ DB.toSql now
               , DB.toSql now
               , DB.toSql $ zonedDay now
-              , DB.toSql entryTitle
-              , DB.toSql entryBody
+              , DB.toSql $ e ^. entryTitle
+              , DB.toSql $ e ^. entryBody
               ]
 
-    , update = \i Entry {..} ->
+    , _update = \i e ->
         liftIO $ retryingTransaction conn $
           withStatement pool "UPDATE entries SET modified_at = ?, title = ?, body = ? WHERE id = ?" $ \stmt -> do
             now <- Time.getZonedTime
             void $ DB.execute stmt
               [ DB.toSql now
-              , DB.toSql entryTitle
-              , DB.toSql entryBody
+              , DB.toSql $ e ^. entryTitle
+              , DB.toSql $ e ^. entryBody
               , DB.toSql i
               ]
 
-    , delete = \(DB.toSql -> i) -> do
+    , _delete = \(DB.toSql -> i) -> do
         status <- liftIO $ retryingTransaction conn $ do
           withStatement pool "DELETE FROM entries WHERE id = ?" $ \stmt ->
             DB.execute stmt [i]
         when (status /= 1) $
           throw RecordNotFound
 
-    , beforeSavedDays = \(DB.toSql -> d) ->
+    , _beforeSavedDays = \(DB.toSql -> d) ->
         enumStatement pool "SELECT day FROM entries WHERE day <= ? GROUP BY day ORDER BY day DESC" [d] E.$= EL.map (DB.fromSql . Prelude.head)
 
-    , afterSavedDays = \(DB.toSql -> d) ->
+    , _afterSavedDays = \(DB.toSql -> d) ->
         enumStatement pool "SELECT day FROM entries WHERE day >= ? GROUP BY day ORDER BY day ASC" [d] E.$= EL.map (DB.fromSql . Prelude.head)
 
-    , insertComment = \d c@Comment {..} -> do
+    , _insertComment = \d c@Comment {..} -> do
         FV.validate commentValidator c
         liftIO $ retryingTransaction conn $ do
           withStatement pool "INSERT INTO comments (created_at, modified_at, day, name, body) VALUES (?, ?, ?, ?, ?)" $ \stmt -> do
@@ -100,8 +102,8 @@ makeEntryDatabase conn spamFilter = do
               [ DB.toSql now
               , DB.toSql now
               , DB.toSql d
-              , DB.toSql commentName
-              , DB.toSql commentBody
+              , DB.toSql $ c ^. commentName
+              , DB.toSql $ c ^. commentBody
               ]
     }
   where
@@ -122,18 +124,18 @@ makeEntryDatabase conn spamFilter = do
                  , DB.fromSql -> n
                  , DB.fromSql -> b
                  ] = Saved
-      { idx = id'
-      , createdAt = c_at
-      , modifiedAt = m_at
-      , savedContent = Comment n b
+      { _idx = id'
+      , _createdAt = c_at
+      , _modifiedAt = m_at
+      , _savedContent = Comment n b
       }
     sqlToComment _ = error "in sql->comment conversion"
 
     commentValidator = FV.makeFieldValidator $ \c@Comment {..} -> do
-      FV.checkIsEmtpy commentName "Name"
-      FV.checkIsTooLong commentName "Name"
-      FV.checkIsEmtpy commentBody "Content"
-      FV.checkIsTooLong commentBody "Content"
+      FV.checkIsEmtpy (c ^. commentName) "Name"
+      FV.checkIsTooLong (c ^. commentName) "Name"
+      FV.checkIsEmtpy (c ^. commentBody) "Content"
+      FV.checkIsTooLong (c ^. commentBody) "Content"
       unless (spamFilter c) $ tell $ pure "Comment is invalid."
 
 data StatementPool = StatementPool
@@ -166,10 +168,10 @@ sqlToEntry [ DB.fromSql -> id'
            , DB.fromSql -> t
            , DB.fromSql -> b
            ] = Saved
-  { idx = id'
-  , createdAt = c_at
-  , modifiedAt = m_at
-  , savedContent = Entry t b
+  { _idx = id'
+  , _createdAt = c_at
+  , _modifiedAt = m_at
+  , _savedContent = Entry t b
   }
 sqlToEntry _ = error "in sql->entry conversion"
 
@@ -188,8 +190,8 @@ retryingTransaction conn action = actionWithRetrying (3 :: Int) <* liftIO (DB.co
 
 makePage :: Time.Day -> [Saved Entry] -> [Saved Comment] -> Page
 makePage d es cs = Page
-  { pageDay = d
-  , pageEntries = es
-  , pageComments = cs
-  , numOfComments = Prelude.length cs
+  { _pageDay = d
+  , _pageEntries = es
+  , _pageComments = cs
+  , _numOfComments = Prelude.length cs
   }

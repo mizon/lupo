@@ -32,6 +32,7 @@ import qualified Heist.Interpreted as H
 import Text.XmlHtml
 
 import qualified Lupo.Entry as E
+import Lupo.Import
 import qualified Lupo.Locale as LL
 import qualified Lupo.Navigation as N
 import qualified Lupo.Syntax as S
@@ -39,50 +40,51 @@ import qualified Lupo.URLMapper as U
 import Lupo.Util
 
 renderBody :: E.Entry -> H.Template
-renderBody E.Entry {..} = S.renderBody entryBody
+renderBody e = S.renderBody $ e ^. E.entryBody
 
 daySummary :: (Functor m, Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => E.Page -> H.Splice m
-daySummary E.Page {..} = H.callTemplate "_day-summary"
-  [ ("lupo:day-title", dayTitle pageDay)
-  , ("lupo:day-entries", pure $ anEntry Nothing =<< pageEntries)
+daySummary p@E.Page {..} = H.callTemplate "_day-summary"
+  [ ("lupo:day-title", dayTitle $ p ^. E.pageDay)
+  , ("lupo:day-entries", pure $ anEntry Nothing =<< p ^. E.pageEntries)
   , ("lupo:link-to-comment", linkToComment)
   , ("lupo:comment-label", H.textSplice =<< commentLabel)
   ]
   where
     commentLabel
-      | numOfComments > 0 = do
+      | p ^. E.numOfComments > 0 = do
           label <- LL.localize "Comment"
-          pure [st|#{label} (#{toText numOfComments})|]
+          let num = toText $ p ^. E.numOfComments
+          pure [st|#{label} (#{num})|]
       | otherwise = LL.localize "New Comment"
 
     linkToComment
-      | numOfComments > 0 = U.toURLSplice =<< U.getURL U.commentsPath <*> pure pageDay
-      | otherwise = U.toURLSplice =<< U.getURL U.newCommentPath <*> pure pageDay
+      | p ^. E.numOfComments > 0 = U.urlSplice $ U.commentsPath $ p ^. E.pageDay
+      | otherwise = U.urlSplice $ U.newCommentPath $ p ^. E.pageDay
 
 dayTitle :: (U.HasURLMapper (H.HeistT m m), Monad m, Functor m) => Time.Day -> H.Splice m
 dayTitle d = do
-  link <- U.getURL $ flip U.singleDayPath d
+  link <- U.getURL $ U.singleDayPath d
   pure $ [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode $ dayFormat d]]
   where
     dayFormat = formatTime "%Y-%m-%d"
 
 anEntry :: Maybe Int -> E.Saved E.Entry -> H.Template
-anEntry index E.Saved {..} =
-     Element "h3" entryHeadlineAttr (S.renderInline $ E.entryTitle savedContent)
-   : S.renderBody (E.entryBody savedContent)
-  <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" createdAt]]
+anEntry i e@E.Saved {..} =
+     Element "h3" entryHeadlineAttr (S.renderInline $ e ^. E.savedContent . E.entryTitle)
+   : S.renderBody (e ^. E.savedContent . E.entryBody)
+  <> [Element "p" [("class", "time")] [TextNode $ formatTime "(%H:%M)" $ e ^. E.createdAt]]
   where
-    entryHeadlineAttr = maybe [] (\i -> [("id", T.justifyRight 2 '0' $ toText i)]) index
+    entryHeadlineAttr = maybe [] (\i' -> [("id", T.justifyRight 2 '0' $ toText i')]) i
 
 comment :: (Monad m, LL.HasLocalizer (H.HeistT m m)) => E.Saved E.Comment -> H.Splice m
-comment E.Saved {..} = H.callTemplate "_comment"
-  [ ("lupo:comment-name", H.textSplice $ E.commentName savedContent)
-  , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ createdAt)
+comment e@E.Saved {..} = H.callTemplate "_comment"
+  [ ("lupo:comment-name", H.textSplice $ e ^. E.savedContent . E.commentName)
+  , ("lupo:comment-time", H.textSplice $ formatTime "%Y-%m-%d %H:%M" $ e ^. E.createdAt)
   , ("lupo:comment-content", commentBodySplice)
   ]
   where
     commentBodySplice = pure $ L.intersperse (Element "br" [] [])
-                      $ TextNode <$> (T.lines $ E.commentBody savedContent)
+                      $ TextNode <$> (T.lines $ e ^. E.savedContent . E.commentBody)
 
 emptyMonth :: LL.HasLocalizer m => m H.Template
 emptyMonth = do
@@ -90,25 +92,25 @@ emptyMonth = do
   pure [Element "p" [("class", "empty-month")] [TextNode message]]
 
 searchResult :: (Functor m, Monad m, U.HasURLMapper (H.HeistT m m)) => E.Saved E.Entry -> H.Splice m
-searchResult e@E.Saved {..} = do
-  (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ flip U.singleDayPath $ zonedDay createdAt
-  (Encoding.decodeUtf8 -> entryLink) <- U.getURL $ flip U.entryPath e
+searchResult e = do
+  (Encoding.decodeUtf8 -> dayLink) <- U.getURL $ U.singleDayPath $ e ^. E.createdAt & zonedDay
+  (Encoding.decodeUtf8 -> entryLink) <- U.getURL $ U.entryPath e
   pure
     [ Element "tr" []
       [ Element "th" [("class", "result-day")]
-        [ Element "a" [("href", dayLink)] [TextNode $ timeToText createdAt]
+        [ Element "a" [("href", dayLink)] [TextNode $ e ^. E.createdAt & timeToText]
         ]
       , Element "th" [("class", "result-title")]
-        [ Element "a" [("href", entryLink)] [TextNode $ E.entryTitle savedContent]
+        [ Element "a" [("href", entryLink)] [TextNode $ e ^. E.savedContent . E.entryTitle]
         ]
-      , Element "td" [] [TextNode $ T.take 30 $ E.entryBody savedContent]
+      , Element "td" [] [TextNode $ T.take 30 $ e ^. E.savedContent . E.entryBody]
       ]
     ]
 
 monthNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => N.Navigation (H.HeistT m m) -> H.Splice m
 monthNavigation nav = do
-  previous <- N.getPreviousMonth nav
-  next <- N.getNextMonth nav
+  previous <- nav ^! N.getPreviousMonth
+  next <- nav ^! N.getNextMonth
   previousLabel <- LL.localize "Previous Month"
   nextLabel <- LL.localize "Next Month"
   H.callTemplate "_navigation"
@@ -118,13 +120,13 @@ monthNavigation nav = do
     ]
   where
     mkMonthLink body = maybe (pure [TextNode body]) $ \m -> do
-      (Encoding.decodeUtf8 -> monthPath) <- U.getURL $ flip U.monthPath m
+      (Encoding.decodeUtf8 -> monthPath) <- U.getURL $ U.monthPath m
       pure [Element "a" [("href", monthPath)] [TextNode body]]
 
 singleDayNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => N.Navigation (H.HeistT m m) -> H.Splice m
 singleDayNavigation nav = do
-  previous <- N.getPreviousDay nav
-  next <- N.getNextDay nav
+  previous <- nav ^! N.getPreviousDay
+  next <- nav ^! N.getNextDay
   previousLabel <- LL.localize "Previous Day"
   thisMonthLabel <- LL.localize "This Month"
   nextLabel <- LL.localize "Next Day"
@@ -135,17 +137,17 @@ singleDayNavigation nav = do
     ]
   where
     mkDayLink body = maybe (pure [TextNode body]) $ \d_ -> do
-      link <- U.getURL $ flip U.singleDayPath d_
+      link <- U.getURL $ U.singleDayPath d_
       pure [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode body]]
 
     thisMonthLink body = do
-      link <- U.getURL $ flip U.monthPath $ N.getThisMonth nav
+      link <- U.getURL $ U.monthPath $ nav ^. N.getThisMonth
       pure [Element "a" [("href", Encoding.decodeUtf8 link)] [TextNode body]]
 
 multiDaysNavigation :: (Monad m, LL.HasLocalizer (H.HeistT m m), U.HasURLMapper (H.HeistT m m)) => Integer -> N.Navigation (H.HeistT m m) -> H.Splice m
 multiDaysNavigation nDays nav = do
-  previous <- N.getPreviousPageTop nav nDays
-  next <- N.getNextPageTop nav nDays
+  previous <- nav ^! N.getPreviousPageTop nDays
+  next <- nav ^! N.getNextPageTop nDays
   previousLabel <- LL.localize "Previous %d Days"
   nextLabel <- LL.localize "Next %d Days"
   H.callTemplate "_navigation"
@@ -155,8 +157,7 @@ multiDaysNavigation nDays nav = do
     ]
   where
     mkDayLink body = maybe (pure [TextNode formattedBody]) $ \d_ -> do
-      (Encoding.decodeUtf8 -> link) <- U.getURL $ \urls ->
-        U.multiDaysPath urls d_ $ fromIntegral nDays
+      (Encoding.decodeUtf8 -> link) <- U.getURL $ U.multiDaysPath d_ $ fromIntegral nDays
       pure [Element "a" [("href", link)] [TextNode formattedBody]]
       where
         formattedBody = T.replace "%d" (toText nDays) body

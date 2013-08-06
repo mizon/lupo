@@ -1,3 +1,4 @@
+{-# LANGUAGE DisambiguateRecordFields #-}
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
@@ -23,6 +24,7 @@ import qualified Snap.Snaplet.Auth as A
 
 import Lupo.Application
 import qualified Lupo.Entry as E
+import Lupo.Import
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
@@ -50,12 +52,12 @@ handleLogin =
 handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
   vf <- gets viewFactory
-  dayContents <- mapM (E.selectPage db) =<< getAllDays db
+  dayContents <- mapM (\d -> db ^! E.selectPage d) =<< getAllDays db
   V.render $ V.adminView vf dayContents
   where
     getAllDays db = do
       today <- zonedDay <$> liftIO Time.getZonedTime
-      run_ $ E.beforeSavedDays db today $$ EL.consume
+      run_ $ db ^. E.beforeSavedDays today $$ EL.consume
 
 handleInitAccount :: LupoHandler ()
 handleInitAccount = do
@@ -81,7 +83,7 @@ handleNewEntry = requireAuth $ method GET (V.render =<< getEditor (E.Entry "" ""
       textParam "action" >>=
         \case
           "Submit" -> withEntryDB $ \(E.EDBWrapper db) -> do
-            E.insert db entry
+            db ^! E.insert entry
             redirect =<< U.getURL U.adminPath
           "Preview" -> do
              p <- getPreview =<< dummySaved entry
@@ -92,56 +94,55 @@ handleNewEntry = requireAuth $ method GET (V.render =<< getEditor (E.Entry "" ""
     getEditor entry = do
       vf <- gets viewFactory
       saved <- dummySaved entry
-      pure $ V.entryEditorView vf saved "New" $ flip U.fullPath "admin/new"
+      pure $ V.entryEditorView vf saved "New" $ U.fullPath "admin/new"
 
     getPreview entry = do
       vf <- gets viewFactory
-      pure $ V.entryPreviewView vf entry "New" $ flip U.fullPath "admin/new"
+      pure $ V.entryPreviewView vf entry "New" $ U.fullPath "admin/new"
 
     dummySaved entry = do
       today <- liftIO Time.getZonedTime
       pure E.Saved
-        { E.idx = undefined
-        , E.createdAt = today
-        , E.modifiedAt = undefined
-        , E.savedContent = entry
+        { _idx = undefined
+        , _createdAt = today
+        , _modifiedAt = undefined
+        , _savedContent = entry
         }
 
 handleEditEntry :: LupoHandler ()
-handleEditEntry = requireAuth $
-      method GET showEntryEditor
-  <|> method POST updateEntry
+handleEditEntry = requireAuth $ method GET showEntryEditor
+                            <|> method POST updateEntry
   where
     showEntryEditor = withEntryDB $ \(E.EDBWrapper db) -> do
       id' <- paramId
-      entry <- E.selectOne db id'
+      entry <- db ^! E.selectOne id'
       V.render =<< getEditor entry
 
     updateEntry = do
       withEntryDB $ \(E.EDBWrapper db) -> do
         id' <- paramId
         entry <- E.Entry <$> textParam "title" <*> textParam "body"
-        baseEntry <- E.selectOne db id'
-        textParam "action" >>=
-          \case
-            "Submit" -> do
-              E.update db id' entry
-              redirect =<< U.getURL U.adminPath
-            "Preview" -> V.render =<< getPreview baseEntry {E.savedContent = entry}
-            "Edit" -> V.render =<< getEditor baseEntry {E.savedContent = entry}
-            _ -> undefined
+        baseEntry <- db ^! E.selectOne id'
+        textParam "action" >>= \case
+          "Submit" -> do
+            db ^! E.update id' entry
+            redirect =<< U.getURL U.adminPath
+          "Preview" -> V.render =<< getPreview (baseEntry & E.savedContent .~ entry)
+          "Edit" -> V.render =<< getEditor (baseEntry & E.savedContent .~ entry)
+          _ -> undefined
 
     getEditor entry = do
       vf <- gets viewFactory
-      pure $ V.entryEditorView vf entry "Edit" $ flip U.entryEditPath entry
+      pure $ V.entryEditorView vf entry "Edit" $ U.entryEditPath entry
 
     getPreview entry = do
       vf <- gets viewFactory
-      pure $ V.entryPreviewView vf entry "Edit" $ flip U.entryEditPath entry
+      pure $ V.entryPreviewView vf entry "Edit" $ U.entryEditPath entry
 
 handleDeleteEntry :: LupoHandler ()
 handleDeleteEntry = requireAuth $ withEntryDB $ \(E.EDBWrapper db) -> do
-  E.delete db =<< paramId
+  i <- paramId
+  db ^! E.delete i
   redirect =<< U.getURL U.adminPath
 
 requireAuth :: LupoHandler a -> LupoHandler a

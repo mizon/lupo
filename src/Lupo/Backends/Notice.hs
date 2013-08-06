@@ -6,7 +6,6 @@ module Lupo.Backends.Notice
   , makeSessionBackend
   ) where
 
-import Control.Applicative
 import qualified Database.HDBC as DB
 import Snap
 import qualified Snap.Snaplet.Session as SS
@@ -15,7 +14,7 @@ import Lupo.Notice
 
 makeNoticeDB :: (DB.IConnection c, Applicative m, MonadIO m) => c -> SessionBackend m -> NoticeDB m
 makeNoticeDB conn SessionBackend {..} = NoticeDB
-  { addNotice = \(DB.toSql -> msg) -> do
+  { _addNotice = \(DB.toSql -> msg) -> do
       (DB.toSql -> token) <- getCsrfToken
       commitSession
       liftIO $ do
@@ -25,7 +24,7 @@ makeNoticeDB conn SessionBackend {..} = NoticeDB
           ]
         DB.commit conn
 
-  , popAllNotice = do
+  , _popAllNotice = do
       (DB.toSql -> token) <- getCsrfToken
       messages <- liftIO $ DB.withTransaction conn $ const $ do
         stmt <- DB.prepare conn "SELECT message FROM notice WHERE token = ?"
