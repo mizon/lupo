@@ -90,12 +90,12 @@ lupoInit lc = makeSnaplet "lupo" "A personal web diary." Nothing $ do
     { _heist = h
     , _session = s
     , _auth = a
-    , lupoConfig = lc
-    , localizer = l
-    , noticeDB = initNoticeDB conn
-    , urlMapper = U.makeURLMapper $ lc ^. lcBasePath
-    , entryDBPool = edbs
-    , viewFactory = V.makeViewFactory
+    , _lupoConfig = lc
+    , _localizer = l
+    , _noticeDB = initNoticeDB conn
+    , _urlMapper = U.makeURLMapper $ lc ^. lcBasePath
+    , _entryDBPool = edbs
+    , _viewFactory = V.makeViewFactory
     }
   where
     initNoticeDB conn = N.makeNoticeDB conn $ N.makeSessionBackend session

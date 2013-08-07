@@ -7,11 +7,17 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lupo.Application
-  ( Lupo (..)
-  , LupoHandler
+  ( LupoHandler
+  , Lupo (..)
   , heist
   , session
   , auth
+  , lupoConfig
+  , localizer
+  , noticeDB
+  , urlMapper
+  , entryDBPool
+  , viewFactory
   , getNoticeDB
   , withEntryDB
   , renderView
@@ -33,42 +39,40 @@ import qualified Lupo.Notice as N
 import qualified Lupo.URLMapper as U
 import qualified Lupo.View as V
 
+type LupoHandler = Handler Lupo Lupo
+
 data Lupo = Lupo
   { _heist :: Snaplet (SH.Heist Lupo)
   , _session :: Snaplet S.SessionManager
   , _auth :: Snaplet (A.AuthManager Lupo)
-  , lupoConfig :: LupoConfig
-  , localizer :: L.Localizer
-  , noticeDB :: forall b. N.NoticeDB (Handler b Lupo)
-  , urlMapper :: U.URLMapper
-  , entryDBPool :: C.ConnectionPool E.EDBWrapper
-  , viewFactory :: V.ViewFactory (Handler Lupo Lupo)
+  , _lupoConfig :: LupoConfig
+  , _localizer :: L.Localizer
+  , _noticeDB :: N.NoticeDB LupoHandler
+  , _urlMapper :: U.URLMapper
+  , _entryDBPool :: C.ConnectionPool E.EDBWrapper
+  , _viewFactory :: V.ViewFactory LupoHandler
   }
 makeLenses ''Lupo
-
-type LupoHandler = Handler Lupo Lupo
 
 instance SH.HasHeist Lupo where
   heistLens = subSnaplet heist
 
 instance (MonadState Lupo m, Applicative m, Functor m) => GetLupoConfig m where
-  getLupoConfig = gets lupoConfig
+  getLupoConfig = use lupoConfig
 
 instance (MonadState Lupo m, Applicative m, Functor m) => L.HasLocalizer m where
-  refLocalizer = gets localizer
+  refLocalizer = use localizer
 
 instance (MonadState Lupo m, Applicative m, Functor m) => U.HasURLMapper m where
-  getURLMapper = gets urlMapper
+  getURLMapper = use urlMapper
 
 getNoticeDB :: MonadState Lupo m => m (N.NoticeDB LupoHandler)
-getNoticeDB = gets noticeDB
+getNoticeDB = use noticeDB
 
 withEntryDB :: (MonadCatchIO m, MonadState Lupo m) => (E.EDBWrapper -> m a) -> m a
 withEntryDB handler = do
-  pool <- gets entryDBPool
+  pool <- use entryDBPool
   C.withConnection pool handler
 
 renderView :: Getter (V.ViewFactory LupoHandler) (V.View LupoHandler) -> LupoHandler ()
-renderView v = do
-  vf <- gets viewFactory
-  V.render $ vf ^. v
+renderView v = V.render =<< use (viewFactory . v)
