@@ -1,0 +1,17 @@
+:set -isrc:spec
+:set -Wall
+:set -XDeriveDataTypeable
+:set -XDisambiguateRecordFields
+:set -XDoAndIfThenElse
+:set -XExistentialQuantification
+:set -XFlexibleContexts
+:set -XFlexibleInstances
+:set -XLambdaCase
+:set -XNoMonomorphismRestriction
+:set -XOverloadedStrings
+:set -XQuasiQuotes
+:set -XRankNTypes
+:set -XScopedTypeVariables
+:set -XTemplateHaskell
+:set -XTypeSynonymInstances
+:set -XViewPatterns
