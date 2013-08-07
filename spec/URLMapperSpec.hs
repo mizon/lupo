@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-missing-fields #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module URLMapperSpec
@@ -27,6 +28,11 @@ urlMapperSpec = describe "URL Mapper" $ do
   it "provides a path to the day page" $
     U.singleDayPath (Time.fromGregorian 2012 1 1) `shouldGet`
       "/lupo/20120101"
+
+  it "provides a path to the single entry on the day page" $
+    let entry = E.Saved {_idx = 10, _savedContent = E.Entry "foo" "foo"}
+        page = E.Page {_pageDay = Time.fromGregorian 2012 1 1, _pageEntries = [entry]}
+    in U.entryDayPath page entry `shouldGet` "/lupo/20120101#01"
 
   it "provides a path to the month page" $
     U.monthPath (Time.fromGregorian 2012 1 1) `shouldGet`

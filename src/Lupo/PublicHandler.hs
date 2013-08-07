@@ -14,15 +14,12 @@ import qualified Data.ByteString as BS
 import qualified Data.Char as C
 import Data.Enumerator as E hiding (head, replicate)
 import qualified Data.Enumerator.List as EL
-import qualified Data.List as L
 import Data.Maybe
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
 import System.Locale
-import Text.Shakespeare.Text hiding (toText)
 
 import Lupo.Application
 import qualified Lupo.Backends.Navigation as N
@@ -72,17 +69,12 @@ handleDay = parseQuery $ A.try multiDaysResponse
 
 handleEntries :: LupoHandler ()
 handleEntries = method GET $ do
-  withEntryDB $ \(LE.EDBWrapper db) -> do
-    i <- paramId
-    entry <- db ^! LE.selectOne i
-    page <- db ^! LE.selectPage (entry ^. LE.createdAt . zonedTimeToLocalTime . localDay)
-    let n = maybe (error "must not happen") (+ 1)
-          $ L.findIndex (== entry)
-          $ page ^. LE.pageEntries
-    base <- U.getURL $ U.singleDayPath $ page ^. LE.pageDay
-    redirect $ TE.encodeUtf8 [st|#{TE.decodeUtf8 base}##{makeEntryNumber n}|]
-  where
-    makeEntryNumber = T.justifyRight 2 '0' . toText
+  i <- paramId
+  (page, entry) <- withEntryDB $ \(LE.EDBWrapper db) -> do
+    entry' <- db ^! LE.selectOne i
+    page' <- db ^! LE.selectPage (entry' ^. LE.getCreatedDay)
+    pure (page', entry')
+  redirect =<< U.getURL (U.entryDayPath page entry)
 
 handleSearch :: LupoHandler ()
 handleSearch = do

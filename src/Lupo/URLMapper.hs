@@ -4,6 +4,7 @@ module Lupo.URLMapper
   , entryPath
   , entryEditPath
   , singleDayPath
+  , entryDayPath
   , multiDaysPath
   , monthPath
   , topPagePath
@@ -36,6 +37,7 @@ data URLMapper = URLMapper
   { _entryPath :: E.Saved E.Entry -> Path
   , _entryEditPath :: E.Saved E.Entry -> Path
   , _singleDayPath :: Time.Day -> Path
+  , _entryDayPath :: E.Page -> E.Saved E.Entry -> Path
   , _multiDaysPath :: Time.Day -> Int -> Path
   , _monthPath :: Time.Day -> Path
   , _topPagePath :: Path
@@ -60,6 +62,10 @@ entryEditPath e = to $ \self ->
 singleDayPath :: Time.Day -> Getter URLMapper Path
 singleDayPath d = to $ \self ->
   _singleDayPath self d
+
+entryDayPath :: E.Page -> E.Saved E.Entry -> Getter URLMapper Path
+entryDayPath p e = to $ \self ->
+  _entryDayPath self p e
 
 multiDaysPath :: Time.Day -> Int -> Getter URLMapper Path
 multiDaysPath d n = to $ \self ->

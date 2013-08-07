@@ -45,7 +45,7 @@ main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
       , Element "a" [("href", "http://snapframework.com/")] [TextNode "Snap Framework"]
       ]
     ]
-  , _lcBasePath = ""
+  , _lcBasePath = "http://localhost:8000"
   , _lcSpamFilter = const True
   , _lcAuthorName = ""
   }

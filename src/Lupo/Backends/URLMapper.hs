@@ -4,9 +4,13 @@ module Lupo.Backends.URLMapper
   ( makeURLMapper
   ) where
 
+import Control.Exception
 import qualified Data.ByteString.Char8 as C
+import Data.Function
+import qualified Data.List as L
 import Data.Monoid
 import qualified Data.Text as T
+import Data.Text.Lens
 import Text.Shakespeare.Text
 
 import qualified Lupo.Entry as E
@@ -15,7 +19,7 @@ import Lupo.URLMapper
 import Lupo.Util
 
 makeURLMapper :: Path -> URLMapper
-makeURLMapper basePath = URLMapper
+makeURLMapper basePath = fix $ \self -> URLMapper
   { _entryPath = \s ->
       full $ "entries" </> show (s ^. E.idx)
 
@@ -23,6 +27,11 @@ makeURLMapper basePath = URLMapper
       full $ "admin" </> show (s ^. E.idx) </> "edit"
 
   , _singleDayPath = full . dayPath
+
+  , _entryDayPath = \page e ->
+     let base = self ^. singleDayPath (page ^. E.pageDay)
+         n = maybe (assert False undefined) succ $ L.findIndex (== e) $ page ^. E.pageEntries
+     in base <> C.pack ("#" <> over packed (T.justifyRight 2 '0') (show n))
 
   , _multiDaysPath = \d n ->
       full [st|#{dayPath d}-#{show n}|]
