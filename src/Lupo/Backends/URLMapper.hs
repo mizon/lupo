@@ -26,6 +26,9 @@ makeURLMapper basePath = fix $ \self -> URLMapper
   , _entryEditPath = \s ->
       full $ "admin" </> show (s ^. E.idx) </> "edit"
 
+  , _entryDeletePath = \s ->
+      full $ "admin" </> show (s ^. E.idx) </> "delete"
+
   , _singleDayPath = full . dayPath
 
   , _entryDayPath = \page e ->

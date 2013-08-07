@@ -25,6 +25,10 @@ urlMapperSpec = describe "URL Mapper" $ do
     U.entryEditPath (E.Saved 8 undefined undefined undefined) `shouldGet`
       "/lupo/admin/8/edit"
 
+  it "provides a path to delete an entry" $
+    U.entryDeletePath (E.Saved 8 undefined undefined undefined) `shouldGet`
+      "/lupo/admin/8/delete"
+
   it "provides a path to the day page" $
     U.singleDayPath (Time.fromGregorian 2012 1 1) `shouldGet`
       "/lupo/20120101"

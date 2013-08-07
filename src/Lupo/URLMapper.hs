@@ -3,6 +3,7 @@ module Lupo.URLMapper
   , URLMapper (..)
   , entryPath
   , entryEditPath
+  , entryDeletePath
   , singleDayPath
   , entryDayPath
   , multiDaysPath
@@ -36,6 +37,7 @@ class Functor m => HasURLMapper m where
 data URLMapper = URLMapper
   { _entryPath :: E.Saved E.Entry -> Path
   , _entryEditPath :: E.Saved E.Entry -> Path
+  , _entryDeletePath :: E.Saved E.Entry -> Path
   , _singleDayPath :: Time.Day -> Path
   , _entryDayPath :: E.Page -> E.Saved E.Entry -> Path
   , _multiDaysPath :: Time.Day -> Int -> Path
@@ -58,6 +60,10 @@ entryPath e = to $ \self ->
 entryEditPath :: E.Saved E.Entry -> Getter URLMapper Path
 entryEditPath e = to $ \self ->
   _entryEditPath self e
+
+entryDeletePath :: E.Saved E.Entry -> Getter URLMapper Path
+entryDeletePath e = to $ \self ->
+  _entryDeletePath self e
 
 singleDayPath :: Time.Day -> Getter URLMapper Path
 singleDayPath d = to $ \self ->

@@ -143,11 +143,22 @@ adminView days = makeView renderAdmin $ ViewRep "Lupo Admin" $ H.callTemplate "a
           ]
 
         makeEntryRow e' = do
+          showPath <- Encoding.decodeUtf8 <$> U.getURL (U.entryPath e')
           editPath <- Encoding.decodeUtf8 <$> U.getURL (U.entryEditPath e')
+          deletePath <- Encoding.decodeUtf8 <$> U.getURL (U.entryDeletePath e')
           pure
             [ Element "td" [] [TextNode $ e' ^. E.savedContent . E.entryTitle]
             , Element "td" [("class", "action")]
-              [ Element "a" [("href", editPath)] [TextNode "Edit"]
+              [ Element "a" [("href", showPath)] [TextNode "Show"]
+              , TextNode " "
+              , Element "a" [("href", editPath)] [TextNode "Edit"]
+              , TextNode " "
+              , Element "a"
+                [ ("href", deletePath)
+                , ("onclick", "return confirm(\"Are you sure you want to delete?\");")
+                ]
+                [ TextNode "Delete"
+                ]
               ]
             ]
 
