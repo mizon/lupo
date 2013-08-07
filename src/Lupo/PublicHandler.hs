@@ -93,10 +93,9 @@ handleSearch = do
 
 handleComment :: LupoHandler ()
 handleComment = method POST $ do
-  dayStr <- textParam "day"
-  withEntryDB $ \(LE.EDBWrapper db) -> do
-    reqDay <- either (error . show) pure $ A.parseOnly dayParser dayStr
-    comment <- LE.Comment <$> textParam "name" <*> textParam "body"
+  reqDay <- parseRequestDay
+  comment <- LE.Comment <$> textParam "name" <*> textParam "body"
+  withEntryDB $ \(LE.EDBWrapper db) ->
     try (db ^! LE.insertComment reqDay comment) >>= \case
       Left (InvalidField msgs) -> do
         page <- db ^! LE.selectPage reqDay
@@ -105,6 +104,10 @@ handleComment = method POST $ do
       Right _ -> do
         getNoticeDB >>= perform (Notice.addNotice "Your comment was posted successfully.")
         redirect =<< U.getURL (U.newCommentPath reqDay)
+  where
+    parseRequestDay = do
+      t <- textParam "day"
+      either (fail . show) pure $ A.parseOnly dayParser t
 
 handleFeed :: LupoHandler ()
 handleFeed = method GET $ do
