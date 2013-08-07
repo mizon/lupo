@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Lupo.Config
   ( LupoConfig (..)
   , lcSiteTitle

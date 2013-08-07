@@ -1,7 +1,3 @@
-{-# LANGUAGE ImpredicativeTypes #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Lupo.Main
   ( main
   , lupoInit

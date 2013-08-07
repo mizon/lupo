@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Lupo.Navigation
   ( Navigation (..)
   , getNextDay

@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Lupo.Backends.Notice
   ( makeNoticeDB
   , makeSessionBackend

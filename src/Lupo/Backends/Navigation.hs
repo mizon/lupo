@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Lupo.Backends.Navigation
   ( makeNavigation
   ) where

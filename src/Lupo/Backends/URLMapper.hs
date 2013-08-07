@@ -1,7 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE NoOverloadedStrings #-}
 
 module Lupo.Backends.URLMapper
   ( makeURLMapper

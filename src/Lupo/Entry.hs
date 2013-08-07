@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module Lupo.Entry
   ( Saved (..)
   , idx

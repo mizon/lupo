@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Lupo.URLMapper
   ( HasURLMapper (..)
   , URLMapper (..)

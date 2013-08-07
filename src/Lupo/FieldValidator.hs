@@ -1,7 +1,3 @@
-{-# LANGUAGE DoAndIfThenElse #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RankNTypes #-}
-
 module Lupo.FieldValidator
   ( FieldValidator (..)
   , makeFieldValidator

@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Lupo.ConnectionPool
   ( ConnectionPool (..)
   , withConnection
