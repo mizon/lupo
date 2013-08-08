@@ -159,3 +159,5 @@ body {
     padding: 0 0.5em; }
   #entries-table td.action {
     text-align: center; }
+    #entries-table td.action a:link, #entries-table td.action a:visited {
+      color: #333; }

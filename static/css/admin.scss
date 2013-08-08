@@ -70,5 +70,9 @@
 
     td.action {
         text-align: center;
+
+        a:link, a:visited {
+            color: #333;
+        }
     }
 }
