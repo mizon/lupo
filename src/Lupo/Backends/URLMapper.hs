@@ -57,6 +57,7 @@ makeURLMapper basePath = fix $ \self -> URLMapper
   , _cssPath = \css ->
       full $ "css" </> css
 
+  , _feedPath = full "recent.atom"
   , _fullPath = full
   }
   where

@@ -5,7 +5,9 @@ module UtilSpec
   ) where
 
 import Control.Applicative
+import Control.Exception
 import Control.Lens.Getter
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Time as Time
 import System.Locale
@@ -31,8 +33,9 @@ utilSpec = describe "utility functions" $ do
         Nothing -> i < 0 || length xs <= i
 
   it "format zoned-time for atom feeds" $ do
-    property $ \zoned ->
-      U.formatTimeForAtom zoned == T.pack (Time.formatTime defaultTimeLocale "%FT%T%z" zoned)
+    let t = fromMaybe (assert False undefined)
+          $ Time.parseTime defaultTimeLocale "%FT%T%z" "2013-08-05T23:39:01+0900"
+    U.formatTimeForAtom t `shouldBe` "2013-08-05T23:39:01+09:00"
 
 instance Arbitrary Time.ZonedTime where
   arbitrary = do

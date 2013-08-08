@@ -66,6 +66,9 @@ urlMapperSpec = describe "URL Mapper" $ do
   it "provides a path to css files" $
     U.cssPath "celeste.css" `shouldGet` "/lupo/css/celeste.css"
 
+  it "provides a path to feed page" $
+    U.feedPath `shouldGet` "/lupo/recent.atom"
+
   it "provides full pathes whatever you like" $
     property $ \path ->
       urlMapper ^. U.fullPath path == "/lupo/" <> path

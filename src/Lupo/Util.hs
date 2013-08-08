@@ -16,6 +16,7 @@ module Lupo.Util
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Ix as Ix
+import qualified Data.List as L
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -68,4 +69,7 @@ safeIndex xs i
   | otherwise = Nothing
 
 formatTimeForAtom :: Time.ZonedTime -> T.Text
-formatTimeForAtom = formatTime "%FT%T%z"
+formatTimeForAtom zt = formatTime "%FT%T" zt <> offset
+  where
+    offset = case Time.timeZoneOffsetString $ Time.zonedTimeZone zt of
+      (L.splitAt 3 -> (hour, min')) -> T.pack $ hour <> ":" <> min'

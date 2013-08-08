@@ -16,6 +16,7 @@ module Lupo.URLMapper
   , newCommentPath
   , commentsPath
   , cssPath
+  , feedPath
   , fullPath
   , Path
   , getURL
@@ -50,6 +51,7 @@ data URLMapper = URLMapper
   , _newCommentPath :: Time.Day -> Path
   , _commentsPath :: Time.Day -> Path
   , _cssPath :: BS.ByteString -> Path
+  , _feedPath :: Path
   , _fullPath :: Path -> Path
   }
 
@@ -108,6 +110,9 @@ commentsPath d = to $ \self ->
 cssPath :: BS.ByteString -> Getter URLMapper Path
 cssPath css = to $ \self ->
   _cssPath self css
+
+feedPath :: Getter URLMapper Path
+feedPath = to _feedPath
 
 fullPath :: Path -> Getter URLMapper Path
 fullPath path = to $ \self ->

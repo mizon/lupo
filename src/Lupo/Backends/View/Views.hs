@@ -195,9 +195,9 @@ entriesFeed entries = V.View $ do
   author <- refLupoConfig lcAuthorName
   SH.withSplices
     [ ("lupo:feed-title", textSplice title)
-    , ("lupo:last-updated", textSplice $ maybe "" (formatTime "%Y-%m-%d") lastUpdated)
+    , ("lupo:last-updated", textSplice $ maybe "" formatTimeForAtom lastUpdated)
     , ("lupo:index-path", U.urlSplice $ U.fullPath "")
-    , ("lupo:feed-id", U.urlSplice $ U.fullPath "recent.atom")
+    , ("lupo:feed-path", U.urlSplice U.feedPath)
     , ("lupo:author-name", textSplice author)
     , ("lupo:entries", H.mapSplices entryToFeed entries)
     ] $ SH.renderAs "application/atom+xml" "feed"
@@ -243,7 +243,7 @@ renderPublic rep = SH.heistLocal bindSplices $ SH.render "public"
         , ("lupo:site-title", H.textSplice =<< refLupoConfig lcSiteTitle)
         , ("lupo:style-sheet", U.urlSplice $ U.cssPath "diary.css")
         , ("lupo:footer-body", refLupoConfig lcFooterBody)
-        , ("lupo:feed-path", U.urlSplice $ U.fullPath "recent.atom")
+        , ("lupo:feed-path", U.urlSplice U.feedPath)
         , ("lupo:feed-icon-path", U.urlSplice $ U.fullPath "images/feed.png")
         ]
       . H.bindSplice "lupo:main-body" (viewSplice rep)
