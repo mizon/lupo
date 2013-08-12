@@ -103,13 +103,15 @@ handleEditEntry = requireAuth $ method GET showEntryEditor
         db ^! E.selectOne id'
       renderView $ getEditor entry
 
-    updateEntry = withEntryDB $ \(E.EDBWrapper db) -> do
+    updateEntry = do
       id' <- paramId
       entry <- E.Entry <$> textParam "title" <*> textParam "body"
-      baseEntry <- db ^! E.selectOne id'
+      baseEntry <- withEntryDB $ \(E.EDBWrapper db) ->
+        db ^! E.selectOne id'
       textParam "action" >>= \case
         "Submit" -> do
-          db ^! E.update id' entry
+          withEntryDB $ \(E.EDBWrapper db) -> do
+            db ^! E.update id' entry
           redirect =<< U.getURL U.adminPath
         "Preview" -> renderView $ getPreview $ baseEntry & E.savedContent .~ entry
         "Edit" -> renderView $ getEditor $ baseEntry & E.savedContent .~ entry

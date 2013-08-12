@@ -87,15 +87,16 @@ handleComment :: LupoHandler ()
 handleComment = method POST $ do
   reqDay <- parseRequestDay
   comment <- LE.Comment <$> textParam "name" <*> textParam "body"
-  withEntryDB $ \(LE.EDBWrapper db) ->
-    try (db ^! LE.insertComment reqDay comment) >>= \case
-      Left (InvalidField msgs) -> do
-        page <- db ^! LE.selectPage reqDay
-        let nav = N.makeNavigation db reqDay
-        renderView $ V.singleDayView page nav comment [] msgs
-      Right _ -> do
-        getNoticeDB >>= perform (Notice.addNotice "Your comment was posted successfully.")
-        redirect =<< U.getURL (U.newCommentPath reqDay)
+  cond <- withEntryDB $ \(LE.EDBWrapper db) ->
+    db ^! LE.insertComment reqDay comment
+  case cond of
+    Left (InvalidField msgs) -> withEntryDB $ \(LE.EDBWrapper db) ->
+      page <- db ^! LE.selectPage reqDay
+      let nav = N.makeNavigation db reqDay
+      renderView $ V.singleDayView page nav comment [] msgs
+    Right _ -> do
+      getNoticeDB >>= perform (Notice.addNotice "Your comment was posted successfully.")
+      redirect =<< U.getURL (U.newCommentPath reqDay)
   where
     parseRequestDay = do
       t <- textParam "day"
