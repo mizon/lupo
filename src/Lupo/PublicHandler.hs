@@ -87,10 +87,10 @@ handleComment :: LupoHandler ()
 handleComment = method POST $ do
   reqDay <- parseRequestDay
   comment <- LE.Comment <$> textParam "name" <*> textParam "body"
-  cond <- withEntryDB $ \(LE.EDBWrapper db) ->
+  cond <- try $ withEntryDB $ \(LE.EDBWrapper db) ->
     db ^! LE.insertComment reqDay comment
   case cond of
-    Left (InvalidField msgs) -> withEntryDB $ \(LE.EDBWrapper db) ->
+    Left (InvalidField msgs) -> withEntryDB $ \(LE.EDBWrapper db) -> do
       page <- db ^! LE.selectPage reqDay
       let nav = N.makeNavigation db reqDay
       renderView $ V.singleDayView page nav comment [] msgs
