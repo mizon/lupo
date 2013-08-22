@@ -67,6 +67,35 @@ handleDay = parseQuery $ A.try multiDaysResponse
           notice <- getNoticeDB >>= perform Notice.popAllNotice
           renderView $ V.singleDayView day nav (LE.Comment "" "") notice []
 
+renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
+renderMultiDays from' nDays = withEntryDB $ \(LE.EDBWrapper db) -> do
+  let nav = N.makeNavigation db from'
+  targetDays <- run_ $ db ^. LE.beforeSavedDays from' $$ EL.take nDays
+  pages <- Prelude.mapM (\d -> db ^! LE.selectPage d) targetDays
+  renderView $ V.multiDaysView nav pages
+
+monthResponse :: A.Parser (LupoHandler ())
+monthResponse = do
+  reqMonth <- monthParser
+  pure $ withEntryDB $ \(LE.EDBWrapper db) -> do
+    let nav = N.makeNavigation db reqMonth
+    days <- run_ $ db ^. LE.afterSavedDays reqMonth
+                $$ toDayContents db
+                =$ takeSameMonthDays reqMonth
+    renderView $ V.monthView nav days
+  where
+    takeSameMonthDays m = EL.takeWhile $ isSameMonth m . view LE.pageDay
+      where
+        isSameMonth (Time.toGregorian -> (year1, month1, _))
+                    (Time.toGregorian -> (year2, month2, _)) =
+          year1 == year2 && month1 == month2
+
+    toDayContents db = EL.mapM $ \d ->
+      db ^! LE.selectPage d
+
+    monthParser = Time.readTime defaultTimeLocale "%Y%m"
+              <$> M.sequence (replicate 6 $ A.satisfy C.isDigit)
+
 handleEntries :: LupoHandler ()
 handleEntries = method GET $ do
   i <- paramId
@@ -107,35 +136,6 @@ handleFeed = method GET $ do
   entries <- withEntryDB $ \(LE.EDBWrapper db) ->
     E.run_ $ db ^. LE.selectAll $$ EL.take 10
   renderView $ V.entriesFeed entries
-
-monthResponse :: A.Parser (LupoHandler ())
-monthResponse = do
-  reqMonth <- monthParser
-  pure $ withEntryDB $ \(LE.EDBWrapper db) -> do
-    let nav = N.makeNavigation db reqMonth
-    days <- run_ $ db ^. LE.afterSavedDays reqMonth
-                $$ toDayContents db
-                =$ takeSameMonthDays reqMonth
-    renderView $ V.monthView nav days
-  where
-    takeSameMonthDays m = EL.takeWhile $ isSameMonth m . view LE.pageDay
-      where
-        isSameMonth (Time.toGregorian -> (year1, month1, _))
-                    (Time.toGregorian -> (year2, month2, _)) =
-          year1 == year2 && month1 == month2
-
-    toDayContents db = EL.mapM $ \d ->
-      db ^! LE.selectPage d
-
-    monthParser = Time.readTime defaultTimeLocale "%Y%m"
-              <$> M.sequence (replicate 6 $ A.satisfy C.isDigit)
-
-renderMultiDays :: Time.Day -> Integer -> LupoHandler ()
-renderMultiDays from' nDays = withEntryDB $ \(LE.EDBWrapper db) -> do
-  let nav = N.makeNavigation db from'
-  targetDays <- run_ $ db ^. LE.beforeSavedDays from' $$ EL.take nDays
-  pages <- Prelude.mapM (\d -> db ^! LE.selectPage d) targetDays
-  renderView $ V.multiDaysView nav pages
 
 dayParser :: A.Parser Time.Day
 dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)

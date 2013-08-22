@@ -1,5 +1,5 @@
-CREATE TABLE entries (
-    id INTEGER PRIMARY KEY
+CREATE TABLE entries
+  ( id INTEGER PRIMARY KEY
   , created_at TEXT NOT NULL
   , modified_at TEXT NOT NULL
   , day TEXT NOT NULL
@@ -7,8 +7,8 @@ CREATE TABLE entries (
   , body TEXT NOT NULL
   );
 
-CREATE TABLE comments (
-    id INTEGER PRIMARY KEY
+CREATE TABLE comments
+  ( id INTEGER PRIMARY KEY
   , created_at TEXT NOT NULL
   , modified_at TEXT NOT NULL
   , day TEXT NOT NULL
@@ -16,8 +16,8 @@ CREATE TABLE comments (
   , body TEXT NOT NULL
   );
 
-CREATE TABLE notice (
-    id INTEGER PRIMARY KEY
+CREATE TABLE notice
+  ( id INTEGER PRIMARY KEY
   , token TEXT NOT NULL
   , message TEXT NOT NULL
   );

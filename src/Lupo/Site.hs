@@ -1,6 +1,5 @@
-module Lupo.Main
-  ( main
-  , lupoInit
+module Lupo.Site
+  ( lupoInit
   ) where
 
 import qualified Database.HDBC as DB
@@ -8,13 +7,11 @@ import qualified Database.HDBC.Sqlite3 as Sqlite3
 import qualified Heist.Interpreted as H
 import Prelude hiding (filter)
 import Snap
-import qualified Snap.Http.Server.Config as C
 import qualified Snap.Snaplet.Auth as A
 import qualified Snap.Snaplet.Auth.Backends.JsonFile as JsonFile
 import qualified Snap.Snaplet.Heist as H
 import qualified Snap.Snaplet.Session.Backends.CookieSession as Cookie
 import Snap.Util.FileServe
-import Text.XmlHtml
 
 import qualified Lupo.AdminHandler as Admin
 import Lupo.Application
@@ -29,26 +26,6 @@ import qualified Lupo.Locale as L
 import qualified Lupo.PublicHandler as Public
 import qualified Lupo.URLMapper as U
 import Lupo.Util
-
-main :: IO ()
-main = serveSnaplet C.defaultConfig $ lupoInit LupoConfig
-  { _lcSiteTitle = "Lupo Web Diary"
-  , _lcSqlitePath = "./development.sqlite3"
-  , _lcLanguage = "ja"
-  , _lcLocaleFile = "./ja.yml"
-  , _lcDaysPerPage = 5
-  , _lcFooterBody =
-    [ Element "p" []
-      [ TextNode "Powered by "
-      , Element "a" [("href", "http://www.haskell.org/haskellwiki/Haskell")] [TextNode "Haskell"]
-      , TextNode ", "
-      , Element "a" [("href", "http://snapframework.com/")] [TextNode "Snap Framework"]
-      ]
-    ]
-  , _lcBasePath = "http://localhost:8000"
-  , _lcSpamFilter = const True
-  , _lcAuthorName = ""
-  }
 
 lupoInit :: LupoConfig -> SnapletInit Lupo Lupo
 lupoInit lc = makeSnaplet "lupo" "A personal web diary." Nothing $ do

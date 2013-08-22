@@ -11,11 +11,27 @@ category:            Web
 build-type:          Simple
 cabal-version:       >= 1.8
 
-executable lupo
+executable lupoup
   main-is:           Main.hs
   build-depends:
     base                      >= 4 && < 5,
-    lupo
+    lupo,
+    snap                      >= 0.11    && < 0.13,
+    snap-server               >= 0.9     && < 0.11,
+    xmlhtml                   >= 0.2
+  extensions:        DisambiguateRecordFields
+                   , DoAndIfThenElse
+                   , FlexibleContexts
+                   , FlexibleInstances
+                   , LambdaCase
+                   , NoMonomorphismRestriction
+                   , OverloadedStrings
+                   , QuasiQuotes
+                   , RankNTypes
+                   , ScopedTypeVariables
+                   , TemplateHaskell
+                   , TypeSynonymInstances
+                   , ViewPatterns
   ghc-options: -threaded -Wall -funbox-strict-fields
 
 test-suite test
@@ -91,9 +107,9 @@ library
     mtl                       >= 2     && < 3,
     old-locale                >= 1.0,
     shakespeare-text          >= 1.0,
-    snap                      >= 0.11    && < 0.12,
-    snap-core                 >= 0.9     && < 0.10,
-    snap-server               >= 0.9     && < 0.10,
+    snap                      >= 0.11    && < 0.13,
+    snap-core                 >= 0.9     && < 0.11,
+    snap-server               >= 0.9     && < 0.11,
     text                      >= 0.11,
     time                      >= 1.4,
     xmlhtml                   >= 0.2,
@@ -115,10 +131,10 @@ library
     Lupo.FieldValidator,
     Lupo.Import,
     Lupo.Locale,
-    Lupo.Main,
     Lupo.Navigation,
     Lupo.Notice,
     Lupo.PublicHandler,
+    Lupo.Site,
     Lupo.Syntax,
     Lupo.URLMapper,
     Lupo.Util,
