@@ -1,8 +1,8 @@
-dist/
-cabal-dev/
 *.sqlite3
-.*
+dist/
 log/
+tmp/
+.*
+cabal.sandbox.config
 site_key.txt
 users.json
-tmp/
