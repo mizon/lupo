@@ -19,6 +19,7 @@ executable lupoup
     snap                      >= 0.11    && < 0.13,
     snap-server               >= 0.9     && < 0.11,
     xmlhtml                   >= 0.2
+  ghc-options:       -Wall
   extensions:        DisambiguateRecordFields
                    , DoAndIfThenElse
                    , FlexibleContexts
