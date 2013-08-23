@@ -1,12 +1,21 @@
-import qualified Lupo.Site as Site
+import Control.Exception
+import qualified Data.Text.IO as IO
 import Snap
-import qualified Snap.Http.Server.Config as C
+import Snap.Snaplet.Config
+import System.IO
 import Text.XmlHtml
 
-import Lupo.Config
+#ifdef DEVELOPMENT
+import Snap.Loader.Dynamic
+#else
+import Snap.Loader.Static
+#endif
 
-main :: IO ()
-main = serveSnaplet C.defaultConfig $ Site.lupoInit LupoConfig
+import Lupo.Config
+import qualified Lupo.Site as Site
+
+lupoConf :: LupoConfig
+lupoConf = LupoConfig
   { _lcSiteTitle = "Lupo Web Diary"
   , _lcSqlitePath = "./development.sqlite3"
   , _lcLanguage = "ja"
@@ -24,3 +33,18 @@ main = serveSnaplet C.defaultConfig $ Site.lupoInit LupoConfig
   , _lcSpamFilter = const True
   , _lcAuthorName = ""
   }
+
+main :: IO ()
+main = do
+  (conf, site, cleanup) <- $(loadSnapTH [|getConf|] 'getActions ["snaplets/heist/templates"])
+  _ <- try $ httpServe conf site :: IO (Either SomeException ())
+  cleanup
+
+getConf :: IO (Config Snap AppConfig)
+getConf = commandLineAppConfig defaultConfig
+
+getActions :: Config Snap AppConfig -> IO (Snap (), IO ())
+getActions conf = do
+  (msgs, site, cleanup) <- runSnaplet (appEnvironment =<< getOther conf) $ Site.lupoInit lupoConf
+  IO.hPutStrLn stderr msgs
+  return (site, cleanup)
