@@ -55,7 +55,7 @@ handleDay = parseQuery $ A.try multiDaysResponse
     multiDaysResponse = do
       from' <- dayParser
       void $ A.char '-'
-      nentries <- read . pure <$> number
+      nentries <- read <$> some (A.satisfy C.isDigit)
       pure $ renderMultiDays from' nentries
 
     singleDayResponse = do
@@ -138,7 +138,6 @@ handleFeed = method GET $ do
   renderView $ V.entriesFeed entries
 
 dayParser :: A.Parser Time.Day
-dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.sequence (replicate 8 number)
-
-number :: A.Parser Char
-number = A.satisfy C.isDigit
+dayParser = Time.readTime defaultTimeLocale "%Y%m%d" <$> M.replicateM 8 number
+  where
+    number = A.satisfy C.isDigit
