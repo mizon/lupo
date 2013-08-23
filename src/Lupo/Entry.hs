@@ -1,34 +1,4 @@
-module Lupo.Entry
-  ( Saved (..)
-  , idx
-  , createdAt
-  , modifiedAt
-  , savedContent
-  , Entry (..)
-  , entryTitle
-  , entryBody
-  , Comment (..)
-  , commentName
-  , commentBody
-  , getCreatedDay
-  , Page (..)
-  , pageDay
-  , pageEntries
-  , numOfComments
-  , pageComments
-  , EntryDatabase (..)
-  , selectOne
-  , selectAll
-  , selectPage
-  , search
-  , insert
-  , update
-  , delete
-  , beforeSavedDays
-  , afterSavedDays
-  , insertComment
-  , EDBWrapper (..)
-  ) where
+module Lupo.Entry where
 
 import Control.Monad.CatchIO
 import qualified Data.Enumerator as E

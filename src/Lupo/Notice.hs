@@ -1,9 +1,4 @@
-module Lupo.Notice
-  ( NoticeDB (..)
-  , addNotice
-  , popAllNotice
-  , SessionBackend (..)
-  ) where
+module Lupo.Notice where
 
 import qualified Data.Text as T
 

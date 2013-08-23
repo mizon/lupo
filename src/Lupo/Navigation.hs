@@ -1,13 +1,4 @@
-module Lupo.Navigation
-  ( Navigation (..)
-  , getNextDay
-  , getPreviousDay
-  , getThisMonth
-  , getNextPageTop
-  , getPreviousPageTop
-  , getNextMonth
-  , getPreviousMonth
-  ) where
+module Lupo.Navigation where
 
 import qualified Data.Time as Time
 

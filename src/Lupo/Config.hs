@@ -1,17 +1,4 @@
-module Lupo.Config
-  ( LupoConfig (..)
-  , lcSiteTitle
-  , lcSqlitePath
-  , lcLanguage
-  , lcLocaleFile
-  , lcDaysPerPage
-  , lcFooterBody
-  , lcBasePath
-  , lcSpamFilter
-  , lcAuthorName
-  , GetLupoConfig (..)
-  , refLupoConfig
-  ) where
+module Lupo.Config where
 
 import qualified Data.ByteString as BS
 import qualified Data.Text as T

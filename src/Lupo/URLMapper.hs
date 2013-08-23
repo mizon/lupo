@@ -1,27 +1,4 @@
-module Lupo.URLMapper
-  ( HasURLMapper (..)
-  , URLMapper (..)
-  , entryPath
-  , entryEditPath
-  , entryDeletePath
-  , singleDayPath
-  , entryDayPath
-  , multiDaysPath
-  , monthPath
-  , topPagePath
-  , adminPath
-  , loginPath
-  , initAccountPath
-  , commentPostPath
-  , newCommentPath
-  , commentsPath
-  , cssPath
-  , feedPath
-  , fullPath
-  , Path
-  , getURL
-  , urlSplice
-  ) where
+module Lupo.URLMapper where
 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Encoding as Encoding

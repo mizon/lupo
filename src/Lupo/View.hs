@@ -1,17 +1,4 @@
-module Lupo.View
-  ( View (..)
-  , ViewFactory (..)
-  , singleDayView
-  , multiDaysView
-  , monthView
-  , searchResultView
-  , loginView
-  , initAccountView
-  , adminView
-  , entryEditorView
-  , entryPreviewView
-  , entriesFeed
-  ) where
+module Lupo.View where
 
 import qualified Data.Text as T
 import qualified Heist as H
