@@ -47,7 +47,6 @@ executable lupo
     build-depends:
       snap-loader-dynamic     == 0.10.*
     cpp-options:     -DDEVELOPMENT
-  ghc-options:       -Wall
   extensions:        CPP
                    , DeriveDataTypeable
                    , DisambiguateRecordFields
