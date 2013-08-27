@@ -1,3 +1,5 @@
+{-# LANGUAGE NoOverloadedStrings #-}
+
 module ConnectionPoolSpec
   ( connectionPoolSpec
   ) where
