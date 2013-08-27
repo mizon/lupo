@@ -1,119 +1,123 @@
-name:                lupo
-version:             0.1
-synopsis:            A personal web diary.
-description:         A personal web diary.
-license:             LGPL-3
-license-file:        LICENSE
-author:              Keita Mizuochi
-maintainer:          mizon9@gmail.com
-stability:           Experimental
-category:            Web
-build-type:          Simple
-cabal-version:       >= 1.8
+author:                 Keita Mizuochi
+build-type:             Simple
+cabal-version:          >= 1.10
+category:               Web
+description:            A personal web diary.
+license-file:           LICENSE
+license:                LGPL-3
+maintainer:             mizon9@gmail.com
+name:                   lupo
+stability:              Experimental
+synopsis:               A personal web diary.
+version:                0.1
 
 flag development
-  description: Whether to build the server in development (interpreted) mode
-  default: False
+  description:          Whether to build the server in development (interpreted) mode
+  default:              False
 
 executable lupo
-  main-is:           Main.hs
-  hs-source-dirs:    ., src
   build-depends:
-    HDBC                      >= 2.3,
-    HDBC-sqlite3              >= 2.3,
-    MonadCatchIO-transformers >= 0.2.1 && < 0.4,
-    attoparsec                >= 0.10,
-    base                      >= 4     && < 5,
-    bytestring                >= 0.9.1 && < 0.11,
-    containers                >= 0.4,
-    convertible               >= 1.0,
-    directory                 >= 1.1,
-    enumerator                >= 0.4   && < 0.5,
-    filepath                  >= 1.3,
-    heist                     >= 0.11  && < 0.12,
-    lens                      >= 3.7,
-    mtl                       >= 2     && < 3,
-    old-locale                >= 1.0,
-    shakespeare-text          >= 1.0,
-    snap                      >= 0.11    && < 0.13,
-    snap-core                 >= 0.9     && < 0.11,
-    snap-loader-static        >= 0.9     && < 0.10,
-    snap-server               >= 0.9     && < 0.11,
-    text                      >= 0.11,
-    time                      >= 1.4,
-    xmlhtml                   >= 0.2,
-    yaml                      >= 0.8
+    HDBC                        >= 2.3,
+    HDBC-sqlite3                >= 2.3,
+    MonadCatchIO-transformers   >= 0.2.1 && < 0.4,
+    attoparsec                  >= 0.10,
+    base                        >= 4 && < 5,
+    bytestring                  >= 0.9.1 && < 0.11,
+    containers                  >= 0.4,
+    convertible                 >= 1.0,
+    directory                   >= 1.1,
+    enumerator                  >= 0.4 && < 0.5,
+    filepath                    >= 1.3,
+    heist                       >= 0.11 && < 0.12,
+    lens                        >= 3.7,
+    mtl                         >= 2 && < 3,
+    old-locale                  >= 1.0,
+    shakespeare-text            >= 1.0,
+    snap                        >= 0.11 && < 0.13,
+    snap-core                   >= 0.9 && < 0.11,
+    snap-loader-static          >= 0.9 && < 0.10,
+    snap-server                 >= 0.9 && < 0.11,
+    text                        >= 0.11,
+    time                        >= 1.4,
+    xmlhtml                     >= 0.2,
+    yaml                        >= 0.8
   if flag(development)
     build-depends:
-      snap-loader-dynamic     == 0.10.*
-    cpp-options:     -DDEVELOPMENT
-  extensions:        CPP
-                   , DeriveDataTypeable
-                   , DisambiguateRecordFields
-                   , DoAndIfThenElse
-                   , ExistentialQuantification
-                   , FlexibleContexts
-                   , FlexibleInstances
-                   , LambdaCase
-                   , NoMonomorphismRestriction
-                   , OverloadedStrings
-                   , QuasiQuotes
-                   , RankNTypes
-                   , ScopedTypeVariables
-                   , TemplateHaskell
-                   , TemplateHaskell
-                   , TypeSynonymInstances
-                   , ViewPatterns
+      snap-loader-dynamic       == 0.10.*
+    cpp-options:                -DDEVELOPMENT
+  default-extensions:
+    CPP,
+    DeriveDataTypeable,
+    DisambiguateRecordFields,
+    DoAndIfThenElse,
+    ExistentialQuantification,
+    FlexibleContexts,
+    FlexibleInstances,
+    LambdaCase,
+    NoMonomorphismRestriction,
+    OverloadedStrings,
+    QuasiQuotes,
+    RankNTypes,
+    ScopedTypeVariables,
+    TemplateHaskell,
+    TemplateHaskell,
+    TypeSynonymInstances,
+    ViewPatterns
+  default-language: Haskell2010
   ghc-options: -threaded -Wall -funbox-strict-fields
+  hs-source-dirs: ., src
+  main-is: Main.hs
 
 test-suite test
-  type:              exitcode-stdio-1.0
-  hs-source-dirs:    src, spec
-  main-is:           Main.hs
-  ghc-options:       -Wall
-  extensions:        CPP
-                   , DeriveDataTypeable
-                   , DisambiguateRecordFields
-                   , DoAndIfThenElse
-                   , ExistentialQuantification
-                   , FlexibleContexts
-                   , FlexibleInstances
-                   , LambdaCase
-                   , NoMonomorphismRestriction
-                   , OverloadedStrings
-                   , QuasiQuotes
-                   , RankNTypes
-                   , ScopedTypeVariables
-                   , TemplateHaskell
-                   , TemplateHaskell
-                   , TypeSynonymInstances
-                   , ViewPatterns
   build-depends:
-    QuickCheck                >= 2.5,
-    data-default              >= 0.5,
-    hspec                     >= 1.2,
+    QuickCheck                  >= 2.5,
+    data-default                >= 0.5,
+    hspec                       >= 1.2,
 
-    HDBC                      >= 2.3,
-    HDBC-sqlite3              >= 2.3,
-    MonadCatchIO-transformers >= 0.2.1 && < 0.4,
-    attoparsec                >= 0.10,
-    base                      >= 4     && < 5,
-    bytestring                >= 0.9.1 && < 0.11,
-    containers                >= 0.4,
-    convertible               >= 1.0,
-    directory                 >= 1.1,
-    enumerator                >= 0.4   && < 0.5,
-    filepath                  >= 1.3,
-    heist                     >= 0.11  && < 0.12,
-    lens                      >= 3.7,
-    mtl                       >= 2     && < 3,
-    old-locale                >= 1.0,
-    shakespeare-text          >= 1.0,
-    snap                      >= 0.11    && < 0.13,
-    snap-core                 >= 0.9     && < 0.11,
-    snap-loader-static        >= 0.9     && < 0.10,
-    snap-server               >= 0.9     && < 0.11,
-    text                      >= 0.11,
-    time                      >= 1.4,
-    xmlhtml                   >= 0.2,
-    yaml                      >= 0.8
+    HDBC                        >= 2.3,
+    HDBC-sqlite3                >= 2.3,
+    MonadCatchIO-transformers   >= 0.2.1 && < 0.4,
+    attoparsec                  >= 0.10,
+    base                        >= 4 && < 5,
+    bytestring                  >= 0.9.1 && < 0.11,
+    containers                  >= 0.4,
+    convertible                 >= 1.0,
+    directory                   >= 1.1,
+    enumerator                  >= 0.4 && < 0.5,
+    filepath                    >= 1.3,
+    heist                       >= 0.11 && < 0.12,
+    lens                        >= 3.7,
+    mtl                         >= 2 && < 3,
+    old-locale                  >= 1.0,
+    shakespeare-text            >= 1.0,
+    snap                        >= 0.11 && < 0.13,
+    snap-core                   >= 0.9 && < 0.11,
+    snap-loader-static          >= 0.9 && < 0.10,
+    snap-server                 >= 0.9 && < 0.11,
+    text                        >= 0.11,
+    time                        >= 1.4,
+    xmlhtml                     >= 0.2,
+    yaml                        >= 0.8
+  default-extensions:
+    CPP,
+    DeriveDataTypeable,
+    DisambiguateRecordFields,
+    DoAndIfThenElse,
+    ExistentialQuantification,
+    FlexibleContexts,
+    FlexibleInstances,
+    LambdaCase,
+    NoMonomorphismRestriction,
+    OverloadedStrings,
+    QuasiQuotes,
+    RankNTypes,
+    ScopedTypeVariables,
+    TemplateHaskell,
+    TemplateHaskell,
+    TypeSynonymInstances,
+    ViewPatterns
+  default-language:     Haskell2010
+  ghc-options:          -Wall
+  hs-source-dirs:       src, spec
+  main-is:              Main.hs
+  type:                 exitcode-stdio-1.0
