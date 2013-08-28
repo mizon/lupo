@@ -24,4 +24,5 @@ lupoConfig = LupoConfig
   , _lcBasePath = "http://localhost:8000"
   , _lcSpamFilter = const True
   , _lcAuthorName = ""
+  , _lcHashedPassword = "81fe8bfe87576c3ecb22426f8e57847382917acf"  -- Default password is "abcd"
   }
