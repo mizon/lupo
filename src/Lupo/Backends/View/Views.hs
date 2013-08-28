@@ -116,7 +116,7 @@ loginView :: T.Text -> V.View LupoHandler
 loginView challenge = makeView renderPlain $ ViewRep "Login" $ H.callTemplate "login"
   [ ("lupo:login-url", U.urlSplice U.loginPath)
   , ("lupo:challenge", H.textSplice challenge)
-  , ("lupo:js-libs", H.mapSplices scriptSplice ["jquery", "sha1", "lupo"])
+  , ("lupo:js-libs", H.mapSplices scriptSplice ["sha1", "lupo"])
   ]
   where
     scriptSplice name = do
