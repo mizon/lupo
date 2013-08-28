@@ -17,6 +17,7 @@ data LupoConfig = LupoConfig
   , _lcBasePath :: BS.ByteString
   , _lcSpamFilter :: E.Comment -> Bool
   , _lcAuthorName :: T.Text
+  , _lcHashedPassword :: T.Text
   }
 makeLenses ''LupoConfig
 
