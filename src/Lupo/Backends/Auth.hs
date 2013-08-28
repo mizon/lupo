@@ -24,20 +24,20 @@ keyChallenge, keyIsLoggedIn :: T.Text
 keyChallenge = "challenge"
 keyIsLoggedIn = "isLoggedIn"
 
-initAuthenticator :: Snaplet S.SessionManager -> LupoConfig -> SnapletInit b (Authenticator b)
-initAuthenticator sess lc = makeSnaplet "Authenticator" "Provide challenge-response authentications" Nothing $ do
+initAuthenticator :: SnapletLens b S.SessionManager -> LupoConfig -> SnapletInit b (Authenticator b)
+initAuthenticator sl lc = makeSnaplet "Authenticator" "Provide challenge-response authentications" Nothing $ do
   return authenticator
   where
     authenticator = Authenticator
       { _prepareChallenge = do
           challenge <- liftIO getRandomText
-          with session $ S.setInSession keyChallenge challenge
+          withSession $ S.setInSession keyChallenge challenge
           return challenge
 
-      , _isLoggedIn = isJust <$> with session (S.getFromSession keyIsLoggedIn)
+      , _isLoggedIn = isJust <$> withSession (S.getFromSession keyIsLoggedIn)
 
       , _login = \pw -> do
-         with session $ S.getFromSession keyChallenge >>= \case
+         withSession $ S.getFromSession keyChallenge >>= \case
            Just challenge -> do
              S.deleteFromSession keyChallenge
              let valid = hashText $ challenge <> lc ^. lcHashedPassword
@@ -47,9 +47,10 @@ initAuthenticator sess lc = makeSnaplet "Authenticator" "Provide challenge-respo
                throw LoginFailed
            Nothing -> throw LoginFailed
 
-      , _logout = with session $ S.deleteFromSession keyIsLoggedIn
-      , _session = sess
+      , _logout = withSession $ S.deleteFromSession keyIsLoggedIn
       }
+
+    withSession = S.withSession sl . withTop sl
 
 hashText :: T.Text -> T.Text
 hashText t = toHexText $ B.unpack (SHA1.hash $ E.encodeUtf8 t)

@@ -31,7 +31,7 @@ makeLenses ''TestEnv
 initHandler :: SnapletInit TestEnv TestEnv
 initHandler = makeSnaplet "TestEnv" "For below test" Nothing $ do
   sess <- nestSnaplet "session" session $ Cookie.initCookieSessionManager "test_auth.txt" "sess" $ Just 3600
-  auth' <- nestSnaplet "auth" auth $ A.initAuthenticator sess LupoConfig
+  auth' <- nestSnaplet "auth" auth $ A.initAuthenticator session LupoConfig
     { _lcHashedPassword = hashText "foo"
     }
   return $ TestEnv sess auth'
@@ -44,7 +44,7 @@ authSpec = describe "challenge-response authentication" $ do
   it "makes challenge strings and keeps it" $ do
     Right (maked, kept) <- evalAuthHandler $ do
       maked' <- A.prepareChallenge
-      kept' <- with A.session $ S.getFromSession keyChallenge
+      kept' <- withTop session $ S.getFromSession keyChallenge
       return (maked', kept')
     T.length maked `shouldBe` 40
     kept `shouldBe` Just maked
@@ -52,7 +52,7 @@ authSpec = describe "challenge-response authentication" $ do
   it "checks if administor is logged-in or not" $ do
     evalAuthHandler A.isLoggedIn `shouldReturn` Right False
     let h = do
-          with A.session $ S.setInSession "isLoggedIn" ""
+          withTop session $ S.setInSession "isLoggedIn" ""
           A.isLoggedIn
     evalAuthHandler h `shouldReturn` Right True
 
@@ -71,9 +71,9 @@ authSpec = describe "challenge-response authentication" $ do
     let h = do
           challenge' <- A.prepareChallenge
           let pw = hashText $ challenge' <> hashText "foo"
-          before'' <- with A.session $ S.getFromSession keyChallenge
+          before'' <- withTop session $ S.getFromSession keyChallenge
           A.login pw
-          after' <- with A.session $ S.getFromSession keyChallenge
+          after' <- withTop session $ S.getFromSession keyChallenge
           return (challenge', before'', after')
     Right (challenge, before', after) <- evalAuthHandler h
     (challenge, before', after) `shouldBe` (challenge, Just challenge, Nothing)
