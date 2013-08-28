@@ -7,7 +7,6 @@ import Control.Error
 import Control.Monad.CatchIO
 import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString as B
-import Data.Char
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
 import Data.Word
@@ -37,15 +36,15 @@ initAuthenticator sl lc = makeSnaplet "Authenticator" "Provide challenge-respons
       , _isLoggedIn = isJust <$> withSession (S.getFromSession keyIsLoggedIn)
 
       , _login = \pw -> do
-         withSession $ S.getFromSession keyChallenge >>= \case
-           Just challenge -> do
-             S.deleteFromSession keyChallenge
-             let valid = hashText $ challenge <> lc ^. lcHashedPassword
-             if pw == valid then
-               S.setInSession keyIsLoggedIn ""
-             else
-               throw LoginFailed
-           Nothing -> throw LoginFailed
+          withSession $ S.getFromSession keyChallenge >>= \case
+            Just challenge -> do
+              S.deleteFromSession keyChallenge
+              let valid = hashText $ challenge <> lc ^. lcHashedPassword
+              if pw == valid then
+                S.setInSession keyIsLoggedIn ""
+              else
+                throw LoginFailed
+            Nothing -> throw LoginFailed
 
       , _logout = withSession $ S.deleteFromSession keyIsLoggedIn
       }
