@@ -112,10 +112,16 @@ searchResultView word es = makeView renderPublic $ ViewRep word $ H.callTemplate
   , ("lupo:search-results", H.mapSplices I.searchResult es)
   ]
 
-loginView :: V.View LupoHandler
-loginView = makeView renderPlain $ ViewRep "Login" $ H.callTemplate "login"
+loginView :: T.Text -> V.View LupoHandler
+loginView challenge = makeView renderPlain $ ViewRep "Login" $ H.callTemplate "login"
   [ ("lupo:login-url", U.urlSplice U.loginPath)
+  , ("lupo:challenge", H.textSplice challenge)
+  , ("lupo:js-libs", H.mapSplices scriptSplice ["jquery", "sha1", "lupo"])
   ]
+  where
+    scriptSplice name = do
+      src <- Encoding.decodeUtf8 <$> U.getURL (U.fullPath $ "js/" <> name <> ".js")
+      pure $ [Element "script" [("src", src)] []]
 
 initAccountView :: V.View LupoHandler
 initAccountView = makeView renderPlain $ ViewRep "Init Account" $ H.callTemplate "init-account"

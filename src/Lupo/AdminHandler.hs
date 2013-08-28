@@ -1,7 +1,6 @@
 module Lupo.AdminHandler
   ( handleLogin
   , handleAdmin
-  , handleInitAccount
   , handleNewEntry
   , handleEditEntry
   , handleDeleteEntry
@@ -12,33 +11,44 @@ import qualified Data.Enumerator.List as EL
 import qualified Data.Time as Time
 import Prelude hiding (filter)
 import Snap
-import qualified Snap.Snaplet.Auth as A
+import Control.Monad.CatchIO
 
 import Lupo.Application
+import qualified Lupo.Auth as A
 import qualified Lupo.Entry as E
 import Lupo.Import
 import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
 
+import qualified Snap.Snaplet.Session as S
+
+requireAuth :: LupoHandler a -> LupoHandler a
+requireAuth h = do
+  stat <- with auth A.isLoggedIn
+  if stat then
+    h
+  else
+    redirect =<< U.getURL U.loginPath
+
 handleLogin :: LupoHandler ()
 handleLogin = method GET showLoginForm
           <|> method POST authenticate
   where
     showLoginForm = do
-      cond <- with auth $ A.isLoggedIn
+      cond <- with auth A.isLoggedIn
       if cond then
         redirect =<< U.getURL U.adminPath
-      else
-        renderView V.loginView
+      else do
+        challenge <- with auth A.prepareChallenge
+        with session $ S.setInSession "challengedummy" challenge
+        renderView $ V.loginView challenge
 
     authenticate = do
-      name <- bsParam "name"
-      pass' <- A.ClearText <$> bsParam "pass"
-      authResult <- with auth $ A.loginByUsername name pass' True
-      loginPath <- U.getURL U.loginPath
-      adminPath <- U.getURL U.adminPath
-      redirect $ either (const loginPath) (const adminPath) authResult
+      pass' <- textParam "pass"
+      with auth (A.login pass') `catch` \(_ :: LoginFailed) -> do
+        redirect =<< U.getURL U.loginPath
+      redirect =<< U.getURL U.adminPath
 
 handleAdmin :: LupoHandler ()
 handleAdmin = requireAuth $ do
@@ -49,19 +59,6 @@ handleAdmin = requireAuth $ do
     getAllDays db = do
       today <- zonedDay <$> liftIO Time.getZonedTime
       run_ $ db ^. E.beforeSavedDays today $$ EL.consume
-
-handleInitAccount :: LupoHandler ()
-handleInitAccount = do
-  exists <- with auth $ A.usernameExists "admin"
-  when exists pass
-  method GET showInitAccountForm <|> method POST registerNewAccount
-  where
-    showInitAccountForm = renderView V.initAccountView
-
-    registerNewAccount = do
-      pass' <- bsParam "pass"
-      void $ with auth $ A.createUser "admin" pass'
-      redirect =<< U.getURL U.adminPath
 
 handleNewEntry :: LupoHandler ()
 handleNewEntry = requireAuth $ method GET (V.render =<< getEditor (E.Entry "" ""))
@@ -126,11 +123,3 @@ handleDeleteEntry = requireAuth $ do
   withEntryDB $ \(E.EDBWrapper db) ->
     db ^! E.delete i
   redirect =<< U.getURL U.adminPath
-
-requireAuth :: LupoHandler a -> LupoHandler a
-requireAuth h = do
-  stat <- with auth A.isLoggedIn
-  if stat then
-    h
-  else
-    redirect =<< U.getURL U.loginPath

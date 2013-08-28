@@ -17,7 +17,7 @@ data ViewFactory h = ViewFactory
   , _multiDaysView :: N.Navigation (H.HeistT h h) -> [E.Page] -> View h
   , _monthView :: N.Navigation (H.HeistT h h) -> [E.Page] -> View h
   , _searchResultView :: T.Text -> [E.Saved E.Entry] -> View h
-  , _loginView :: View h
+  , _loginView :: T.Text -> View h
   , _initAccountView :: View h
   , _adminView :: [E.Page] -> View h
   , _entryEditorView :: E.Saved E.Entry -> T.Text -> Getter U.URLMapper U.Path -> View h
@@ -41,8 +41,9 @@ searchResultView :: T.Text -> [E.Saved E.Entry] -> Getter (ViewFactory h) (View 
 searchResultView t es = to $ \self ->
   _searchResultView self t es
 
-loginView :: Getter (ViewFactory h) (View h)
-loginView = to _loginView
+loginView :: T.Text -> Getter (ViewFactory h) (View h)
+loginView challenge = to $ \self ->
+  _loginView self challenge
 
 initAccountView :: Getter (ViewFactory h) (View h)
 initAccountView = to _initAccountView

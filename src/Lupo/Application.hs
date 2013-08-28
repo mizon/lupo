@@ -21,10 +21,10 @@ module Lupo.Application
 import Control.Monad.CatchIO hiding (Handler)
 import Prelude hiding (filter)
 import Snap
-import qualified Snap.Snaplet.Auth as A
 import qualified Snap.Snaplet.Heist as SH
 import qualified Snap.Snaplet.Session as S
 
+import qualified Lupo.Auth as A
 import Lupo.Config
 import qualified Lupo.ConnectionPool as C
 import qualified Lupo.Entry as E
@@ -39,7 +39,7 @@ type LupoHandler = Handler Lupo Lupo
 data Lupo = Lupo
   { _heist :: Snaplet (SH.Heist Lupo)
   , _session :: Snaplet S.SessionManager
-  , _auth :: Snaplet (A.AuthManager Lupo)
+  , _auth :: Snaplet (A.Authenticator Lupo)
   , _lupoConfig :: LupoConfig
   , _localizer :: L.Localizer
   , _noticeDB :: N.NoticeDB LupoHandler
