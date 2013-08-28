@@ -34,12 +34,11 @@ handleLogin = method GET showLoginForm
           <|> method POST authenticate
   where
     showLoginForm = do
-      cond <- with auth A.isLoggedIn
-      if cond then
-        redirect =<< U.getURL U.adminPath
-      else do
-        challenge <- with auth A.prepareChallenge
-        renderView $ V.loginView challenge
+      challenge <- with auth $ do
+        loggedIn <- A.isLoggedIn
+        when loggedIn A.logout
+        A.prepareChallenge
+      renderView $ V.loginView challenge
 
     authenticate = do
       pass' <- textParam "pass"
