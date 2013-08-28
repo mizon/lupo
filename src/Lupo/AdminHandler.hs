@@ -21,8 +21,6 @@ import qualified Lupo.URLMapper as U
 import Lupo.Util
 import qualified Lupo.View as V
 
-import qualified Snap.Snaplet.Session as S
-
 requireAuth :: LupoHandler a -> LupoHandler a
 requireAuth h = do
   stat <- with auth A.isLoggedIn
@@ -41,7 +39,6 @@ handleLogin = method GET showLoginForm
         redirect =<< U.getURL U.adminPath
       else do
         challenge <- with auth A.prepareChallenge
-        with session $ S.setInSession "challengedummy" challenge
         renderView $ V.loginView challenge
 
     authenticate = do
